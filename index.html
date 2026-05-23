@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#0f4a29">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Tanzeem">
+  <title>Tanzeem Manager</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="css/app.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+<!-- ── Login Screen ──────────────────────────────────── -->
+<div id="setupScreen" class="setup-screen">
+  <div class="setup-inner">
+    <div class="setup-logo">
+      <div class="setup-logo-icon">🕌</div>
+      <h2>Tanzeem Manager</h2>
+      <p>تنظیم عبد مصطفیٰ — بسولی</p>
+    </div>
+    <div class="setup-card">
+      <p>Sign in with Google to access your Tanzeem data from Google Sheets.</p>
+      <button class="google-btn" onclick="signIn()">
+        <svg width="20" height="20" viewBox="0 0 48 48">
+          <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+          <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+          <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+          <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+        </svg>
+        Sign in with Google
+      </button>
+    </div>
+    <p class="setup-footer">Data stays in your Google Sheet. No server involved.</p>
+  </div>
+</div>
+
+<!-- ── Main App ──────────────────────────────────────── -->
+<div id="mainApp" style="display:none">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <span class="header-icon">🕌</span>
+      <h1 id="screenTitle">Dashboard</h1>
+    </div>
+    <div class="header-right">
+      <select class="session-select" id="sessionSelect" onchange="onSessionChange()">
+        <option value="0" selected>2025-26</option>
+        <option value="1">2024-25</option>
+      </select>
+      <div class="user-avatar" id="userAvatar" title="Tap to sign out" onclick="signOut()">A</div>
+    </div>
+  </div>
+
+  <!-- Dashboard Screen -->
+  <div id="screen-dashboard" class="screen active">
+    <div id="dashboardContent"><div class="loading">Loading data...</div></div>
+  </div>
+
+  <!-- Members Screen -->
+  <div id="screen-members" class="screen">
+    <div class="search-box">
+      <span class="search-icon">⌕</span>
+      <input type="text" id="memberSearch" placeholder="Search by name or mobile…" oninput="filterMembers()">
+    </div>
+    <div class="filter-tabs">
+      <button class="filter-tab active" onclick="setMemberFilter('all',this)">All</button>
+      <button class="filter-tab" onclick="setMemberFilter('Active',this)">Active</button>
+      <button class="filter-tab" onclick="setMemberFilter('Inactive',this)">Inactive</button>
+    </div>
+    <div id="membersList"><div class="loading">Loading...</div></div>
+  </div>
+
+  <!-- Payments Screen -->
+  <div id="screen-payments" class="screen">
+    <div id="paymentsContent"><div class="loading">Loading...</div></div>
+  </div>
+
+  <!-- Finance Screen -->
+  <div id="screen-finance" class="screen">
+    <div class="tabs">
+      <button class="tab active" onclick="setFinanceTab('donations',this)">Donations</button>
+      <button class="tab" onclick="setFinanceTab('expenses',this)">Expenses</button>
+    </div>
+    <div id="financeContent"><div class="loading">Loading...</div></div>
+  </div>
+
+  <!-- AI Chat Screen -->
+  <div id="screen-ai" class="screen">
+    <div class="ai-header">
+      <div class="ai-avatar">🤖</div>
+      <div class="ai-header-text">
+        <h4>AI Assistant</h4>
+        <p>Ask about your data</p>
+      </div>
+    </div>
+    <div class="quick-chips">
+      <span class="chip" onclick="quickAsk('Who are the inactive members?')">Inactive members</span>
+      <span class="chip" onclick="quickAsk('Which month had highest collection?')">Best month</span>
+      <span class="chip" onclick="quickAsk('Who has not paid this month?')">Unpaid this month</span>
+      <span class="chip" onclick="quickAsk('What is the total balance?')">Total balance</span>
+      <span class="chip" onclick="quickAsk('List members with total paid amount')">Member totals</span>
+    </div>
+    <div class="card" style="padding:14px">
+      <div class="chat-messages" id="chatMessages">
+        <div class="msg ai">
+          <div class="msg-bubble">Assalamu Alaikum! I am your Tanzeem assistant. Ask me anything about members, payments, or finances.</div>
+        </div>
+      </div>
+      <div class="chat-input-row">
+        <input type="text" id="chatInput" placeholder="Type your question…" onkeydown="if(event.key==='Enter') sendChat()">
+        <button class="btn btn-primary btn-sm" onclick="sendChat()">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Navigation -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" onclick="showScreen('dashboard',this)">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <rect x="3" y="3" width="7" height="7" rx="1.5"/>
+        <rect x="14" y="3" width="7" height="7" rx="1.5"/>
+        <rect x="3" y="14" width="7" height="7" rx="1.5"/>
+        <rect x="14" y="14" width="7" height="7" rx="1.5"/>
+      </svg>
+      Home
+    </button>
+    <button class="nav-item" onclick="showScreen('members',this)">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <circle cx="9" cy="7" r="4"/>
+        <path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/>
+        <path d="M16 3.13a4 4 0 0 1 0 7.75M21 21v-2a4 4 0 0 0-3-3.87"/>
+      </svg>
+      Members
+    </button>
+    <button class="nav-item" onclick="showScreen('payments',this)">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <rect x="2" y="5" width="20" height="14" rx="2.5"/>
+        <path d="M2 10h20"/>
+        <path d="M6 15h4"/>
+      </svg>
+      Payments
+    </button>
+    <button class="nav-item" onclick="showScreen('finance',this)">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+      </svg>
+      Finance
+    </button>
+    <button class="nav-item" onclick="showScreen('ai',this)">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path d="M12 2a10 10 0 0 1 10 10c0 5.52-4.48 10-10 10a9.96 9.96 0 0 1-5.19-1.45L2 21l1.45-4.81A9.96 9.96 0 0 1 2 12 10 10 0 0 1 12 2z"/>
+        <circle cx="8" cy="12" r="1" fill="currentColor" stroke="none"/>
+        <circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/>
+        <circle cx="16" cy="12" r="1" fill="currentColor" stroke="none"/>
+      </svg>
+      AI Chat
+    </button>
+  </nav>
+
+</div>
+
+
+<!-- JS: load order matters -->
+<script src="js/config.js"></script>
+<script src="js/app.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/sheets.js"></script>
+<script src="js/router.js"></script>
+<script src="js/features/dashboard.js"></script>
+<script src="js/features/members.js"></script>
+<script src="js/features/payments.js"></script>
+<script src="js/features/finance.js"></script>
+<script src="js/features/ai.js"></script>
+
+</body>
+</html>
