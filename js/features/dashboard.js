@@ -1,6 +1,10 @@
 function renderDashboard() {
-  const active        = STATE.allMembers.filter(m => m.status === 'Active').length;
-  const inactive      = STATE.allMembers.length - active;
+  const regular         = STATE.allMembers.filter(m => (m.type || 'Regular') === 'Regular');
+  const donors          = STATE.allMembers.filter(m => m.type === 'Donor');
+  const regularActive   = regular.filter(m => m.status === 'Active').length;
+  const regularInactive = regular.length - regularActive;
+  const active          = STATE.allMembers.filter(m => m.status === 'Active').length;
+  const inactive        = STATE.allMembers.length - active;
   const s             = STATE.sessionSummary;
   const months        = STATE.allPayments.length > 0 ? Object.keys(STATE.allPayments[0].months) : [];
   const monthlyTotals = months.map(m =>
@@ -18,8 +22,8 @@ function renderDashboard() {
         <div class="metric-bg-icon">👥</div>
       </div>
       <div class="metric blue">
-        <div class="metric-label">Active Members</div>
-        <div class="metric-value">${active}</div>
+        <div class="metric-label">Regular Active</div>
+        <div class="metric-value">${regularActive}</div>
         <div class="metric-bg-icon">✅</div>
       </div>
       <div class="metric orange">
@@ -54,9 +58,11 @@ function renderDashboard() {
 
     <div class="card">
       <div class="card-title">Member Overview</div>
-      <div class="stat-row"><span class="muted">Active</span><span style="color:#1a6b3c;font-weight:600">${active}</span></div>
-      <div class="stat-row"><span class="muted">Inactive</span><span style="color:#e53e3e;font-weight:600">${inactive}</span></div>
-      <div class="stat-row total-row"><span>Total</span><span>${STATE.allMembers.length}</span></div>
+      <div class="stat-row"><span class="muted" style="font-weight:600">👤 Regular</span><span style="font-weight:700">${regular.length}</span></div>
+      <div class="stat-row" style="padding-left:14px"><span class="muted">Active</span><span style="color:#1a6b3c;font-weight:600">${regularActive}</span></div>
+      <div class="stat-row" style="padding-left:14px"><span class="muted">In Active</span><span style="color:#e53e3e;font-weight:600">${regularInactive}</span></div>
+      <div class="stat-row"><span class="muted" style="font-weight:600">🎁 Donors</span><span style="color:#1d4ed8;font-weight:700">${donors.length}</span></div>
+      <div class="stat-row total-row"><span>Total Members</span><span>${STATE.allMembers.length}</span></div>
     </div>`;
 
   setTimeout(() => buildDashChart(months, monthlyTotals), 80);

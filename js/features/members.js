@@ -3,8 +3,10 @@ function renderMembers() {
   const list = STATE.allMembers.filter(m => {
     const matchQ = !q || m.name.toLowerCase().includes(q) || m.mobile.includes(q);
     const matchF = STATE.memberFilter === 'all'
-      || (STATE.memberFilter === 'Active' && m.status === 'Active')
-      || (STATE.memberFilter === 'Inactive' && m.status !== 'Active');
+      || (STATE.memberFilter === 'Active'   && m.status === 'Active')
+      || (STATE.memberFilter === 'Inactive' && m.status !== 'Active')
+      || (STATE.memberFilter === 'Regular'  && (m.type || 'Regular') === 'Regular')
+      || (STATE.memberFilter === 'Donor'    && m.type === 'Donor');
     return matchQ && matchF;
   });
 
@@ -26,6 +28,7 @@ function renderMembers() {
             <div class="member-name">
               ${m.name}
               <span class="badge ${isActive(m) ? 'badge-active' : 'badge-inactive'}">${m.status}</span>
+              <span style="font-size:10px;padding:2px 6px;border-radius:8px;font-weight:600;${m.type === 'Donor' ? 'background:#dbeafe;color:#1d4ed8' : 'background:#f0fdf4;color:#15803d'}">${m.type || 'Regular'}</span>
             </div>
             <div class="member-sub">${m.mobile || 'No mobile'}</div>
             ${m.address ? `<div class="member-sub">${m.address}</div>` : ''}
@@ -110,6 +113,7 @@ function openMemberProfile(idx) {
           <div class="modal-title" style="font-size:16px">${member.name}</div>
           <div style="display:flex;align-items:center;gap:7px;margin-top:4px;flex-wrap:wrap">
             <span class="badge ${isActive ? 'badge-active' : 'badge-inactive'}">${member.status}</span>
+            <span style="font-size:10px;padding:2px 6px;border-radius:8px;font-weight:600;${(member.type||'Regular')==='Donor' ? 'background:#dbeafe;color:#1d4ed8' : 'background:#f0fdf4;color:#15803d'}">${member.type || 'Regular'}</span>
             ${member.mobile ? `<span style="font-size:12px;color:var(--muted)">${member.mobile}</span>` : ''}
           </div>
           ${member.address ? `<div style="font-size:11px;color:var(--muted);margin-top:2px">${member.address}</div>` : ''}
@@ -259,11 +263,13 @@ function togglePaymentFromProfile(payIdx, mo, memberIdx) {
 // ── Member Edit ───────────────────────────────────────────
 
 let _editMemberStatus = null;
+let _editMemberType   = null;
 
 function openEditMember(idx) {
   const m = STATE.allMembers[idx];
   if (!m) return;
   _editMemberStatus = m.status;
+  _editMemberType   = m.type || 'Regular';
   document.getElementById('memberProfileContent').innerHTML = `
     <div class="modal-header">
       <div class="modal-title">Edit Member</div>
@@ -284,6 +290,13 @@ function openEditMember(idx) {
         <button id="emStatusInactive" class="btn ${m.status !== 'Active' ? 'btn-danger' : 'btn-secondary'}" style="flex:1;padding:10px" onclick="setEditStatus('In Active')">❌ Inactive</button>
       </div>
     </div>
+    <div class="form-group">
+      <label>Type</label>
+      <div style="display:flex;gap:8px">
+        <button id="emTypeRegular" class="btn ${(m.type||'Regular')==='Regular' ? 'btn-primary' : 'btn-secondary'}" style="flex:1;padding:10px" onclick="setEditType('Regular')">👤 Regular</button>
+        <button id="emTypeDonor"   class="btn ${m.type==='Donor' ? 'btn-primary' : 'btn-secondary'}" style="flex:1;padding:10px" onclick="setEditType('Donor')">🎁 Donor</button>
+      </div>
+    </div>
     <button class="btn btn-primary" style="width:100%;margin-top:6px" onclick="saveEditMember(${idx})">💾 Save Changes</button>
     <button class="btn btn-danger" style="width:100%;margin-top:8px" onclick="deleteMember(${idx})">🗑 Member Delete Karein</button>
   `;
@@ -295,6 +308,12 @@ function setEditStatus(s) {
   document.getElementById('emStatusInactive').className = 'btn ' + (s !== 'Active' ? 'btn-danger' : 'btn-secondary');
 }
 
+function setEditType(t) {
+  _editMemberType = t;
+  document.getElementById('emTypeRegular').className = 'btn ' + (t === 'Regular' ? 'btn-primary' : 'btn-secondary');
+  document.getElementById('emTypeDonor').className   = 'btn ' + (t === 'Donor'   ? 'btn-primary' : 'btn-secondary');
+}
+
 function saveEditMember(idx) {
   const m = STATE.allMembers[idx];
   if (!m) return;
@@ -302,20 +321,24 @@ function saveEditMember(idx) {
   const newName   = (document.getElementById('em_name').value   || '').trim();
   const newMobile = (document.getElementById('em_mobile').value || '').trim();
   const newStatus = _editMemberStatus || m.status;
+  const newType   = _editMemberType   || (m.type || 'Regular');
   if (!newName) { showToast('Naam khali nahi ho sakta', 'error'); return; }
   const changes = [];
-  if (newName   !== m.name)   changes.push(`Naam: <b>${m.name}</b> → <b>${newName}</b>`);
-  if (newMobile !== (m.mobile || '')) changes.push(`Mobile: <b>${m.mobile || '—'}</b> → <b>${newMobile || '—'}</b>`);
-  if (newStatus !== m.status) changes.push(`Status: <b>${m.status}</b> → <b>${newStatus}</b>`);
+  if (newName   !== m.name)              changes.push(`Naam: <b>${m.name}</b> → <b>${newName}</b>`);
+  if (newMobile !== (m.mobile || ''))    changes.push(`Mobile: <b>${m.mobile || '—'}</b> → <b>${newMobile || '—'}</b>`);
+  if (newStatus !== m.status)            changes.push(`Status: <b>${m.status}</b> → <b>${newStatus}</b>`);
+  if (newType   !== (m.type||'Regular')) changes.push(`Type: <b>${m.type||'Regular'}</b> → <b>${newType}</b>`);
   if (!changes.length) { openMemberProfile(idx); return; }
   showConfirm('Yeh changes save karein?', changes.join('<br>'), async () => {
     try {
-      if (newName   !== m.name)         await sheetsPut(`Members List!B${m.row}`, [[newName]]);
-      if (newMobile !== (m.mobile||'')) await sheetsPut(`Members List!C${m.row}`, [[newMobile]]);
-      if (newStatus !== m.status)       await sheetsPut(`Members List!G${m.row}`, [[newStatus]]);
+      if (newName   !== m.name)              await sheetsPut(`Members List!B${m.row}`, [[newName]]);
+      if (newMobile !== (m.mobile||''))      await sheetsPut(`Members List!C${m.row}`, [[newMobile]]);
+      if (newStatus !== m.status)            await sheetsPut(`Members List!G${m.row}`, [[newStatus]]);
+      if (newType   !== (m.type||'Regular')) await sheetsPut(`Members List!I${m.row}`, [[newType]]);
       STATE.allMembers[idx].name   = newName;
       STATE.allMembers[idx].mobile = newMobile;
       STATE.allMembers[idx].status = newStatus;
+      STATE.allMembers[idx].type   = newType;
       saveCache(STATE.currentSession.label);
       showToast('Member update ho gaya! ✅');
       openMemberProfile(idx);
@@ -382,6 +405,13 @@ function openAddMember() {
       </div>
     </div>
     <div class="form-group">
+      <label>Type</label>
+      <div style="display:flex;gap:8px">
+        <button id="nmTypeRegular" class="btn btn-primary" style="flex:1;padding:10px" onclick="setNewMemberType('Regular')">👤 Regular</button>
+        <button id="nmTypeDonor"   class="btn btn-secondary" style="flex:1;padding:10px" onclick="setNewMemberType('Donor')">🎁 Donor</button>
+      </div>
+    </div>
+    <div class="form-group">
       <label>Status</label>
       <div style="display:flex;gap:8px">
         <button id="nmStatusActive" class="btn btn-primary" style="flex:1;padding:10px" onclick="setNewMemberStatus('Active')">✅ Active</button>
@@ -392,16 +422,24 @@ function openAddMember() {
   `;
   _newMemberStatus = 'Active';
   _newMemberAadhar = 'No';
+  _newMemberType   = 'Regular';
   document.getElementById('memberProfileOverlay').classList.add('open');
 }
 
 let _newMemberStatus = 'Active';
 let _newMemberAadhar = 'No';
+let _newMemberType   = 'Regular';
 
 function setNewMemberStatus(s) {
   _newMemberStatus = s;
   document.getElementById('nmStatusActive').className   = 'btn ' + (s === 'Active' ? 'btn-primary'   : 'btn-secondary');
   document.getElementById('nmStatusInactive').className = 'btn ' + (s !== 'Active' ? 'btn-danger' : 'btn-secondary');
+}
+
+function setNewMemberType(t) {
+  _newMemberType = t;
+  document.getElementById('nmTypeRegular').className = 'btn ' + (t === 'Regular' ? 'btn-primary' : 'btn-secondary');
+  document.getElementById('nmTypeDonor').className   = 'btn ' + (t === 'Donor'   ? 'btn-primary' : 'btn-secondary');
 }
 
 function setNewMemberAadhar(v) {
@@ -417,19 +455,20 @@ function saveNewMember() {
   const address= (document.getElementById('nm_address').value|| '').trim();
   const aadhar = _newMemberAadhar;
   const status = _newMemberStatus;
+  const type   = _newMemberType;
   if (!name) { showToast('Naam likhein', 'error'); return; }
   const nextId = STATE.allMembers.length + 1;
   showConfirm(
     'Member add karein?',
-    `<b>${name}</b>${mobile ? '<br>📞 ' + mobile : ''}${doj ? '<br>DOJ: ' + doj : ''}${address ? '<br>🏠 ' + address : ''}<br>Status: ${status}`,
+    `<b>${name}</b>${mobile ? '<br>📞 ' + mobile : ''}${doj ? '<br>DOJ: ' + doj : ''}${address ? '<br>🏠 ' + address : ''}<br>Type: ${type}<br>Status: ${status}`,
     async () => {
       try {
-        // Sheet columns: A=#, B=Name, C=Mobile, D=DOJ, E=Address, F=Aadhar, G=Status, H=DOE
-        await sheetsAppend('Members List', [[nextId, name, mobile, doj, address, aadhar, status, '']]);
+        // Sheet columns: A=#, B=Name, C=Mobile, D=DOJ, E=Address, F=Aadhar, G=Status, H=DOE, I=Type
+        await sheetsAppend('Members List', [[nextId, name, mobile, doj, address, aadhar, status, '', type]]);
         const newRow = STATE.allMembers.length > 0
           ? Math.max(...STATE.allMembers.map(m => m.row)) + 1
           : 2;
-        STATE.allMembers.push({ row: newRow, id: String(nextId), name, mobile, doj, address, aadhar, status, doe: '' });
+        STATE.allMembers.push({ row: newRow, id: String(nextId), name, mobile, doj, address, aadhar, status, doe: '', type });
         saveCache(STATE.currentSession.label);
         showToast('Member add ho gaya! ✅');
         closeMemberProfile();

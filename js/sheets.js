@@ -113,7 +113,7 @@ async function loadAllData(forceRefresh = false) {
   setSyncLoading(true);
   try {
     const [membersRaw, sessionRaw, donationsRaw, expensesRaw] = await Promise.all([
-      sheetsGet('Members List!A:H'),
+      sheetsGet('Members List!A:I'),
       sheetsGet(session.sheet + '!A:P'),
       sheetsGet(session.donations + '!A:F').catch(() => []),
       sheetsGet(session.expenses  + '!A:F').catch(() => [])
@@ -152,7 +152,8 @@ function parseMembers(rows) {
       address: r[4] || '',
       aadhar: r[5] || '',
       status: r[6] || 'Active',
-      doe: r[7] || ''
+      doe:    r[7] || '',
+      type:   r[8] || 'Regular'
     });
   }
 }

@@ -60,20 +60,25 @@ function isPastOrCurrent(monthLabel) {
 }
 
 function buildMemberStats(payments) {
-  // Month headers from any existing record
   const monthKeys = payments.length > 0 ? Object.keys(payments[0].months) : [];
 
-  // Members in allMembers with no payment row → treat as all unpaid
-  // Use fuzzy nameMatch so spelling variants (Siddiqi/Siddiqui) don't create ghost duplicates
+  // Payment stats are for Regular members only — Donors are excluded
+  const regularPayments = payments.filter(p => {
+    const m = STATE.allMembers.find(mb => nameMatch(mb.name, p.name));
+    return !m || (m.type || 'Regular') === 'Regular';
+  });
+
+  // Ghosts: Regular members in allMembers with no payment row
   const ghosts = STATE.allMembers
-    .filter(m => !payments.some(p => nameMatch(p.name, m.name)))
+    .filter(m => (m.type || 'Regular') === 'Regular')
+    .filter(m => !regularPayments.some(p => nameMatch(p.name, m.name)))
     .map(m => {
       const emptyMonths = {};
       monthKeys.forEach(k => { emptyMonths[k] = ''; });
       return { name: m.name, months: emptyMonths, total: '0' };
     });
 
-  return [...payments, ...ghosts].map(p => {
+  return [...regularPayments, ...ghosts].map(p => {
     const allMonths  = Object.keys(p.months);
     const pastMonths = allMonths.filter(isPastOrCurrent);
 
@@ -310,6 +315,7 @@ function renderPayments() {
               <div class="pay-sub">${m.unpaidList.length} months unpaid · ${m.unpaidList.join(', ')}</div>
             </div>
             <div class="pay-amount" style="color:${C_ORANGE}">${formatCurrency(m.totalPending)}</div>
+            <button onclick="waMemberOverdue('${m.name.replace(/\(.*?\)/g,'').trim()}')" title="WhatsApp Reminder" style="background:none;border:none;cursor:pointer;color:#25d366;padding:2px 6px;flex-shrink:0;line-height:1">${WA_SVG}</button>
           </div>`).join('')}
       </div>` : ''}
     </div>` : ''}
@@ -337,6 +343,7 @@ function renderPayments() {
               <div class="pay-sub">Paid ${m.paidList.length} months · Due ${m.unpaidList.length} months</div>
             </div>
             <div class="pay-amount" style="color:${C_GREY}">${m.totalPaid > 0 ? formatCurrency(m.totalPaid) : '—'}</div>
+            ${isCurrentSession ? `<button onclick="waMemberSummary('${m.name.replace(/\(.*?\)/g,'').trim()}')" title="Member Summary WhatsApp" style="background:none;border:none;cursor:pointer;color:#25d366;padding:2px 6px;flex-shrink:0;line-height:1">${WA_SVG}</button>` : ''}
           </div>`).join('')}
       </div>` : ''}
     </div>` : ''}
@@ -366,6 +373,7 @@ function renderPayments() {
                   <div class="pay-sub">Past pending: ${formatCurrency(m.totalPending)}</div>
                 </div>
                 <div class="pay-amount" style="color:${C_RED}">−${formatCurrency(FEE)}</div>
+                <button onclick="waMemberUnpaid('${m.name.replace(/\(.*?\)/g,'').trim()}','${sel}')" title="Payment Reminder WhatsApp" style="background:none;border:none;cursor:pointer;color:#25d366;padding:2px 6px;flex-shrink:0;line-height:1">${WA_SVG}</button>
               </div>`).join('')}
       </div>` : ''}
     </div>` : ''}
@@ -395,6 +403,7 @@ function renderPayments() {
                   <div class="pay-sub">Paid ${m.paidList.length} of ${months.filter(isPastOrCurrent).length} past months</div>
                 </div>
                 <div class="pay-amount" style="color:${C_GREEN}">+${formatCurrency(FEE)}</div>
+                <button onclick="waMemberPaidPopup('${m.name.replace(/\(.*?\)/g,'').trim()}')" title="Payment Confirm WhatsApp" style="background:none;border:none;cursor:pointer;color:#25d366;padding:2px 6px;flex-shrink:0;line-height:1">${WA_SVG}</button>
               </div>`).join('')}
       </div>` : ''}
     </div>` : ''}
@@ -419,6 +428,7 @@ function renderPayments() {
               <th>Due</th>
               <th>Collected</th>
               <th>Pending</th>
+              ${isCurrentSession ? '<th></th>' : ''}
             </tr>
           </thead>
           <tbody>
@@ -434,6 +444,7 @@ function renderPayments() {
                 <td style="color:${m.totalPending > 0 ? C_RED : C_MUTED};font-weight:600;white-space:nowrap">
                   ${m.totalPending > 0 ? formatCurrency(m.totalPending) : '—'}
                 </td>
+                ${isCurrentSession ? `<td style="padding:2px 4px"><button onclick="waMemberSummary('${m.name.replace(/\(.*?\)/g,'').trim()}')" title="Member Summary WhatsApp" style="background:none;border:none;cursor:pointer;color:#25d366;padding:2px 4px;line-height:1">${WA_SVG}</button></td>` : ''}
               </tr>`).join('')}
           </tbody>
         </table>
@@ -445,7 +456,7 @@ function renderPayments() {
       <div class="toggle-header" onclick="toggleGrid()"
         style="cursor:pointer;display:flex;align-items:center;gap:8px;margin-bottom:0">
         <span style="font-size:13px;font-weight:600;flex:1">Full Payment Grid
-          <span style="font-size:10px;font-weight:400;color:${C_MUTED};margin-left:4px">(active + in active)</span>
+          <span style="font-size:10px;font-weight:400;color:${C_MUTED};margin-left:4px">(Regular members)</span>
         </span>
         <span class="section-count" style="background:#f0f9ff;color:#0369a1">${stats.length}</span>
         ${chevron(_showGrid)}
@@ -685,4 +696,139 @@ function showWhatsAppPopup() {
 
 function closeWhatsAppPopup() {
   document.getElementById('waPopupOverlay')?.classList.remove('open');
+}
+
+// ── Per-member WhatsApp helpers ───────────────────────────
+
+function _memberWaLink(name) {
+  const member = STATE.allMembers.find(m => nameMatch(m.name, name));
+  const raw    = (member?.mobile || '').replace(/\D/g, '').replace(/^0+/, '');
+  const mobile = raw.length === 10 ? '91' + raw : raw;
+  return mobile ? `https://wa.me/${mobile}?text=` : `https://wa.me/?text=`;
+}
+
+function _waHeader() {
+  const session = STATE.currentSession ? STATE.currentSession.label : '';
+  return `Assalamualkum wa Rahmatullahi wa Barakatuh! 🕌\n\nاسلام علیکم ورحمتہ وبرکاتہ\n\n*Tanzeem Abd-e-Mustafa — Bisauli*\n*تنظیم عبد مصطفیٰ — بسولی*\n*Session: ${session}*\n━━━━━━━━━━━━━━━━━━━\n\n`;
+}
+
+function waMemberOverdue(name) {
+  const allStats = buildMemberStats(STATE.allPayments);
+  const m = allStats.find(s => nameMatch(s.name, name));
+  if (!m) return;
+  const clean = n => n.replace(/\(.*?\)/g, '').trim();
+  let msg = _waHeader();
+  msg += `Bhai *${clean(m.name)}*,\n\n`;
+  msg += `Tanzeem Abd-e-Mustafa ki taraf se yaad dahani:\n\n`;
+  msg += `⚠️ *Aapki Baqi Mahine (${m.unpaidList.length} mahine):*\n`;
+  msg += m.unpaidList.join(', ') + '\n\n';
+  msg += `💰 *Kul Baqi Rakam:* ${formatCurrency(m.totalPending)}\n`;
+  msg += `(${m.unpaidList.length} mahine × Rs.${FEE})\n\n`;
+  msg += `━━━━━━━━━━━━━━━━━━━\n`;
+  msg += `Meherbani karke jald se jald ada kar dein.\n`;
+  msg += `Jazakallah Khair 🤲`;
+  window.open(_memberWaLink(name) + encodeURIComponent(msg), '_blank');
+}
+
+function waMemberUnpaid(name, month) {
+  const clean = n => n.replace(/\(.*?\)/g, '').trim();
+  let msg = _waHeader();
+  msg += `Bhai *${clean(name)}*,\n\n`;
+  msg += `❌ *${month} Ki Payment Abhi Baqi Hai*\n\n`;
+  msg += `Meherbani karke Rs.${FEE} jama kar dein.\n\n`;
+  msg += `━━━━━━━━━━━━━━━━━━━\n`;
+  msg += `Jazakallah Khair 🤲`;
+  window.open(_memberWaLink(name) + encodeURIComponent(msg), '_blank');
+}
+
+// Paid: show month picker popup
+let _waPaidName     = '';
+let _waPaidMonths   = [];
+let _waPaidSelected = new Set();
+
+function waMemberPaidPopup(name) {
+  const allStats = buildMemberStats(STATE.allPayments);
+  const m = allStats.find(s => nameMatch(s.name, name));
+  if (!m || m.paidList.length === 0) { showToast('Is member ki koi paid entry nahi', 'error'); return; }
+  _waPaidName     = name;
+  _waPaidMonths   = m.paidList;
+  const defMonth  = STATE.selectedPaymentMonth && m.paidList.includes(STATE.selectedPaymentMonth)
+    ? STATE.selectedPaymentMonth
+    : m.paidList[m.paidList.length - 1];
+  _waPaidSelected = new Set([defMonth]);
+  _renderWaPaidPopup();
+}
+
+function _renderWaPaidPopup() {
+  let overlay = document.getElementById('waPaidPopupOverlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'waPaidPopupOverlay';
+    overlay.className = 'modal-overlay';
+    overlay.style.zIndex = '400';
+    overlay.addEventListener('click', closeWaPaidPopup);
+    document.body.appendChild(overlay);
+  }
+  const clean = n => n.replace(/\(.*?\)/g, '').trim();
+  overlay.innerHTML = `
+    <div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-handle"></div>
+      <div class="modal-header">
+        <div class="modal-title">📤 Payment Confirm — ${clean(_waPaidName)}</div>
+        <button class="close-btn" onclick="closeWaPaidPopup()">×</button>
+      </div>
+      <div style="font-size:12px;color:#64748b;margin-bottom:12px">Kis mahine ki payment confirm karni hai? (multiple select ho sakta hai)</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px">
+        ${_waPaidMonths.map(mo => `
+          <button onclick="toggleWaPaidMonth('${mo}')" id="wpm-${mo}"
+            class="month-pill ${_waPaidSelected.has(mo) ? 'active' : ''}"
+            style="scroll-snap-align:none">${mo}</button>`).join('')}
+      </div>
+      <button class="whatsapp-btn" style="margin:0;justify-content:center;gap:10px" onclick="sendWaMemberPaid()">
+        ${WA_SVG} Send Karein
+      </button>
+    </div>`;
+  overlay.classList.add('open');
+}
+
+function toggleWaPaidMonth(mo) {
+  if (_waPaidSelected.has(mo)) {
+    if (_waPaidSelected.size > 1) _waPaidSelected.delete(mo);
+  } else {
+    _waPaidSelected.add(mo);
+  }
+  _renderWaPaidPopup();
+}
+
+function closeWaPaidPopup() {
+  document.getElementById('waPaidPopupOverlay')?.classList.remove('open');
+}
+
+function sendWaMemberPaid() {
+  closeWaPaidPopup();
+  const months = [..._waPaidSelected].sort((a, b) => {
+    const months_ = STATE.allPayments.length > 0 ? Object.keys(STATE.allPayments[0].months) : [];
+    return months_.indexOf(a) - months_.indexOf(b);
+  });
+  const clean = n => n.replace(/\(.*?\)/g, '').trim();
+  let msg = _waHeader();
+  msg += `Bhai *${clean(_waPaidName)}*,\n\n`;
+  msg += `✅ *Aapki Payment Haasil Ho Gayi!*\n\n`;
+  if (months.length === 1) {
+    msg += `📅 Mahina: *${months[0]}*\n`;
+    msg += `💰 Rakam: Rs.${FEE}\n\n`;
+  } else {
+    msg += `📅 Mahine: *${months.join(', ')}*\n`;
+    msg += `💰 Kul Rakam: Rs.${months.length * FEE}\n\n`;
+  }
+  msg += `Tanzeem ko aapki khidmat qabool ho.\n`;
+  msg += `━━━━━━━━━━━━━━━━━━━\n`;
+  msg += `Jazakallah Khair 🤲`;
+  window.open(_memberWaLink(_waPaidName) + encodeURIComponent(msg), '_blank');
+}
+
+function waMemberSummary(name) {
+  const idx = STATE.allMembers.findIndex(m => nameMatch(m.name, name));
+  if (idx === -1) { showToast('Member nahi mila', 'error'); return; }
+  shareWhatsAppMember(idx);
 }

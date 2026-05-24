@@ -82,10 +82,12 @@
       <input type="text" id="memberSearch" placeholder="Search by name or mobile…" oninput="filterMembers()">
     </div>
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-      <div class="filter-tabs" style="margin-bottom:0">
-        <button class="filter-tab active" onclick="setMemberFilter('all',this)">All</button>
-        <button class="filter-tab" onclick="setMemberFilter('Active',this)">Active</button>
-        <button class="filter-tab" onclick="setMemberFilter('Inactive',this)">Inactive</button>
+      <div class="filter-tabs" style="margin-bottom:0;overflow-x:auto;scrollbar-width:none;flex-wrap:nowrap">
+        <button class="filter-tab active" onclick="setMemberFilter('all',this)">👥 All</button>
+        <button class="filter-tab" onclick="setMemberFilter('Regular',this)">👤 Regular</button>
+        <button class="filter-tab" onclick="setMemberFilter('Donor',this)">🎁 Donor</button>
+        <button class="filter-tab" onclick="setMemberFilter('Active',this)">✅ Active</button>
+        <button class="filter-tab" onclick="setMemberFilter('Inactive',this)">❌ Inactive</button>
       </div>
       <button onclick="openAddMember()" style="background:#0f4a29;border:none;border-radius:10px;padding:7px 14px;color:#fff;font-size:13px;font-weight:600;cursor:pointer">+ Add</button>
     </div>

@@ -1,4 +1,6 @@
 function renderFinance() {
+  const fab = document.getElementById('financeFab');
+  if (fab) fab.style.display = STATE.currentSessionIdx === 0 ? 'flex' : 'none';
   if (STATE.currentFinanceTab === 'donations') renderDonations();
   else renderExpenses();
 }
@@ -32,8 +34,9 @@ function renderDonations() {
               </div>
               <div style="display:flex;align-items:center;gap:8px">
                 <div class="finance-amount green">${formatCurrency(d.amount)}</div>
+                ${STATE.currentSessionIdx === 0 ? `
                 <button onclick="openFinanceForm('donation',${i})" style="background:none;border:none;cursor:pointer;font-size:15px;padding:4px 6px;color:#94a3b8;border-radius:8px;transition:background .15s" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='none'">✏</button>
-                <button onclick="deleteFinanceItem('donation',${i})" style="background:none;border:none;cursor:pointer;font-size:15px;padding:4px 6px;color:#fca5a5;border-radius:8px;transition:background .15s" onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background='none'">🗑</button>
+                <button onclick="deleteFinanceItem('donation',${i})" style="background:none;border:none;cursor:pointer;font-size:15px;padding:4px 6px;color:#fca5a5;border-radius:8px;transition:background .15s" onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background='none'">🗑</button>` : ''}
               </div>
             </div>`).join('')}
     </div>`;
@@ -68,8 +71,9 @@ function renderExpenses() {
               </div>
               <div style="display:flex;align-items:center;gap:8px">
                 <div class="finance-amount red">${formatCurrency(e.amount)}</div>
+                ${STATE.currentSessionIdx === 0 ? `
                 <button onclick="openFinanceForm('expense',${i})" style="background:none;border:none;cursor:pointer;font-size:15px;padding:4px 6px;color:#94a3b8;border-radius:8px;transition:background .15s" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='none'">✏</button>
-                <button onclick="deleteFinanceItem('expense',${i})" style="background:none;border:none;cursor:pointer;font-size:15px;padding:4px 6px;color:#fca5a5;border-radius:8px;transition:background .15s" onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background='none'">🗑</button>
+                <button onclick="deleteFinanceItem('expense',${i})" style="background:none;border:none;cursor:pointer;font-size:15px;padding:4px 6px;color:#fca5a5;border-radius:8px;transition:background .15s" onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background='none'">🗑</button>` : ''}
               </div>
             </div>`).join('')}
     </div>`;
@@ -145,6 +149,7 @@ function closeFinanceForm() {
 
 function saveFinanceForm() {
   if (!STATE.accessToken) { showToast('Write ke liye pehle Sync karein 🔄', 'error'); return; }
+  if (STATE.currentSessionIdx !== 0) { showToast('Purane session mein edit nahi ho sakta', 'error'); return; }
 
   const isDonation = _ffType === 'donation';
   const isEdit     = _ffIdx !== null;
@@ -212,6 +217,7 @@ function saveFinanceForm() {
 
 function deleteFinanceItem(type, idx) {
   if (!STATE.accessToken) { showToast('Write ke liye pehle Sync karein 🔄', 'error'); return; }
+  if (STATE.currentSessionIdx !== 0) { showToast('Purane session mein edit nahi ho sakta', 'error'); return; }
   const isDonation = type === 'donation';
   const item    = isDonation ? STATE.allDonations[idx] : STATE.allExpenses[idx];
   if (!item) return;
