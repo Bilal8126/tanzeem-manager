@@ -138,7 +138,22 @@ window.addEventListener('load', () => {
   if (sel) sel.value = STATE.currentSessionIdx;
 
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js').catch(() => {});
+    navigator.serviceWorker.register('sw.js').then(reg => {
+      // When a new SW takes control, reload once so users get fresh UI automatically
+      let reloading = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (!reloading) {
+          reloading = true;
+          showToast('Naya update aa gaya — reload ho raha hai... 🔄');
+          setTimeout(() => window.location.reload(), 1200);
+        }
+      });
+
+      // Re-check for SW updates whenever the user brings the app back to foreground
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') reg.update();
+      });
+    }).catch(() => {});
   }
 
   // Restore session on refresh — shows cached data without re-login

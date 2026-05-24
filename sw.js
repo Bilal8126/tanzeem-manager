@@ -1,4 +1,4 @@
-const CACHE = 'tanzeem-v3';
+const CACHE = 'tanzeem-v4'; // bump this version on every deploy → triggers auto-reload for all users
 const ASSETS = [
   './',
   './index.html',
