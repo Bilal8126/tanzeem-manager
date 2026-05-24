@@ -109,7 +109,7 @@ function openFinanceForm(type, idx) {
       </div>
       <div class="form-group">
         <label>Tarikh</label>
-        <input id="ff_date" type="date" value="${item?.date || todayDate()}">
+        <input id="ff_date" type="date" value="${item?.date || ''}">
       </div>
       <div class="form-group">
         <label>Note</label>
@@ -126,7 +126,7 @@ function openFinanceForm(type, idx) {
       </div>
       <div class="form-group">
         <label>Tarikh</label>
-        <input id="ff_date" type="date" value="${item?.date || todayDate()}">
+        <input id="ff_date" type="date" value="${item?.date || ''}">
       </div>
       <div class="form-group">
         <label>Category</label>

@@ -236,6 +236,10 @@ function openEditMember(idx) {
       <input id="em_name" value="${m.name.replace(/"/g, '&quot;')}" placeholder="Naam likhein...">
     </div>
     <div class="form-group">
+      <label>Mobile Number</label>
+      <input id="em_mobile" type="tel" value="${(m.mobile || '').replace(/"/g, '&quot;')}" placeholder="Mobile number...">
+    </div>
+    <div class="form-group">
       <label>Status</label>
       <div style="display:flex;gap:8px">
         <button id="emStatusActive" class="btn ${m.status === 'Active' ? 'btn-primary' : 'btn-secondary'}" style="flex:1;padding:10px" onclick="setEditStatus('Active')">✅ Active</button>
@@ -256,18 +260,22 @@ function saveEditMember(idx) {
   const m = STATE.allMembers[idx];
   if (!m) return;
   if (!STATE.accessToken) { showToast('Write ke liye pehle Sync karein 🔄', 'error'); return; }
-  const newName   = (document.getElementById('em_name').value || '').trim();
+  const newName   = (document.getElementById('em_name').value   || '').trim();
+  const newMobile = (document.getElementById('em_mobile').value || '').trim();
   const newStatus = _editMemberStatus || m.status;
   if (!newName) { showToast('Naam khali nahi ho sakta', 'error'); return; }
   const changes = [];
-  if (newName !== m.name)     changes.push(`Naam: <b>${m.name}</b> → <b>${newName}</b>`);
+  if (newName   !== m.name)   changes.push(`Naam: <b>${m.name}</b> → <b>${newName}</b>`);
+  if (newMobile !== (m.mobile || '')) changes.push(`Mobile: <b>${m.mobile || '—'}</b> → <b>${newMobile || '—'}</b>`);
   if (newStatus !== m.status) changes.push(`Status: <b>${m.status}</b> → <b>${newStatus}</b>`);
   if (!changes.length) { openMemberProfile(idx); return; }
   showConfirm('Yeh changes save karein?', changes.join('<br>'), async () => {
     try {
-      if (newName !== m.name)     await sheetsPut(`Members List!B${m.row}`, [[newName]]);
-      if (newStatus !== m.status) await sheetsPut(`Members List!G${m.row}`, [[newStatus]]);
+      if (newName   !== m.name)         await sheetsPut(`Members List!B${m.row}`, [[newName]]);
+      if (newMobile !== (m.mobile||'')) await sheetsPut(`Members List!C${m.row}`, [[newMobile]]);
+      if (newStatus !== m.status)       await sheetsPut(`Members List!G${m.row}`, [[newStatus]]);
       STATE.allMembers[idx].name   = newName;
+      STATE.allMembers[idx].mobile = newMobile;
       STATE.allMembers[idx].status = newStatus;
       saveCache(STATE.currentSession.label);
       showToast('Member update ho gaya! ✅');
