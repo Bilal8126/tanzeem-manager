@@ -177,8 +177,10 @@ function saveFinanceForm() {
             STATE.allDonations[_ffIdx] = { ...d, donor: name, amount, note: extra, date };
           } else {
             const sr     = STATE.allDonations.length + 1;
-            const newRow = STATE.allDonations.length + 2;
-            await sheetsAppend(sheetName, [[sr, name, amount, extra, date]]);
+            const newRow = STATE.allDonations.length > 0
+              ? STATE.allDonations[STATE.allDonations.length - 1].row + 1 : 3;
+            // Sheet columns: A=Sr, B=Name, C=Amount, D=Description, E=Date, F=Session
+            await sheetsAppend(sheetName, [[sr, name, amount, extra, date, session.label]]);
             STATE.allDonations.push({ row: newRow, sr: String(sr), donor: name, amount, note: extra, date });
           }
         } else {
@@ -189,7 +191,8 @@ function saveFinanceForm() {
             STATE.allExpenses[_ffIdx] = { ...e, desc: name, amount, date };
           } else {
             const sr     = STATE.allExpenses.length + 1;
-            const newRow = STATE.allExpenses.length + 2;
+            const newRow = STATE.allExpenses.length > 0
+              ? STATE.allExpenses[STATE.allExpenses.length - 1].row + 1 : 3;
             await sheetsAppend(sheetName, [[sr, name, amount, date, session.label]]);
             STATE.allExpenses.push({ row: newRow, sr: String(sr), desc: name, amount, date, session: session.label });
           }
