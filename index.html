@@ -25,7 +25,7 @@
       <p>تنظیم عبد مصطفیٰ — بسولی</p>
     </div>
     <div class="setup-card">
-      <p>Sign in with Google</p>
+      <!-- <p>Sign in with Google</p> -->
       <!-- //to access your Tanzeem data from Google Sheets. -->
       <button class="google-btn" onclick="signIn()">
         <svg width="20" height="20" viewBox="0 0 48 48">
@@ -66,7 +66,9 @@
         <option value="0" selected>2025-26</option>
         <option value="1">2024-25</option>
       </select>
-      <div class="user-avatar" id="userAvatar" title="Tap to sign out" onclick="signOut()">A</div>
+      <div class="user-avatar" id="userAvatar" title="Sign Out" onclick="signOut()">
+        <svg id="avatarIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>
+      </div>
     </div>
   </div>
 
@@ -81,15 +83,25 @@
       <span class="search-icon">⌕</span>
       <input type="text" id="memberSearch" placeholder="Search by name or mobile…" oninput="filterMembers()">
     </div>
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-      <div class="filter-tabs" style="margin-bottom:0;overflow-x:auto;scrollbar-width:none;flex-wrap:nowrap">
-        <button class="filter-tab active" onclick="setMemberFilter('all',this)">👥 All</button>
-        <button class="filter-tab" onclick="setMemberFilter('Regular',this)">👤 Regular</button>
-        <button class="filter-tab" onclick="setMemberFilter('Donor',this)">🎁 Donor</button>
-        <button class="filter-tab" onclick="setMemberFilter('Active',this)">✅ Active</button>
-        <button class="filter-tab" onclick="setMemberFilter('Inactive',this)">❌ Inactive</button>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+      <div class="filter-tabs" style="margin-bottom:0;overflow-x:auto;scrollbar-width:none;flex-wrap:nowrap;flex:1;min-width:0">
+        <button class="filter-tab active" onclick="setMemberFilter('all',this)">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="7" r="3"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.13a4 4 0 0 1 0 7.75M21 21v-2a4 4 0 0 0-3-3.87"/></svg>All
+        </button>
+        <button class="filter-tab" onclick="setMemberFilter('Regular',this)">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>Regular
+        </button>
+        <button class="filter-tab" onclick="setMemberFilter('Donor',this)">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>Donor
+        </button>
+        <button class="filter-tab" onclick="setMemberFilter('Active',this)">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>Active
+        </button>
+        <button class="filter-tab" onclick="setMemberFilter('Inactive',this)">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><line x1="17" y1="8" x2="23" y2="14"/><line x1="23" y1="8" x2="17" y2="14"/></svg>Inactive
+        </button>
       </div>
-      <button onclick="openAddMember()" style="background:#0f4a29;border:none;border-radius:10px;padding:7px 14px;color:#fff;font-size:13px;font-weight:600;cursor:pointer">+ Add</button>
+      <button onclick="openAddMember()" title="Add Member" style="flex-shrink:0;background:#1a6b3c;border:none;border-radius:50%;width:36px;height:36px;color:#fff;font-size:22px;font-weight:300;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;box-shadow:0 2px 8px rgba(15,74,41,0.35)">+</button>
     </div>
     <div id="membersList"><div class="loading">Loading...</div></div>
   </div>

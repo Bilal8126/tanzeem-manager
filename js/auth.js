@@ -22,9 +22,40 @@ function checkAutoSignIn() {
   // Ensure flag is set for future loads
   localStorage.setItem(_AUTH_FLAG, '1');
 
+  // Restore saved user display name
+  const savedName = localStorage.getItem('tanzeem_user_display');
+  if (savedName) _setAvatar(savedName);
+
   document.getElementById('setupScreen').style.display = 'none';
   document.getElementById('mainApp').style.display = 'block';
   loadAllData(false); // serve from localStorage cache; no token required
+}
+
+// Update avatar with first-name initials (max 2 chars, never URL-like)
+function _setAvatar(name) {
+  const el = document.getElementById('userAvatar');
+  if (!el || !name) return;
+  // Take only first word, strip special chars, max 2 letters → initials
+  const word = name.trim().split(/[\s@._/]+/)[0].replace(/[^a-zA-Z؀-ۿ]/g, '');
+  const initials = word.slice(0, 2).toUpperCase();
+  if (initials) {
+    el.textContent = initials;
+    el.title = name.split(/[\s@._/]+/)[0] + ' — Sign Out';
+  }
+}
+
+// Fetch Google user profile to show proper initials in avatar
+async function _fetchUserInfo(token) {
+  try {
+    const info = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+      headers: { Authorization: 'Bearer ' + token }
+    }).then(r => r.json());
+    const display = info.given_name || (info.name || '').split(' ')[0] || '';
+    if (display) {
+      localStorage.setItem('tanzeem_user_display', display);
+      _setAvatar(display);
+    }
+  } catch(e) { /* keep default person icon */ }
 }
 
 async function signIn() {
@@ -39,6 +70,7 @@ async function signIn() {
         localStorage.setItem(_AUTH_FLAG, '1');
         document.getElementById('setupScreen').style.display = 'none';
         document.getElementById('mainApp').style.display = 'block';
+        _fetchUserInfo(resp.access_token); // non-blocking — updates avatar in background
         await loadAllData();
       }
     });
@@ -73,10 +105,22 @@ async function syncData() {
 }
 
 function signOut() {
-  if (!confirm('Sign out of Tanzeem Abd-e-Mustafa?')) return;
-  STATE.accessToken = null;
-  localStorage.removeItem(_AUTH_FLAG);
-  document.getElementById('mainApp').style.display = 'none';
-  document.getElementById('setupScreen').style.display = 'flex';
-  showToast('Signed out');
+  showConfirm(
+    'Sign Out',
+    'Tanzeem Abd-e-Mustafa se sign out karna chahte hain?<br><span style="font-size:12px;color:#94a3b8">Aapka cached data safe rahega</span>',
+    () => {
+      STATE.accessToken = null;
+      localStorage.removeItem(_AUTH_FLAG);
+      localStorage.removeItem('tanzeem_user_display');
+      document.getElementById('mainApp').style.display = 'none';
+      document.getElementById('setupScreen').style.display = 'flex';
+      // Reset avatar back to person icon
+      const av = document.getElementById('userAvatar');
+      if (av) {
+        av.innerHTML = '<svg id="avatarIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>';
+        av.title = 'Sign Out';
+      }
+      showToast('Sign out ho gaye ✓');
+    }
+  );
 }
