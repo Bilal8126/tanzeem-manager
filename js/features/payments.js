@@ -821,7 +821,7 @@ function sendWaMemberPaid() {
     msg += `📅 Mahine: *${months.join(', ')}*\n`;
     msg += `💰 Kul Rakam: Rs.${months.length * FEE}\n\n`;
   }
-  msg += `Tanzeem ko aapki khidmat qabool ho.\n`;
+  msg += `Allah aapki kamai mein barkat farmaaye. 🤲\n`;
   msg += `━━━━━━━━━━━━━━━━━━━\n`;
   msg += `Jazakallah Khair 🤲`;
   window.open(_memberWaLink(_waPaidName) + encodeURIComponent(msg), '_blank');
