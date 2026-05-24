@@ -1,4 +1,5 @@
 let _tokenClient = null;
+const _AUTH_FLAG = 'tanzeem_signed_in';
 
 function loadGoogleScript() {
   return new Promise(resolve => {
@@ -10,6 +11,14 @@ function loadGoogleScript() {
   });
 }
 
+// Called on page load — restores session from cache without needing a token
+function checkAutoSignIn() {
+  if (!localStorage.getItem(_AUTH_FLAG)) return;
+  document.getElementById('setupScreen').style.display = 'none';
+  document.getElementById('mainApp').style.display = 'block';
+  loadAllData(false); // serve from localStorage cache; no token required
+}
+
 async function signIn() {
   try {
     await loadGoogleScript();
@@ -19,9 +28,10 @@ async function signIn() {
       callback: async (resp) => {
         if (resp.error) { showToast('Sign in failed: ' + resp.error, 'error'); return; }
         STATE.accessToken = resp.access_token;
+        localStorage.setItem(_AUTH_FLAG, '1');
         document.getElementById('setupScreen').style.display = 'none';
         document.getElementById('mainApp').style.display = 'block';
-        await loadAllData(); // uses localStorage cache if available
+        await loadAllData();
       }
     });
     _tokenClient.requestAccessToken();
@@ -33,7 +43,6 @@ async function signIn() {
 async function syncData() {
   try {
     await loadGoogleScript();
-    // Reuse existing token client, updating callback for sync
     const onToken = async (resp) => {
       if (resp.error) { showToast('Sync failed: ' + resp.error, 'error'); return; }
       STATE.accessToken = resp.access_token;
@@ -58,6 +67,7 @@ async function syncData() {
 function signOut() {
   if (!confirm('Sign out of Tanzeem Abd-e-Mustafa?')) return;
   STATE.accessToken = null;
+  localStorage.removeItem(_AUTH_FLAG);
   document.getElementById('mainApp').style.display = 'none';
   document.getElementById('setupScreen').style.display = 'flex';
   showToast('Signed out');

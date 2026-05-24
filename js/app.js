@@ -141,6 +141,9 @@ window.addEventListener('load', () => {
     navigator.serviceWorker.register('sw.js').catch(() => {});
   }
 
+  // Restore session on refresh — shows cached data without re-login
+  checkAutoSignIn();
+
   // Show iOS install hint after a short delay (no beforeinstallprompt on iOS)
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
   const isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
