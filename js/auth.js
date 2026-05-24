@@ -56,7 +56,7 @@ async function syncData() {
 }
 
 function signOut() {
-  if (!confirm('Sign out of Tanzeem Manager?')) return;
+  if (!confirm('Sign out of Tanzeem Abd-e-Mustafa?')) return;
   STATE.accessToken = null;
   document.getElementById('mainApp').style.display = 'none';
   document.getElementById('setupScreen').style.display = 'flex';
