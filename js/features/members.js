@@ -375,8 +375,11 @@ function openAddMember() {
       <input id="nm_address" placeholder="Ghar ka pata...">
     </div>
     <div class="form-group">
-      <label>Aadhar Card Number</label>
-      <input id="nm_aadhar" type="tel" placeholder="Aadhar number...">
+      <label>Aadhar Card</label>
+      <div style="display:flex;gap:8px">
+        <button id="nmAadharNo" class="btn btn-secondary" style="flex:1;padding:10px" onclick="setNewMemberAadhar('No')">❌ No</button>
+        <button id="nmAadharYes" class="btn btn-secondary" style="flex:1;padding:10px" onclick="setNewMemberAadhar('Yes')">✅ Yes</button>
+      </div>
     </div>
     <div class="form-group">
       <label>Status</label>
@@ -388,10 +391,12 @@ function openAddMember() {
     <button class="btn btn-primary" style="width:100%;margin-top:6px" onclick="saveNewMember()">➕ Member Add Karein</button>
   `;
   _newMemberStatus = 'Active';
+  _newMemberAadhar = 'No';
   document.getElementById('memberProfileOverlay').classList.add('open');
 }
 
 let _newMemberStatus = 'Active';
+let _newMemberAadhar = 'No';
 
 function setNewMemberStatus(s) {
   _newMemberStatus = s;
@@ -399,12 +404,18 @@ function setNewMemberStatus(s) {
   document.getElementById('nmStatusInactive').className = 'btn ' + (s !== 'Active' ? 'btn-danger' : 'btn-secondary');
 }
 
+function setNewMemberAadhar(v) {
+  _newMemberAadhar = v;
+  document.getElementById('nmAadharNo').className  = 'btn ' + (v === 'No'  ? 'btn-danger'   : 'btn-secondary');
+  document.getElementById('nmAadharYes').className = 'btn ' + (v === 'Yes' ? 'btn-primary' : 'btn-secondary');
+}
+
 function saveNewMember() {
   const name   = (document.getElementById('nm_name').value   || '').trim();
   const mobile = (document.getElementById('nm_mobile').value || '').trim();
   const doj    = (document.getElementById('nm_doj').value    || '').trim();
   const address= (document.getElementById('nm_address').value|| '').trim();
-  const aadhar = (document.getElementById('nm_aadhar').value || '').trim();
+  const aadhar = _newMemberAadhar;
   const status = _newMemberStatus;
   if (!name) { showToast('Naam likhein', 'error'); return; }
   const nextId = STATE.allMembers.length + 1;
