@@ -179,6 +179,14 @@
 </div>
 
 
+<!-- Member Profile Modal -->
+<div id="memberProfileOverlay" class="modal-overlay" onclick="closeMemberProfile()">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div id="memberProfileContent"></div>
+  </div>
+</div>
+
 <!-- JS: load order matters -->
 <script src="js/config.js"></script>
 <script src="js/app.js"></script>

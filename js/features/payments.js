@@ -59,7 +59,9 @@ function buildMemberStats(payments) {
     const allMonths  = Object.keys(p.months);
     const pastMonths = allMonths.filter(isPastOrCurrent);
 
-    const paid   = pastMonths.filter(m => isPaid(p.months[m]));
+    // paid = any month marked Paid (includes advance future payments)
+    const paid   = allMonths.filter(m => isPaid(p.months[m]));
+    // unpaid/pending = only past months not yet paid (future unpaid = not due yet)
     const unpaid = pastMonths.filter(m => !isPaid(p.months[m]));
 
     return {
@@ -109,7 +111,8 @@ function renderPayments() {
   const selIsPast = isPastOrCurrent(sel);
 
   const stats          = buildMemberStats(STATE.allPayments);
-  const paidThisMon    = selIsPast ? stats.filter(m =>  isPaid(m.months[sel])) : [];
+  // Show advance-paid members even for future months
+  const paidThisMon    = stats.filter(m =>  isPaid(m.months[sel]));
   const pendingThisMon = selIsPast ? stats.filter(m => !isPaid(m.months[sel])) : [];
   const overdue        = stats.filter(m => m.isOverdue);
   const totalCollected = stats.reduce((s, m) => s + m.totalPaid,    0);
@@ -291,9 +294,12 @@ function renderPayments() {
             <tr>
               <th style="text-align:left;min-width:110px">Member</th>
               ${months.map(m => {
-                const past = isPastOrCurrent(m);
-                const cnt  = past ? stats.filter(s => isPaid(s.months[m])).length : '—';
-                return `<th style="${!past ? 'opacity:0.45' : ''}">${m}${!past ? '<br><span style="font-size:8px">future</span>' : `<br><span style="font-size:9px;font-weight:400;opacity:.8">${cnt}/${stats.length}</span>`}</th>`;
+                const past    = isPastOrCurrent(m);
+                const paidCnt = stats.filter(s => isPaid(s.months[m])).length;
+                const sub     = past
+                  ? `${paidCnt}/${stats.length}`
+                  : (paidCnt > 0 ? `${paidCnt}↑adv` : 'future');
+                return `<th style="${!past && paidCnt === 0 ? 'opacity:0.45' : ''}">${m}<br><span style="font-size:8px;font-weight:400;opacity:.8">${sub}</span></th>`;
               }).join('')}
               <th>Paid</th>
               <th>Pending</th>
@@ -307,8 +313,8 @@ function renderPayments() {
                   ${m.isOverdue ? `<span style="color:${C_RED};font-size:9px;margin-left:2px">●</span>` : ''}
                 </td>
                 ${months.map(mo => {
-                  if (!isPastOrCurrent(mo)) return `<td class="cell-empty" style="opacity:0.4">—</td>`;
-                  if (isPaid(m.months[mo]))  return `<td class="cell-paid">✓</td>`;
+                  if (isPaid(m.months[mo]))   return `<td class="cell-paid">${isPastOrCurrent(mo) ? '✓' : '↑'}</td>`;
+                  if (!isPastOrCurrent(mo))   return `<td class="cell-empty" style="opacity:0.4">—</td>`;
                   return `<td class="cell-unpaid">✗</td>`;
                 }).join('')}
                 <td style="color:${C_GREEN};font-weight:600;white-space:nowrap">${formatCurrency(m.totalPaid)}</td>
