@@ -1,8 +1,8 @@
 {
   "id": "/tanzeem-manager/",
-  "name": "Tanzeem Abd-e-Mustafa",
-  "short_name": "Tanzeem",
-  "description": "Member & payment manager for Tanzeem Abd-e-Mustafa, Basoli",
+  "name": "Tanzeem Account Manager",
+  "short_name": "Tanzeem Account Manager",
+  "description": "Member & payment manager for Tanzeem Abd-e-Mustafa, Basauli",
   "lang": "en",
   "start_url": "/tanzeem-manager/",
   "scope": "/tanzeem-manager/",
