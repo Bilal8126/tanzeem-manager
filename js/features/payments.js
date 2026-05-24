@@ -55,7 +55,20 @@ function isPastOrCurrent(monthLabel) {
 }
 
 function buildMemberStats(payments) {
-  return payments.map(p => {
+  // Month headers from any existing record
+  const monthKeys = payments.length > 0 ? Object.keys(payments[0].months) : [];
+
+  // Members in allMembers with no payment row → treat as all unpaid
+  const payNames = new Set(payments.map(p => p.name));
+  const ghosts   = STATE.allMembers
+    .filter(m => !payNames.has(m.name))
+    .map(m => {
+      const emptyMonths = {};
+      monthKeys.forEach(k => { emptyMonths[k] = ''; });
+      return { name: m.name, months: emptyMonths, total: '0' };
+    });
+
+  return [...payments, ...ghosts].map(p => {
     const allMonths  = Object.keys(p.months);
     const pastMonths = allMonths.filter(isPastOrCurrent);
 

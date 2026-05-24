@@ -50,18 +50,23 @@ function openMemberProfile(idx) {
   const member = STATE.allMembers[idx];
   if (!member) return;
 
-  const payRec   = STATE.allPayments.find(p => p.name === member.name);
-  const isActive = member.status === 'Active';
-  const initials = n => n.trim().split(' ').slice(0,2).map(w => w[0]).join('').toUpperCase();
+  const payRec    = STATE.allPayments.find(p => p.name === member.name);
+  // Fall back to month list from any payment record if this member has no row
+  const monthKeys = payRec
+    ? Object.keys(payRec.months)
+    : (STATE.allPayments.length > 0 ? Object.keys(STATE.allPayments[0].months) : []);
+  const isActive  = member.status === 'Active';
+  const initials  = n => n.trim().split(' ').slice(0,2).map(w => w[0]).join('').toUpperCase();
 
   let paidCount = 0, unpaidCount = 0, totalPaid = 0, totalDue = 0;
   let monthRows = '';
 
-  if (payRec) {
-    const months = Object.keys(payRec.months);
-    months.forEach(mo => {
-      const paid = isPaid(payRec.months[mo]);
-      const past = isPastOrCurrent(mo);
+  if (monthKeys.length > 0) {
+    monthKeys.forEach(mo => {
+      // Use member's own value if present; missing key or no row → treat as blank (unpaid)
+      const rawVal = payRec ? (payRec.months[mo] || '') : '';
+      const paid   = isPaid(rawVal);
+      const past   = isPastOrCurrent(mo);
 
       if (paid)       { paidCount++; totalPaid += FEE; }
       else if (past)  { unpaidCount++; totalDue += FEE; }
@@ -107,7 +112,7 @@ function openMemberProfile(idx) {
       <button class="close-btn" onclick="closeMemberProfile()">×</button>
     </div>
 
-    ${payRec ? `
+    ${monthKeys.length > 0 ? `
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px">
       <div class="member-stat-card member-stat-card--green">
         <div class="member-stat-label">Months Paid</div>
@@ -123,7 +128,7 @@ function openMemberProfile(idx) {
 
     <div class="card-title" style="margin-bottom:10px">Monthly Transactions</div>
     <div class="txn-list">
-      ${payRec ? monthRows : `<div style="text-align:center;padding:24px;color:#94a3b8;font-size:13px">No payment data</div>`}
+      ${monthRows || `<div style="text-align:center;padding:24px;color:#94a3b8;font-size:13px">No session data available</div>`}
     </div>
   `;
 
