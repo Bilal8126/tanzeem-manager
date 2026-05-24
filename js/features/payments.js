@@ -3,9 +3,14 @@ const C_GREEN  = '#15803d';
 const C_RED    = '#b91c1c';
 const C_MUTED  = '#9ca3af';
 const C_ORANGE = '#b45309';
+const WA_SVG   = `<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>`;
 
 let _showOverdue      = false;
 let _showUnpaid       = false;
+let _showInactive     = false;
+let _showSummary      = false;
+let _showGrid         = false;
+let _showPaid         = false;
 let _overdueThreshold = 2;   // default — user can change
 
 // ── Helpers ──────────────────────────────────────────────
@@ -59,9 +64,9 @@ function buildMemberStats(payments) {
   const monthKeys = payments.length > 0 ? Object.keys(payments[0].months) : [];
 
   // Members in allMembers with no payment row → treat as all unpaid
-  const payNames = new Set(payments.map(p => p.name));
-  const ghosts   = STATE.allMembers
-    .filter(m => !payNames.has(m.name))
+  // Use fuzzy nameMatch so spelling variants (Siddiqi/Siddiqui) don't create ghost duplicates
+  const ghosts = STATE.allMembers
+    .filter(m => !payments.some(p => nameMatch(p.name, m.name)))
     .map(m => {
       const emptyMonths = {};
       monthKeys.forEach(k => { emptyMonths[k] = ''; });
@@ -72,13 +77,17 @@ function buildMemberStats(payments) {
     const allMonths  = Object.keys(p.months);
     const pastMonths = allMonths.filter(isPastOrCurrent);
 
-    // paid = any month marked Paid (includes advance future payments)
     const paid   = allMonths.filter(m => isPaid(p.months[m]));
-    // unpaid/pending = only past months not yet paid (future unpaid = not due yet)
     const unpaid = pastMonths.filter(m => !isPaid(p.months[m]));
+
+    const member       = STATE.allMembers.find(m => nameMatch(m.name, p.name));
+    const memberStatus = member ? member.status : 'Active';
+    const isInactive   = memberStatus !== 'Active';
 
     return {
       ...p,
+      memberStatus,
+      isInactive,
       paidList:     paid,
       unpaidList:   unpaid,
       totalPaid:    paid.length   * FEE,
@@ -90,25 +99,26 @@ function buildMemberStats(payments) {
 
 // ── Toggle handlers ───────────────────────────────────────
 
-function toggleOverdue() { _showOverdue = !_showOverdue; renderPayments(); }
-function toggleUnpaid()  { _showUnpaid  = !_showUnpaid;  renderPayments(); }
-function toggleAll() {
-  const anyOpen  = _showOverdue || _showUnpaid;
-  _showOverdue   = _showUnpaid = !anyOpen;
-  renderPayments();
-}
+function toggleOverdue()  { _showOverdue  = !_showOverdue;  renderPayments(); }
+function toggleUnpaid()   { _showUnpaid   = !_showUnpaid;   renderPayments(); }
+function toggleInactive() { _showInactive = !_showInactive; renderPayments(); }
+function toggleSummary()  { _showSummary  = !_showSummary;  renderPayments(); }
+function toggleGrid()     { _showGrid     = !_showGrid;     renderPayments(); }
+function togglePaid()     { _showPaid     = !_showPaid;     renderPayments(); }
 function setOverdueThreshold(n) {
   _overdueThreshold = n;
   renderPayments();
 }
 function selectPaymentMonth(month) {
   STATE.selectedPaymentMonth = month;
-  renderPayments();
+  renderPayments(); // pill centering is handled inside renderPayments
 }
 
 // ── Main render ───────────────────────────────────────────
 
 function renderPayments() {
+  const _savedScroll = window.scrollY;
+
   if (STATE.allPayments.length === 0) {
     document.getElementById('paymentsContent').innerHTML =
       '<div class="empty-state"><div class="empty-state-icon">💳</div><p>No payment data for this session</p></div>';
@@ -118,86 +128,167 @@ function renderPayments() {
   const months = Object.keys(STATE.allPayments[0].months);
 
   if (!STATE.selectedPaymentMonth || !months.includes(STATE.selectedPaymentMonth)) {
-    STATE.selectedPaymentMonth = detectCurrentMonth(months);
+    STATE.selectedPaymentMonth = STATE.currentSessionIdx === 0
+      ? detectCurrentMonth(months)
+      : months[months.length - 1];
   }
   const sel = STATE.selectedPaymentMonth;
   const selIsPast = isPastOrCurrent(sel);
 
   const stats          = buildMemberStats(STATE.allPayments);
-  // Show advance-paid members even for future months
-  const paidThisMon    = stats.filter(m =>  isPaid(m.months[sel]));
-  const pendingThisMon = selIsPast ? stats.filter(m => !isPaid(m.months[sel])) : [];
-  const overdue        = stats.filter(m => m.isOverdue);
-  const totalCollected = stats.reduce((s, m) => s + m.totalPaid,    0);
-  const totalPending   = stats.reduce((s, m) => s + m.totalPending, 0);
-  const allOpen        = _showOverdue && _showUnpaid;
+  const activeStats    = stats.filter(m => !m.isInactive);
+  const inactiveStats  = stats.filter(m =>  m.isInactive);
+  const paidThisMon         = activeStats.filter(m =>  isPaid(m.months[sel]));
+  const paidThisMonInactive = inactiveStats.filter(m =>  isPaid(m.months[sel]));
+  const pendingThisMon      = selIsPast ? activeStats.filter(m => !isPaid(m.months[sel])) : [];
+  const pendingThisMonInact = selIsPast ? inactiveStats.filter(m => !isPaid(m.months[sel])) : [];
+  const overdue             = activeStats.filter(m => m.isOverdue);
+  const collectedActive     = activeStats.reduce((s, m) => s + m.totalPaid,    0);
+  const collectedInactive   = inactiveStats.reduce((s, m) => s + m.totalPaid,  0);
+  const collectedTotal      = collectedActive + collectedInactive;
+  const selIdx             = months.indexOf(sel);
+  const monthsTillSel      = months.slice(0, selIdx + 1);
+  const pendingActiveSel   = activeStats.reduce((s, m) =>
+    s + monthsTillSel.filter(mo => !isPaid(m.months[mo])).length * FEE, 0);
+  const pendingInactiveSel = inactiveStats.reduce((s, m) =>
+    s + monthsTillSel.filter(mo => !isPaid(m.months[mo])).length * FEE, 0);
+  const pendingTotalSel    = pendingActiveSel + pendingInactiveSel;
+  const C_GREY           = '#64748b';
+  const isCurrentSession = STATE.currentSessionIdx === 0;
+  const curCalMonth      = isCurrentSession ? detectCurrentMonth(months) : null;
 
   document.getElementById('paymentsContent').innerHTML = `
 
-    <!-- Summary Cards -->
-    <div class="metrics">
-      <div class="metric green">
-        <div class="metric-label">Paid · ${sel}</div>
-        <div class="metric-value">${paidThisMon.length}</div>
-        <div class="metric-bg-icon">✅</div>
-      </div>
-      <div class="metric" style="background:linear-gradient(135deg,#b91c1c,#e53e3e)">
-        <div class="metric-label">Pending · ${sel}</div>
-        <div class="metric-value">${selIsPast ? pendingThisMon.length : '—'}</div>
-        <div class="metric-bg-icon">⏳</div>
-      </div>
-      <div class="metric blue">
-        <div class="metric-label">Total Collected</div>
-        <div class="metric-value sm">${formatCurrency(totalCollected)}</div>
-        <div class="metric-bg-icon">💰</div>
-      </div>
-      <div class="metric orange">
-        <div class="metric-label">Total Pending</div>
-        <div class="metric-value sm">${formatCurrency(totalPending)}</div>
-        <div class="metric-bg-icon">📋</div>
-      </div>
-    </div>
-
-    <!-- Overdue Threshold Picker -->
-    <div class="card" style="padding:12px 14px">
-      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-        <span style="font-size:12px;font-weight:600;color:${C_ORANGE};white-space:nowrap">⚠️ Overdue if unpaid ≥</span>
-        <div class="month-pills" style="flex:1">
-          ${[1,2,3,4,5,6].map(n => `
-            <button class="month-pill ${_overdueThreshold === n ? 'active' : ''}"
-              onclick="setOverdueThreshold(${n})" style="${_overdueThreshold===n?'':'border-color:#f59e0b;color:#b45309'}">${n}+ months</button>
-          `).join('')}
-        </div>
-      </div>
-    </div>
-
-    <!-- Month Selector -->
+    ${isCurrentSession ? `<!-- Month Selector -->
     <div class="card" style="padding:12px 14px">
       <div class="card-title">Select Month</div>
-      <div class="month-pills">
+      <div class="month-pills" id="monthPillsRow" style="scroll-snap-type:x mandatory;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none">
         ${months.map(m => {
-          const past = isPastOrCurrent(m);
-          return `<button class="month-pill ${m === sel ? 'active' : ''}"
+          const past  = isPastOrCurrent(m);
+          const isSel = m === sel;
+          const isCur = m === curCalMonth;
+          let style = 'scroll-snap-align:center;';
+          if (!past && !isSel)  style += 'opacity:0.4;border-style:dashed;';
+          if (isCur  && !isSel) style += 'border-color:#f59e0b;color:#92400e;background:#fef3c7;font-weight:700;';
+          return `<button class="month-pill ${isSel ? 'active' : ''}"
+            id="mpill-${m}"
             onclick="selectPaymentMonth('${m}')"
-            style="${!past && m !== sel ? 'opacity:0.4;border-style:dashed' : ''}"
-            title="${past ? '' : 'Future month'}">${m}</button>`;
+            style="${style}"
+            title="${isCur ? 'Current month' : past ? '' : 'Future month'}">${m}${isCur && !isSel ? '<span style="display:block;width:4px;height:4px;border-radius:50%;background:#f59e0b;margin:0 auto -2px"></span>' : ''}</button>`;
         }).join('')}
       </div>
       ${!selIsPast ? `<div style="margin-top:8px;font-size:11px;color:${C_MUTED};text-align:center">
         Future month — overdue &amp; pending counts not applicable
       </div>` : ''}
-    </div>
+    </div>` : ''}
 
-    <!-- WhatsApp Share -->
-    <button class="whatsapp-btn" onclick="shareWhatsApp()">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-      </svg>
-      WhatsApp Par Share Karein — ${sel}
-    </button>
+    ${isCurrentSession ? `<!-- Summary Cards -->
+    <div class="metrics">
+      <div class="metric green">
+        <div class="metric-label">Paid · ${sel}</div>
+        <div style="margin-top:6px">
+          <div style="display:flex;justify-content:space-between;font-size:11px;opacity:0.88">
+            <span>Active</span><span style="font-weight:700">${paidThisMon.length}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:11px;opacity:0.88;margin-top:3px">
+            <span>In Active</span><span style="font-weight:700">${paidThisMonInactive.length}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;margin-top:5px;border-top:1px solid rgba(255,255,255,0.35);padding-top:5px">
+            <span>Total</span><span>${paidThisMon.length + paidThisMonInactive.length}</span>
+          </div>
+        </div>
+        <div class="metric-bg-icon">✅</div>
+      </div>
+      <div class="metric" style="background:linear-gradient(135deg,#b91c1c,#e53e3e)">
+        <div class="metric-label">Pending · ${sel}</div>
+        ${selIsPast ? `
+        <div style="margin-top:6px">
+          <div style="display:flex;justify-content:space-between;font-size:11px;opacity:0.88">
+            <span>Active</span><span style="font-weight:700">${pendingThisMon.length}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:11px;opacity:0.88;margin-top:3px">
+            <span>In Active</span><span style="font-weight:700">${pendingThisMonInact.length}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;margin-top:5px;border-top:1px solid rgba(255,255,255,0.35);padding-top:5px">
+            <span>Total</span><span>${pendingThisMon.length + pendingThisMonInact.length}</span>
+          </div>
+        </div>` : `<div class="metric-value">—</div>`}
+        <div class="metric-bg-icon">⏳</div>
+      </div>
+      <div class="metric blue">
+        <div class="metric-label">Total Collected</div>
+        <div style="margin-top:6px">
+          <div style="display:flex;justify-content:space-between;font-size:11px;opacity:0.88">
+            <span>Active</span><span style="font-weight:700">${formatCurrency(collectedActive)}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:11px;opacity:0.88;margin-top:3px">
+            <span>In Active</span><span style="font-weight:700">${formatCurrency(collectedInactive)}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;margin-top:5px;border-top:1px solid rgba(255,255,255,0.35);padding-top:5px">
+            <span>Total</span><span>${formatCurrency(collectedTotal)}</span>
+          </div>
+        </div>
+        <div class="metric-bg-icon">💰</div>
+      </div>
+      <div class="metric orange">
+        <div class="metric-label">Total Pending</div>
+        <div style="font-size:10px;opacity:0.8;margin-top:1px">${months[0]} – ${sel} tak</div>
+        <div style="margin-top:4px">
+          <div style="display:flex;justify-content:space-between;font-size:11px;opacity:0.88">
+            <span>Active</span><span style="font-weight:700">${formatCurrency(pendingActiveSel)}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:11px;opacity:0.88;margin-top:3px">
+            <span>In Active</span><span style="font-weight:700">${formatCurrency(pendingInactiveSel)}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;margin-top:5px;border-top:1px solid rgba(255,255,255,0.35);padding-top:5px">
+            <span>Total</span><span>${formatCurrency(pendingTotalSel)}</span>
+          </div>
+        </div>
+        <div class="metric-bg-icon">📋</div>
+      </div>
+    </div>` : ''}
+
+    <!-- Year Target Bar (current session only) -->
+    ${isCurrentSession ? `
+    <div style="background:linear-gradient(135deg,#0f4a29,#1a6b3c);border-radius:12px;padding:10px 14px;color:#fff;margin-bottom:12px">
+      <div style="font-size:12px;font-weight:600;margin-bottom:2px">📅 Is Session Ka Expected Amount</div>
+      <div style="font-size:10px;opacity:0.7;margin-bottom:8px">Agar tamam members pura saal dein — 12 mahine × Rs.${FEE}</div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;opacity:0.88;margin-bottom:4px">
+        <span>✅ Active (${activeStats.length} members)</span>
+        <span style="font-weight:700">${formatCurrency(activeStats.length * 12 * FEE)}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;opacity:0.88;margin-bottom:6px">
+        <span>🚫 In Active (${inactiveStats.length} members)</span>
+        <span style="font-weight:700">${formatCurrency(inactiveStats.length * 12 * FEE)}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:14px;font-weight:700;border-top:1px solid rgba(255,255,255,0.3);padding-top:6px">
+        <span>Grand Total (${stats.length} members)</span>
+        <span>${formatCurrency(stats.length * 12 * FEE)}</span>
+      </div>
+    </div>` : ''}
+
+    <!-- WhatsApp Share (current session only) -->
+    ${isCurrentSession ? `
+    <button class="whatsapp-btn" onclick="showWhatsAppPopup()"
+      style="justify-content:center;gap:10px;font-size:14px">
+      ${WA_SVG} 📤 WhatsApp Share — ${sel}
+    </button>` : ''}
+
+    ${isCurrentSession ? `<!-- Overdue Threshold Picker -->
+    <div class="card" style="padding:10px 14px">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <span style="font-size:12px;font-weight:600;color:${C_ORANGE};white-space:nowrap">⚠️ Overdue if unpaid ≥</span>
+        <div class="month-pills" style="flex:1">
+          ${[1,2,3,4,5,6].map(n => `
+            <button class="month-pill ${_overdueThreshold === n ? 'active' : ''}"
+              onclick="setOverdueThreshold(${n})" style="${_overdueThreshold===n?'':'border-color:#f59e0b;color:#b45309'}">${n}+</button>
+          `).join('')}
+        </div>
+      </div>
+    </div>` : ''}
 
     <!-- Overdue (collapsed by default) -->
-    ${overdue.length > 0 ? `
+    ${isCurrentSession && overdue.length > 0 ? `
     <div class="card overdue-card">
       <div class="toggle-header" onclick="toggleOverdue()"
         style="cursor:pointer;display:flex;align-items:center;gap:8px">
@@ -213,7 +304,9 @@ function renderPayments() {
           <div class="pay-row">
             <div class="pay-avatar pay-avatar--overdue">${getInitials(m.name)}</div>
             <div class="pay-info">
-              <div class="pay-name">${m.name.replace(/\(.*?\)/g,'').trim()}</div>
+              <div class="pay-name"><b>${m.name.replace(/\(.*?\)/g,'').trim()}</b>
+                <span class="badge badge-active" style="font-size:10px;margin-left:4px">Active</span>
+              </div>
               <div class="pay-sub">${m.unpaidList.length} months unpaid · ${m.unpaidList.join(', ')}</div>
             </div>
             <div class="pay-amount" style="color:${C_ORANGE}">${formatCurrency(m.totalPending)}</div>
@@ -221,8 +314,35 @@ function renderPayments() {
       </div>` : ''}
     </div>` : ''}
 
+    <!-- In Active Members (collapsed by default) -->
+    ${inactiveStats.length > 0 ? `
+    <div class="card" style="border-left:3px solid ${C_GREY}">
+      <div class="toggle-header" onclick="toggleInactive()"
+        style="cursor:pointer;display:flex;align-items:center;gap:8px">
+        <span style="font-size:13px;font-weight:600;flex:1;color:${C_GREY}">
+          🚫 In Active Members
+        </span>
+        <span class="section-count" style="background:#f1f5f9;color:${C_GREY}">${inactiveStats.length}</span>
+        ${chevron(_showInactive)}
+      </div>
+      ${_showInactive ? `
+      <div style="margin-top:10px">
+        ${inactiveStats.map(m => `
+          <div class="pay-row" style="opacity:0.8">
+            <div class="pay-avatar" style="background:#e2e8f0;color:#64748b">${getInitials(m.name)}</div>
+            <div class="pay-info">
+              <div class="pay-name"><b>${m.name.replace(/\(.*?\)/g,'').trim()}</b>
+                <span class="badge badge-inactive" style="font-size:10px;margin-left:4px">In Active</span>
+              </div>
+              <div class="pay-sub">Paid ${m.paidList.length} months · Due ${m.unpaidList.length} months</div>
+            </div>
+            <div class="pay-amount" style="color:${C_GREY}">${m.totalPaid > 0 ? formatCurrency(m.totalPaid) : '—'}</div>
+          </div>`).join('')}
+      </div>` : ''}
+    </div>` : ''}
+
     <!-- Not Paid This Month (collapsed by default) -->
-    ${selIsPast ? `
+    ${isCurrentSession && selIsPast ? `
     <div class="card">
       <div class="toggle-header" onclick="toggleUnpaid()"
         style="cursor:pointer;display:flex;align-items:center;gap:8px">
@@ -239,8 +359,9 @@ function renderPayments() {
                 <div class="pay-avatar pay-avatar--unpaid">${getInitials(m.name)}</div>
                 <div class="pay-info">
                   <div class="pay-name">
-                    ${m.name.replace(/\(.*?\)/g,'').trim()}
-                    ${m.isOverdue ? `<span class="badge badge-inactive" style="font-size:10px">Overdue</span>` : ''}
+                    <b>${m.name.replace(/\(.*?\)/g,'').trim()}</b>
+                    <span class="badge badge-active" style="font-size:10px;margin-left:4px">Active</span>
+                    ${m.isOverdue ? `<span class="badge badge-inactive" style="font-size:10px;margin-left:2px">Overdue</span>` : ''}
                   </div>
                   <div class="pay-sub">Past pending: ${formatCurrency(m.totalPending)}</div>
                 </div>
@@ -249,34 +370,47 @@ function renderPayments() {
       </div>` : ''}
     </div>` : ''}
 
-    <!-- Paid This Month (always visible) -->
+    ${isCurrentSession ? `<!-- Paid This Month (active only) -->
     <div class="card">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:${paidThisMon.length > 0 ? 10 : 0}px">
+      <div class="toggle-header" onclick="togglePaid()"
+        style="cursor:pointer;display:flex;align-items:center;gap:8px">
         <span style="font-size:13px;font-weight:600;flex:1;color:${C_GREEN}">Paid — ${sel}</span>
         <span class="section-count" style="background:#dcfce7;color:${C_GREEN}">${paidThisMon.length}</span>
-        <button class="toggle-all-btn" onclick="toggleAll()">${allOpen ? 'Hide All' : 'Show All'}</button>
+        ${chevron(_showPaid)}
       </div>
-      ${paidThisMon.length === 0
-        ? `<div style="padding:8px 0;color:${C_MUTED};font-size:13px;text-align:center">
-             ${selIsPast ? 'No payments recorded yet' : 'Future month — nothing to show'}
-           </div>`
-        : paidThisMon.map(m => `
-            <div class="pay-row">
-              <div class="pay-avatar pay-avatar--paid">${getInitials(m.name)}</div>
-              <div class="pay-info">
-                <div class="pay-name">${m.name.replace(/\(.*?\)/g,'').trim()}</div>
-                <div class="pay-sub">Paid ${m.paidList.length} of ${months.filter(isPastOrCurrent).length} past months</div>
-              </div>
-              <div class="pay-amount" style="color:${C_GREEN}">+${formatCurrency(FEE)}</div>
-            </div>`).join('')}
-    </div>
+      ${_showPaid ? `
+      <div style="margin-top:10px">
+        ${paidThisMon.length === 0
+          ? `<div style="padding:8px 0;color:${C_MUTED};font-size:13px;text-align:center">
+               ${selIsPast ? 'No payments recorded yet' : 'Future month — nothing to show'}
+             </div>`
+          : paidThisMon.map(m => `
+              <div class="pay-row">
+                <div class="pay-avatar pay-avatar--paid">${getInitials(m.name)}</div>
+                <div class="pay-info">
+                  <div class="pay-name">
+                    <b>${m.name.replace(/\(.*?\)/g,'').trim()}</b>
+                    <span class="badge badge-active" style="font-size:10px;margin-left:4px">Active</span>
+                  </div>
+                  <div class="pay-sub">Paid ${m.paidList.length} of ${months.filter(isPastOrCurrent).length} past months</div>
+                </div>
+                <div class="pay-amount" style="color:${C_GREEN}">+${formatCurrency(FEE)}</div>
+              </div>`).join('')}
+      </div>` : ''}
+    </div>` : ''}
 
-    <!-- Member-wise Summary (past months only) -->
+    <!-- Member-wise Summary (past months, active only) -->
     <div class="card" style="padding:12px">
-      <div class="card-title">Member-wise Summary
-        <span style="font-size:10px;font-weight:400;color:${C_MUTED};margin-left:4px">(past months only)</span>
+      <div class="toggle-header" onclick="toggleSummary()"
+        style="cursor:pointer;display:flex;align-items:center;gap:8px">
+        <span style="font-size:13px;font-weight:600;flex:1">Member-wise Summary
+          <span style="font-size:10px;font-weight:400;color:${C_MUTED};margin-left:4px">(active only)</span>
+        </span>
+        <span class="section-count" style="background:#f0fdf4;color:${C_GREEN}">${activeStats.length}</span>
+        ${chevron(_showSummary)}
       </div>
-      <div class="summary-scroll">
+      ${_showSummary ? `
+      <div class="summary-scroll" style="margin-top:10px">
         <table class="summary-table">
           <thead>
             <tr>
@@ -288,9 +422,9 @@ function renderPayments() {
             </tr>
           </thead>
           <tbody>
-            ${stats.map(m => `
+            ${activeStats.map(m => `
               <tr style="${m.isOverdue ? 'background:#fff9f0' : ''}">
-                <td style="text-align:left;font-weight:500;white-space:nowrap;font-size:12px">
+                <td style="text-align:left;font-weight:700;white-space:nowrap;font-size:12px">
                   ${m.name.replace(/\(.*?\)/g,'').trim()}
                   ${m.isOverdue ? `<span style="color:${C_RED};font-size:9px;margin-left:3px">●</span>` : ''}
                 </td>
@@ -303,13 +437,20 @@ function renderPayments() {
               </tr>`).join('')}
           </tbody>
         </table>
-      </div>
+      </div>` : ''}
     </div>
 
     <!-- Full Payment Grid -->
     <div class="card" style="padding:12px">
-      <div class="card-title">Full Payment Grid</div>
-      <div class="payment-grid">
+      <div class="toggle-header" onclick="toggleGrid()"
+        style="cursor:pointer;display:flex;align-items:center;gap:8px;margin-bottom:0">
+        <span style="font-size:13px;font-weight:600;flex:1">Full Payment Grid
+          <span style="font-size:10px;font-weight:400;color:${C_MUTED};margin-left:4px">(active + in active)</span>
+        </span>
+        <span class="section-count" style="background:#f0f9ff;color:#0369a1">${stats.length}</span>
+        ${chevron(_showGrid)}
+      </div>
+      ${_showGrid ? `<div class="payment-grid" style="margin-top:10px">
         <table class="payment-table">
           <thead>
             <tr>
@@ -328,17 +469,18 @@ function renderPayments() {
           </thead>
           <tbody>
             ${stats.map(m => {
-              const payIdx = STATE.allPayments.findIndex(p => p.name === m.name);
+              const payIdx  = STATE.allPayments.findIndex(p => nameMatch(p.name, m.name));
+              const canEdit = isCurrentSession && !m.isInactive && payIdx !== -1;
               return `
-              <tr style="${m.isOverdue ? 'background:#fff9f0' : ''}">
-                <td class="name-col">
+              <tr style="${m.isInactive ? 'opacity:0.6;background:#f8fafc' : m.isOverdue ? 'background:#fff9f0' : ''}">
+                <td class="name-col" style="font-weight:700;color:${m.isInactive ? '#64748b' : 'inherit'}">
                   ${m.name.replace(/\(.*?\)/g,'').trim()}
-                  ${m.isOverdue ? `<span style="color:${C_RED};font-size:9px;margin-left:2px">●</span>` : ''}
+                  ${m.isInactive ? `<span style="color:#94a3b8;font-size:9px;margin-left:2px">●</span>` : m.isOverdue ? `<span style="color:${C_RED};font-size:9px;margin-left:2px">●</span>` : ''}
                 </td>
                 ${months.map(mo => {
-                  const oc = payIdx !== -1 ? `onclick="togglePaymentCell(${payIdx},'${mo}')" style="cursor:pointer"` : '';
+                  const oc = canEdit ? `onclick="togglePaymentCell(${payIdx},'${mo}')" style="cursor:pointer"` : '';
                   if (isPaid(m.months[mo]))  return `<td class="cell-paid" ${oc}>${isPastOrCurrent(mo) ? '✓' : '↑'}</td>`;
-                  if (!isPastOrCurrent(mo))  return `<td class="cell-empty" style="opacity:0.4${payIdx !== -1 ? ';cursor:pointer' : ''}" ${payIdx !== -1 ? `onclick="togglePaymentCell(${payIdx},'${mo}')"` : ''}>—</td>`;
+                  if (!isPastOrCurrent(mo))  return `<td class="cell-empty" style="opacity:0.4${canEdit ? ';cursor:pointer' : ''}" ${canEdit ? `onclick="togglePaymentCell(${payIdx},'${mo}')"` : ''}>—</td>`;
                   return `<td class="cell-unpaid" ${oc}>✗</td>`;
                 }).join('')}
                 <td style="color:${C_GREEN};font-weight:600;white-space:nowrap">${formatCurrency(m.totalPaid)}</td>
@@ -349,45 +491,90 @@ function renderPayments() {
             }).join('')}
           </tbody>
         </table>
-      </div>
+      </div>` : ''}
     </div>
   `;
+
+  // Restore page scroll (prevents jump-to-top on toggle) and center selected month pill horizontally
+  requestAnimationFrame(() => {
+    window.scrollTo(0, _savedScroll);
+    if (isCurrentSession) {
+      const row  = document.getElementById('monthPillsRow');
+      const pill = document.getElementById('mpill-' + sel);
+      if (row && pill) {
+        row.scrollLeft = pill.offsetLeft - row.offsetWidth / 2 + pill.offsetWidth / 2;
+      }
+    }
+  });
 }
 
 // ── WhatsApp Share ────────────────────────────────────────
 
-function shareWhatsApp() {
+function shareWhatsApp(filter) {
+  // filter: 'active' | 'inactive' | 'all'
   if (STATE.allPayments.length === 0) {
     showToast('Pehle data sync karein', 'error');
     return;
   }
 
-  const months  = Object.keys(STATE.allPayments[0].months);
-  const sel     = STATE.selectedPaymentMonth || detectCurrentMonth(months);
-  const stats   = buildMemberStats(STATE.allPayments);
-  const session = STATE.currentSession ? STATE.currentSession.label : '';
+  const months   = Object.keys(STATE.allPayments[0].months);
+  const sel      = STATE.selectedPaymentMonth || detectCurrentMonth(months);
+  const allStats = buildMemberStats(STATE.allPayments);
+  const session  = STATE.currentSession ? STATE.currentSession.label : '';
+  const clean    = n => n.replace(/\(.*?\)/g, '').trim();
 
-  const clean   = n => n.replace(/\(.*?\)/g, '').trim();
+  // Overdue filter gets its own focused message
+  if (filter === 'overdue') {
+    const overdueList = allStats.filter(m => !m.isInactive && m.isOverdue)
+      .sort((a, b) => b.unpaidList.length - a.unpaidList.length);
+    if (overdueList.length === 0) { showToast('Abhi koi overdue member nahi hai', 'error'); return; }
+    let msg = '';
+    msg += `Assalamualkum wa Rahmatullahi wa Barakatuh! 🕌\n\n`;
+    msg += `اسلام علیکم ورحمتہ وبرکاتہ\n\n`;
+    msg += `*Tanzeem Abd-e-Mustafa — Bisauli*\n`;
+    msg += `*تنظیم عبد مصطفیٰ — بسولی*\n`;
+    msg += `*Session: ${session}*\n`;
+    msg += `━━━━━━━━━━━━━━━━━━━\n\n`;
+    msg += `⚠️ *Overdue Members — ${_overdueThreshold}+ Mahine Baqi (${overdueList.length} log):*\n\n`;
+    overdueList.forEach((m, i) => {
+      msg += `${i + 1}. *${clean(m.name)}*\n`;
+      msg += `   Baqi: ${m.unpaidList.join(', ')} (${m.unpaidList.length} mahine)\n`;
+      msg += `   Rakam: ${formatCurrency(m.totalPending)}\n\n`;
+    });
+    msg += `━━━━━━━━━━━━━━━━━━━\n`;
+    msg += `📊 *Khulasa:*\n`;
+    msg += `• Overdue members: ${overdueList.length} log\n`;
+    //msg += `• Kul baqi: ${formatCurrency(overdueList.reduce((s, m) => s + m.totalPending, 0))}\n`;
+    msg += `\nJazakallah Khair 🤲`;
+    window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
+    return;
+  }
 
-  const paidNow   = stats.filter(m =>  isPaid(m.months[sel]));
-  const unpaidNow = isPastOrCurrent(sel) ? stats.filter(m => !isPaid(m.months[sel])) : [];
+  const stats = filter === 'active'
+    ? allStats.filter(m => !m.isInactive)
+    : filter === 'inactive'
+      ? allStats.filter(m =>  m.isInactive)
+      : allStats;
 
-  // All members who have any past unpaid months, sorted by most overdue first
+  const sectionLabel = filter === 'active'
+    ? 'Active Members'
+    : filter === 'inactive'
+      ? 'In Active Members'
+      : 'Tamam Members (Active + In Active)';
+
+  const paidNow    = stats.filter(m =>  isPaid(m.months[sel]));
+  const unpaidNow  = isPastOrCurrent(sel) ? stats.filter(m => !isPaid(m.months[sel])) : [];
   const withUnpaid = stats
     .filter(m => m.unpaidList.length > 0)
     .sort((a, b) => b.unpaidList.length - a.unpaidList.length);
 
-  const totalCollected = stats.reduce((s, m) => s + m.totalPaid,    0);
-  const totalPending   = stats.reduce((s, m) => s + m.totalPending, 0);
-
   let msg = '';
   msg += `Assalamualkum wa Rahmatullahi wa Barakatuh! 🕌\n\n`;
   msg += `اسلام علیکم ورحمتہ وبرکاتہ\n\n`;
-
   msg += `*Tanzeem Abd-e-Mustafa — Bisauli*\n`;
   msg += `*تنظیم عبد مصطفیٰ — بسولی*\n`;
-
   msg += `*Session: ${session}*\n`;
+  msg += `*[${sectionLabel}]*\n`;
   msg += `━━━━━━━━━━━━━━━━━━━\n\n`;
 
   msg += `✅ *${sel} Mahine Mein Jama Kiya (${paidNow.length} log):*\n`;
@@ -427,8 +614,13 @@ function shareWhatsApp() {
 
 function togglePaymentCell(payIdx, mo) {
   if (!STATE.accessToken) { showToast('Write ke liye pehle Sync karein 🔄', 'error'); return; }
+  if (STATE.currentSessionIdx !== 0) { showToast('Purane session mein edit nahi ho sakta', 'error'); return; }
   const p = STATE.allPayments[payIdx];
   if (!p) return;
+  const memberRec = STATE.allMembers.find(m => nameMatch(m.name, p.name));
+  if (memberRec && memberRec.status !== 'Active') {
+    showToast('In Active member ko pehle Active karein', 'error'); return;
+  }
   const months = Object.keys(p.months);
   const mIdx   = months.indexOf(mo);
   if (mIdx === -1) return;
@@ -454,4 +646,43 @@ function togglePaymentCell(payIdx, mo) {
       }
     }
   );
+}
+
+// ── WhatsApp Share Popup ──────────────────────────────────
+
+function showWhatsAppPopup() {
+  let overlay = document.getElementById('waPopupOverlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'waPopupOverlay';
+    overlay.className = 'modal-overlay';
+    overlay.style.zIndex = '300';
+    overlay.addEventListener('click', closeWhatsAppPopup);
+    document.body.appendChild(overlay);
+  }
+  const sel = STATE.selectedPaymentMonth || '';
+  overlay.innerHTML = `
+    <div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-handle"></div>
+      <div class="modal-header">
+        <div class="modal-title">📤 WhatsApp Share — ${sel}</div>
+        <button class="close-btn" onclick="closeWhatsAppPopup()">×</button>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;padding-top:4px">
+        <button class="whatsapp-btn" style="margin:0" onclick="closeWhatsAppPopup();shareWhatsApp('active')">
+          ${WA_SVG} ✅ Active Members
+        </button>
+        <button class="whatsapp-btn" style="margin:0;background:linear-gradient(135deg,#b45309,#d97706)" onclick="closeWhatsAppPopup();shareWhatsApp('overdue')">
+          ${WA_SVG} ⚠️ Overdue Members
+        </button>
+        <button class="whatsapp-btn" style="margin:0;background:linear-gradient(135deg,#1d4ed8,#2563eb)" onclick="closeWhatsAppPopup();shareWhatsApp('all')">
+          ${WA_SVG} 📋 All Members (Active + In Active)
+        </button>
+      </div>
+    </div>`;
+  overlay.classList.add('open');
+}
+
+function closeWhatsAppPopup() {
+  document.getElementById('waPopupOverlay')?.classList.remove('open');
 }

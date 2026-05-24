@@ -900,6 +900,7 @@ input:focus, select:focus, textarea:focus {
   width: 100%;
   padding: 14px 18px;
   border-radius: var(--radius);
+  margin-bottom: 12px;
   background: linear-gradient(135deg, #075e54, #25d366);
   color: #fff;
   border: none;

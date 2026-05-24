@@ -32,5 +32,6 @@ function onSessionChange() {
   const idx = parseInt(document.getElementById('sessionSelect').value);
   STATE.currentSessionIdx = idx;
   STATE.currentSession = CONFIG.SESSIONS[idx];
+  STATE.selectedPaymentMonth = null; // reset so default month recalculates for new session
   loadAllData();
 }

@@ -50,7 +50,7 @@ function openMemberProfile(idx) {
   const member = STATE.allMembers[idx];
   if (!member) return;
 
-  const payIdx     = STATE.allPayments.findIndex(p => p.name === member.name);
+  const payIdx     = STATE.allPayments.findIndex(p => nameMatch(p.name, member.name));
   const payRec     = payIdx !== -1 ? STATE.allPayments[payIdx] : null;
   const canEdit    = payIdx !== -1 && !!STATE.accessToken;
   // Fall back to month list from any payment record if this member has no row
@@ -160,7 +160,7 @@ function shareWhatsAppMember(idx) {
   const member = STATE.allMembers[idx];
   if (!member) return;
 
-  const payRec    = STATE.allPayments.find(p => p.name === member.name);
+  const payRec    = STATE.allPayments.find(p => nameMatch(p.name, member.name));
   const monthKeys = payRec
     ? Object.keys(payRec.months)
     : (STATE.allPayments.length > 0 ? Object.keys(STATE.allPayments[0].months) : []);
