@@ -1,4 +1,4 @@
-const CACHE = 'tanzeem-v1';
+const CACHE = 'tanzeem-v3';
 const ASSETS = [
   './',
   './index.html',
@@ -12,22 +12,52 @@ const ASSETS = [
   './js/features/members.js',
   './js/features/payments.js',
   './js/features/finance.js',
-  './js/features/ai.js'
+  './js/features/ai.js',
+  './icons/icon.svg',
+  './manifest.json'
 ];
 
+// Skip waiting so updated SW activates immediately
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
+  e.waitUntil(
+    caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting())
+  );
 });
 
+// Claim clients immediately so new SW controls all open tabs at once
 self.addEventListener('activate', e => {
-  e.waitUntil(caches.keys().then(keys =>
-    Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
-  ));
+  e.waitUntil(
+    caches.keys()
+      .then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
+      .then(() => self.clients.claim())
+  );
 });
+
+// Network-bypass for external APIs — never cache these
+const BYPASS = [
+  'googleapis.com',
+  'generativelanguage.googleapis.com',
+  'accounts.google.com',
+  'workers.dev',
+  'gsi/client',
+  'cdn.jsdelivr.net',
+];
 
 self.addEventListener('fetch', e => {
-  if (e.request.url.includes('googleapis.com') || e.request.url.includes('generativelanguage')) return;
+  const url = e.request.url;
+  if (BYPASS.some(h => url.includes(h))) return; // let browser handle it
+
   e.respondWith(
-    caches.match(e.request).then(cached => cached || fetch(e.request))
+    caches.match(e.request).then(cached => {
+      if (cached) return cached;
+      return fetch(e.request).then(res => {
+        // Cache successful same-origin GET responses
+        if (res.ok && e.request.method === 'GET' && url.startsWith(self.location.origin)) {
+          const clone = res.clone();
+          caches.open(CACHE).then(c => c.put(e.request, clone));
+        }
+        return res;
+      });
+    }).catch(() => caches.match('./index.html')) // offline fallback
   );
 });
