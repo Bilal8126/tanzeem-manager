@@ -13,7 +13,15 @@ function loadGoogleScript() {
 
 // Called on page load — restores session from cache without needing a token
 function checkAutoSignIn() {
-  if (!localStorage.getItem(_AUTH_FLAG)) return;
+  const hasFlag = !!localStorage.getItem(_AUTH_FLAG);
+  // Also check for cached session data (covers users signed in before flag was added)
+  const hasCachedData = CONFIG.SESSIONS.some(s => !!localStorage.getItem('tanzeem_v1_' + s.label));
+
+  if (!hasFlag && !hasCachedData) return;
+
+  // Ensure flag is set for future loads
+  localStorage.setItem(_AUTH_FLAG, '1');
+
   document.getElementById('setupScreen').style.display = 'none';
   document.getElementById('mainApp').style.display = 'block';
   loadAllData(false); // serve from localStorage cache; no token required
