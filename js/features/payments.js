@@ -382,22 +382,22 @@ function shareWhatsApp() {
   msg += `*Session: ${session}*\n`;
   msg += `━━━━━━━━━━━━━━━━━━━\n\n`;
 
-  msg += `✅ *${sel} — Ada Kar Diya (${paidNow.length} log):*\n`;
+  msg += `✅ *${sel} Mahine Mein Jama Kiya (${paidNow.length} log):*\n`;
   msg += paidNow.length > 0
     ? paidNow.map((m, i) => `${i + 1}. ${clean(m.name)}`).join('\n')
-    : '_Abhi kisi ne nahi diya_';
+    : '_Abhi kisi ne jama nahi kiya_';
   msg += '\n\n';
 
   if (isPastOrCurrent(sel)) {
-    msg += `❌ *${sel} — Abhi Tak Nahi Diya (${unpaidNow.length} log):*\n`;
+    msg += `❌ *${sel} Mahine Mein Jama Nahi Kiya (${unpaidNow.length} log):*\n`;
     msg += unpaidNow.length > 0
       ? unpaidNow.map((m, i) => `${i + 1}. ${clean(m.name)}`).join('\n')
-      : '_Sab ne ada kar diya_ ✅';
+      : '_Shukriya! Sab ne jama kar diya_ ✅';
     msg += '\n\n';
   }
 
   if (withUnpaid.length > 0) {
-    msg += `📋 *Member Wise Unpaid Months:*\n`;
+    msg += `📋 *Har Member Ke Baqi Mahine:*\n`;
     withUnpaid.forEach((m, i) => {
       msg += `${i + 1}.) ${clean(m.name)} — ${m.unpaidList.join(', ')}\n`;
     });
@@ -405,12 +405,12 @@ function shareWhatsApp() {
   }
 
   msg += `━━━━━━━━━━━━━━━━━━━\n`;
-  msg += `📊 *Khulasa (${sel}):*\n`;
-  msg += `• ${sel} paid: ${paidNow.length} log\n`;
-  if (isPastOrCurrent(sel)) msg += `• ${sel} unpaid: ${unpaidNow.length} log\n`;
+  msg += `📊 *${sel} Ka Khulasa:*\n`;
+  msg += `• Jama kiya: ${paidNow.length} log\n`;
+  if (isPastOrCurrent(sel)) msg += `• Baqi hai: ${unpaidNow.length} log\n`;
   // msg += `• Kul ikattha hua: ${formatCurrency(totalCollected)}\n`;
-  // msg += `• Kul baqi hai: ${formatCurrency(totalPending)}\n\n`;
-  msg += `Jazakallah Khair 🤲`;
+  // msg += `• Kul baqi hai: ${formatCurrency(totalPending)}\n`;
+  msg += `\nJazakallah Khair 🤲`;
 
   window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
 }
