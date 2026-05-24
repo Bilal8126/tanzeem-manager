@@ -39,22 +39,9 @@ async function sendChat() {
   if (!q) return;
   input.value = '';
   appendMessage('user', q);
-  appendMessage('ai', 'Thinking...');
-  try {
-    const res = await fetch(CONFIG.WORKER_URL + '/api/ai', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        system_instruction: { parts: [{ text: buildDataContext() }] },
-        contents: [{ parts: [{ text: q }] }]
-      })
-    });
-    const d = await res.json();
-    const reply = d.candidates?.[0]?.content?.parts?.[0]?.text || 'Sorry, could not get a response.';
-    updateLastAiMessage(reply);
-  } catch (e) {
-    updateLastAiMessage('Error: ' + e.message);
-  }
+  appendMessage('ai',
+    '🚧 Yeh feature abhi tayyar ho raha hai.\n\nHamara developer is par kaam kar raha hai — jald hi aap apne sawaal yahan pooch sakenge. Shukriya aapki dilchaspi ke liye! 🙏'
+  );
 }
 
 function quickAsk(q) {
