@@ -50,7 +50,9 @@ function openMemberProfile(idx) {
   const member = STATE.allMembers[idx];
   if (!member) return;
 
-  const payRec    = STATE.allPayments.find(p => p.name === member.name);
+  const payIdx     = STATE.allPayments.findIndex(p => p.name === member.name);
+  const payRec     = payIdx !== -1 ? STATE.allPayments[payIdx] : null;
+  const canEdit    = payIdx !== -1 && !!STATE.accessToken;
   // Fall back to month list from any payment record if this member has no row
   const monthKeys = payRec
     ? Object.keys(payRec.months)
@@ -87,11 +89,15 @@ function openMemberProfile(idx) {
         amt  = `<span class="txn-amt txn-amt--unpaid">−${formatCurrency(FEE)}</span>`;
       }
 
+      const rowClick = canEdit
+        ? `onclick="togglePaymentFromProfile(${payIdx},'${mo}',${idx})" style="cursor:pointer" title="Tap to toggle"`
+        : '';
       monthRows += `
-        <div class="txn-row${!past ? ' txn-row--future' : ''}">
+        <div class="txn-row${!past ? ' txn-row--future' : ''}" ${rowClick}>
           <span class="txn-month">${mo}</span>
           ${chip}
           ${amt}
+          ${canEdit ? `<span style="font-size:10px;color:#cbd5e1;flex-shrink:0">✏</span>` : ''}
         </div>`;
     });
   }
@@ -218,6 +224,38 @@ function shareWhatsAppMember(idx) {
   window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
 }
 
+// ── Toggle payment from member profile ───────────────────
+
+function togglePaymentFromProfile(payIdx, mo, memberIdx) {
+  if (!STATE.accessToken) { showToast('Write ke liye pehle Sync karein 🔄', 'error'); return; }
+  const p = STATE.allPayments[payIdx];
+  if (!p) return;
+  const months = Object.keys(p.months);
+  const mIdx   = months.indexOf(mo);
+  if (mIdx === -1) return;
+  const col      = colLetter(3 + mIdx);
+  const newVal   = isPaid(p.months[mo]) ? '' : 'Paid';
+  const action   = newVal === 'Paid' ? 'Paid mark karein' : 'Unpaid mark karein';
+  const cleanName = p.name.replace(/\(.*?\)/g, '').trim();
+  showConfirm(
+    `${action}?`,
+    `<b>${cleanName}</b> — ${mo}<br><span style="color:var(--muted);font-size:12px">${isPaid(p.months[mo]) ? 'Paid ✓ hai → Unpaid karna chahte hain?' : 'Unpaid ✗ hai → Paid karna chahte hain?'}</span>`,
+    async () => {
+      try {
+        await sheetsPut(`${STATE.currentSession.sheet}!${col}${p.row}`, [[newVal]]);
+        STATE.allPayments[payIdx].months[mo] = newVal;
+        const paidCount = Object.values(STATE.allPayments[payIdx].months).filter(v => isPaid(v)).length;
+        STATE.allPayments[payIdx].total = String(paidCount * FEE);
+        saveCache(STATE.currentSession.label);
+        showToast(newVal === 'Paid' ? '✅ Paid ho gaya!' : '✗ Unpaid ho gaya!');
+        openMemberProfile(memberIdx);
+      } catch(e) {
+        showToast(e.message === 'AUTH_EXPIRED' ? 'Session expired — sync karein' : 'Error: ' + e.message, 'error');
+      }
+    }
+  );
+}
+
 // ── Member Edit ───────────────────────────────────────────
 
 let _editMemberStatus = null;
@@ -247,6 +285,7 @@ function openEditMember(idx) {
       </div>
     </div>
     <button class="btn btn-primary" style="width:100%;margin-top:6px" onclick="saveEditMember(${idx})">💾 Save Changes</button>
+    <button class="btn btn-danger" style="width:100%;margin-top:8px" onclick="deleteMember(${idx})">🗑 Member Delete Karein</button>
   `;
 }
 
@@ -284,4 +323,98 @@ function saveEditMember(idx) {
       showToast(e.message === 'AUTH_EXPIRED' ? 'Session expired — sync karein' : 'Error: ' + e.message, 'error');
     }
   });
+}
+
+function deleteMember(idx) {
+  const m = STATE.allMembers[idx];
+  if (!m) return;
+  if (!STATE.accessToken) { showToast('Write ke liye pehle Sync karein 🔄', 'error'); return; }
+  showConfirm(
+    'Member delete karein?',
+    `<b>${m.name}</b> ko hamesha ke liye remove kar diya jayega.<br><span style="color:var(--red);font-size:12px">Yeh action wapas nahi ho sakta!</span>`,
+    async () => {
+      try {
+        await sheetsDeleteRow('Members List', m.row);
+        const deletedRow = m.row;
+        STATE.allMembers.splice(idx, 1);
+        STATE.allMembers.forEach(mb => { if (mb.row > deletedRow) mb.row--; });
+        saveCache(STATE.currentSession.label);
+        showToast('Member delete ho gaya! 🗑');
+        closeMemberProfile();
+        renderMembers();
+      } catch(e) {
+        showToast(e.message === 'AUTH_EXPIRED' ? 'Session expired — sync karein' : 'Error: ' + e.message, 'error');
+      }
+    }
+  );
+}
+
+// ── Add New Member ────────────────────────────────────────
+
+function openAddMember() {
+  if (!STATE.accessToken) { showToast('Write ke liye pehle Sync karein 🔄', 'error'); return; }
+  document.getElementById('memberProfileContent').innerHTML = `
+    <div class="modal-header">
+      <div class="modal-title">Naya Member Add Karein</div>
+      <button class="close-btn" onclick="closeMemberProfile()">×</button>
+    </div>
+    <div class="form-group">
+      <label>Naam *</label>
+      <input id="nm_name" placeholder="Naam likhein...">
+    </div>
+    <div class="form-group">
+      <label>Mobile Number</label>
+      <input id="nm_mobile" type="tel" placeholder="Mobile number...">
+    </div>
+    <div class="form-group">
+      <label>Address</label>
+      <input id="nm_address" placeholder="Ghar ka pata...">
+    </div>
+    <div class="form-group">
+      <label>Status</label>
+      <div style="display:flex;gap:8px">
+        <button id="nmStatusActive" class="btn btn-primary" style="flex:1;padding:10px" onclick="setNewMemberStatus('Active')">✅ Active</button>
+        <button id="nmStatusInactive" class="btn btn-secondary" style="flex:1;padding:10px" onclick="setNewMemberStatus('Inactive')">❌ Inactive</button>
+      </div>
+    </div>
+    <button class="btn btn-primary" style="width:100%;margin-top:6px" onclick="saveNewMember()">➕ Member Add Karein</button>
+  `;
+  _newMemberStatus = 'Active';
+  document.getElementById('memberProfileOverlay').classList.add('open');
+}
+
+let _newMemberStatus = 'Active';
+
+function setNewMemberStatus(s) {
+  _newMemberStatus = s;
+  document.getElementById('nmStatusActive').className   = 'btn ' + (s === 'Active' ? 'btn-primary'   : 'btn-secondary');
+  document.getElementById('nmStatusInactive').className = 'btn ' + (s !== 'Active' ? 'btn-danger' : 'btn-secondary');
+}
+
+function saveNewMember() {
+  const name    = (document.getElementById('nm_name').value    || '').trim();
+  const mobile  = (document.getElementById('nm_mobile').value  || '').trim();
+  const address = (document.getElementById('nm_address').value || '').trim();
+  const status  = _newMemberStatus;
+  if (!name) { showToast('Naam likhein', 'error'); return; }
+  const nextId = STATE.allMembers.length + 1;
+  showConfirm(
+    'Member add karein?',
+    `<b>${name}</b>${mobile ? '<br>📞 ' + mobile : ''}${address ? '<br>🏠 ' + address : ''}<br>Status: ${status}`,
+    async () => {
+      try {
+        await sheetsAppend('Members List', [[nextId, name, mobile, '', address, '', status, '']]);
+        const newRow = STATE.allMembers.length > 0
+          ? Math.max(...STATE.allMembers.map(m => m.row)) + 1
+          : 2;
+        STATE.allMembers.push({ row: newRow, id: String(nextId), name, mobile, doj: '', address, aadhar: '', status, doe: '' });
+        saveCache(STATE.currentSession.label);
+        showToast('Member add ho gaya! ✅');
+        closeMemberProfile();
+        renderMembers();
+      } catch(e) {
+        showToast(e.message === 'AUTH_EXPIRED' ? 'Session expired — sync karein' : 'Error: ' + e.message, 'error');
+      }
+    }
+  );
 }

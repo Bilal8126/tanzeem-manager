@@ -33,6 +33,7 @@ function renderDonations() {
               <div style="display:flex;align-items:center;gap:8px">
                 <div class="finance-amount green">${formatCurrency(d.amount)}</div>
                 <button onclick="openFinanceForm('donation',${i})" style="background:none;border:none;cursor:pointer;font-size:15px;padding:4px 6px;color:#94a3b8;border-radius:8px;transition:background .15s" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='none'">✏</button>
+                <button onclick="deleteFinanceItem('donation',${i})" style="background:none;border:none;cursor:pointer;font-size:15px;padding:4px 6px;color:#fca5a5;border-radius:8px;transition:background .15s" onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background='none'">🗑</button>
               </div>
             </div>`).join('')}
     </div>`;
@@ -68,6 +69,7 @@ function renderExpenses() {
               <div style="display:flex;align-items:center;gap:8px">
                 <div class="finance-amount red">${formatCurrency(e.amount)}</div>
                 <button onclick="openFinanceForm('expense',${i})" style="background:none;border:none;cursor:pointer;font-size:15px;padding:4px 6px;color:#94a3b8;border-radius:8px;transition:background .15s" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='none'">✏</button>
+                <button onclick="deleteFinanceItem('expense',${i})" style="background:none;border:none;cursor:pointer;font-size:15px;padding:4px 6px;color:#fca5a5;border-radius:8px;transition:background .15s" onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background='none'">🗑</button>
               </div>
             </div>`).join('')}
     </div>`;
@@ -197,6 +199,40 @@ function saveFinanceForm() {
         saveCache(session.label);
         showToast(isEdit ? 'Update ho gaya! ✅' : 'Add ho gaya! ✅');
         closeFinanceForm();
+        renderFinance();
+      } catch(e) {
+        showToast(e.message === 'AUTH_EXPIRED' ? 'Session expired — sync karein' : 'Error: ' + e.message, 'error');
+      }
+    }
+  );
+}
+
+// ── Delete Finance Item ───────────────────────────────────
+
+function deleteFinanceItem(type, idx) {
+  if (!STATE.accessToken) { showToast('Write ke liye pehle Sync karein 🔄', 'error'); return; }
+  const isDonation = type === 'donation';
+  const item    = isDonation ? STATE.allDonations[idx] : STATE.allExpenses[idx];
+  if (!item) return;
+  const session  = STATE.currentSession;
+  const sheetName = isDonation ? session.donations : session.expenses;
+  const label     = isDonation ? item.donor : item.desc;
+  showConfirm(
+    isDonation ? 'Donation delete karein?' : 'Kharcha delete karein?',
+    `<b>${label}</b> — Rs.${item.amount}<br><span style="color:var(--red);font-size:12px">Yeh action wapas nahi ho sakta!</span>`,
+    async () => {
+      try {
+        await sheetsDeleteRow(sheetName, item.row);
+        const deletedRow = item.row;
+        if (isDonation) {
+          STATE.allDonations.splice(idx, 1);
+          STATE.allDonations.forEach(d => { if (d.row > deletedRow) d.row--; });
+        } else {
+          STATE.allExpenses.splice(idx, 1);
+          STATE.allExpenses.forEach(e => { if (e.row > deletedRow) e.row--; });
+        }
+        saveCache(session.label);
+        showToast('Delete ho gaya! 🗑');
         renderFinance();
       } catch(e) {
         showToast(e.message === 'AUTH_EXPIRED' ? 'Session expired — sync karein' : 'Error: ' + e.message, 'error');

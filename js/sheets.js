@@ -20,6 +20,38 @@ async function sheetsPut(range, values) {
   return d;
 }
 
+const _sheetIdCache = {};
+
+async function sheetsGetSheetId(sheetName) {
+  if (_sheetIdCache[sheetName] !== undefined) return _sheetIdCache[sheetName];
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}?fields=sheets.properties`;
+  const r = await fetch(url, { headers: { Authorization: 'Bearer ' + STATE.accessToken } });
+  if (r.status === 401) throw new Error('AUTH_EXPIRED');
+  const d = await r.json();
+  if (d.error) throw new Error(d.error.message);
+  for (const s of (d.sheets || [])) _sheetIdCache[s.properties.title] = s.properties.sheetId;
+  if (_sheetIdCache[sheetName] === undefined) throw new Error('Sheet not found: ' + sheetName);
+  return _sheetIdCache[sheetName];
+}
+
+async function sheetsDeleteRow(sheetName, rowNumber) {
+  const sheetId = await sheetsGetSheetId(sheetName);
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}:batchUpdate`;
+  const r = await fetch(url, {
+    method: 'POST',
+    headers: { Authorization: 'Bearer ' + STATE.accessToken, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      requests: [{ deleteDimension: {
+        range: { sheetId, dimension: 'ROWS', startIndex: rowNumber - 1, endIndex: rowNumber }
+      }}]
+    })
+  });
+  if (r.status === 401) throw new Error('AUTH_EXPIRED');
+  const d = await r.json();
+  if (d.error) throw new Error(d.error.message);
+  return d;
+}
+
 async function sheetsAppend(sheetTab, values) {
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/${encodeURIComponent(sheetTab + '!A1')}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
   const r = await fetch(url, {
