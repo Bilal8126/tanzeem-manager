@@ -1,17 +1,59 @@
 async function sheetsGet(range) {
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/${encodeURIComponent(range)}`;
   const r = await fetch(url, { headers: { Authorization: 'Bearer ' + STATE.accessToken } });
+  if (r.status === 401) throw new Error('AUTH_EXPIRED');
   const d = await r.json();
   if (d.error) throw new Error(d.error.message);
   return d.values || [];
 }
 
+// ── Local cache (per session) ─────────────────────────
+function _cacheKey(label) { return 'tanzeem_v1_' + label; }
 
-async function loadAllData() {
+function saveCache(label) {
+  try {
+    localStorage.setItem(_cacheKey(label), JSON.stringify({
+      ts:      Date.now(),
+      members:  STATE.allMembers,
+      payments: STATE.allPayments,
+      donations:STATE.allDonations,
+      expenses: STATE.allExpenses,
+      summary:  { ...STATE.sessionSummary }
+    }));
+  } catch(e) {}
+}
+
+function loadFromCache(label) {
+  try {
+    const raw = localStorage.getItem(_cacheKey(label));
+    return raw ? JSON.parse(raw) : null;
+  } catch(e) { return null; }
+}
+
+async function loadAllData(forceRefresh = false) {
   STATE.currentSession = CONFIG.SESSIONS[STATE.currentSessionIdx];
   document.getElementById('sessionSelect').value = STATE.currentSessionIdx;
+
+  const session = STATE.currentSession;
+
+  if (!forceRefresh) {
+    const cached = loadFromCache(session.label);
+    if (cached) {
+      STATE.allMembers      = cached.members;
+      STATE.allPayments     = cached.payments;
+      STATE.allDonations    = cached.donations;
+      STATE.allExpenses     = cached.expenses;
+      STATE.sessionSummary  = cached.summary;
+      STATE.selectedPaymentMonth = null;
+      renderCurrentScreen();
+      updateSyncStatus(cached.ts);
+      return;
+    }
+  }
+
+  // Fetch from Google Sheets
+  setSyncLoading(true);
   try {
-    const session = STATE.currentSession;
     const [membersRaw, sessionRaw, donationsRaw, expensesRaw] = await Promise.all([
       sheetsGet('Members List!A:H'),
       sheetsGet(session.sheet + '!A:P'),
@@ -22,9 +64,18 @@ async function loadAllData() {
     parsePayments(sessionRaw);
     parseDonations(donationsRaw);
     parseExpenses(expensesRaw);
+    STATE.selectedPaymentMonth = null;
+    saveCache(session.label);
+    updateSyncStatus(Date.now());
     renderCurrentScreen();
   } catch (e) {
-    showToast('Error loading data: ' + e.message, 'error');
+    if (e.message === 'AUTH_EXPIRED') {
+      showToast('Session expired — please sign out and sign in again', 'error');
+    } else {
+      showToast('Error loading data: ' + e.message, 'error');
+    }
+  } finally {
+    setSyncLoading(false);
   }
 }
 

@@ -49,6 +49,23 @@ function todayDate() {
   return new Date().toISOString().split('T')[0];
 }
 
+function setSyncLoading(on) {
+  const btn = document.getElementById('syncBtn');
+  if (!btn) return;
+  btn.disabled = on;
+  btn.classList.toggle('spinning', on);
+}
+
+function updateSyncStatus(ts) {
+  const el = document.getElementById('syncStatus');
+  if (!el) return;
+  if (!ts) { el.textContent = ''; return; }
+  const mins = Math.round((Date.now() - ts) / 60000);
+  if (mins < 1)   el.textContent = 'just now';
+  else if (mins < 60) el.textContent = mins + 'm ago';
+  else            el.textContent = Math.round(mins / 60) + 'h ago';
+}
+
 window.addEventListener('load', () => {
   // Set correct session on first load from CONFIG
   STATE.currentSession = CONFIG.SESSIONS[STATE.currentSessionIdx];

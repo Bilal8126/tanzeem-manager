@@ -778,3 +778,36 @@ input:focus, select:focus, textarea:focus {
 }
 .ai-header-text h4 { font-size: 14px; font-weight: 700; margin-bottom: 2px; }
 .ai-header-text p  { font-size: 12px; opacity: 0.8; }
+
+/* ── Sync Button ─────────────────────────────────────── */
+.sync-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+}
+.sync-status {
+  font-size: 9px;
+  color: rgba(255,255,255,0.65);
+  white-space: nowrap;
+  line-height: 1;
+  min-height: 10px;
+}
+.sync-btn {
+  background: rgba(255,255,255,0.16);
+  border: 1px solid rgba(255,255,255,0.25);
+  color: #fff;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background .2s;
+  flex-shrink: 0;
+}
+.sync-btn:hover  { background: rgba(255,255,255,0.28); }
+.sync-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.sync-btn.spinning svg { animation: spin .9s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
