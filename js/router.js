@@ -1,4 +1,9 @@
+const _scrollPos = {};
+
 function showScreen(name, el) {
+  // Save scroll position for the screen we're leaving
+  _scrollPos[STATE.currentScreen] = window.scrollY;
+
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('screen-' + name).classList.add('active');
@@ -7,6 +12,11 @@ function showScreen(name, el) {
   const titles = { dashboard: 'Dashboard', members: 'Members', payments: 'Payments', finance: 'Finance', ai: 'AI Chat' };
   document.getElementById('screenTitle').textContent = titles[name] || name;
   renderCurrentScreen();
+
+  // Restore saved scroll position for this screen (0 on first visit)
+  requestAnimationFrame(() => {
+    window.scrollTo({ top: _scrollPos[name] || 0, behavior: 'instant' });
+  });
 }
 
 function renderCurrentScreen() {

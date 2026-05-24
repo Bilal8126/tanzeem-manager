@@ -14,7 +14,7 @@ function buildDataContext() {
 
   const memberTotals = STATE.allPayments.map(p => `${p.name}: Rs.${p.total}`).join('\n');
 
-  return `You are a helpful assistant for Tanzeem Abd e Mustafa NGO, Bisauli. Session: ${STATE.currentSession}.
+  return `You are a helpful assistant for Tanzeem Abd e Mustafa. Session: ${STATE.currentSession}.
 
 SUMMARY:
 Total members: ${STATE.allMembers.length}, Active: ${active}, Inactive: ${inactive.length}
@@ -41,7 +41,7 @@ async function sendChat() {
   appendMessage('user', q);
   appendMessage('ai', 'Thinking...');
   try {
-    const res = await fetch(`${CONFIG.GEMINI_URL}?key=${CONFIG.GEMINI_KEY}`, {
+    const res = await fetch(CONFIG.WORKER_URL + '/api/ai', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

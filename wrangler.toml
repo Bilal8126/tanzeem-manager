@@ -1,0 +1,6 @@
+name = "tanzeem-proxy"
+main = "worker.js"
+compatibility_date = "2025-01-01"
+
+# Secrets are set via Cloudflare dashboard or `wrangler secret put GEMINI_API_KEY`
+# Never put real keys here — this file IS committed to git
