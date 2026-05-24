@@ -281,7 +281,7 @@ function openEditMember(idx) {
       <label>Status</label>
       <div style="display:flex;gap:8px">
         <button id="emStatusActive" class="btn ${m.status === 'Active' ? 'btn-primary' : 'btn-secondary'}" style="flex:1;padding:10px" onclick="setEditStatus('Active')">✅ Active</button>
-        <button id="emStatusInactive" class="btn ${m.status !== 'Active' ? 'btn-danger' : 'btn-secondary'}" style="flex:1;padding:10px" onclick="setEditStatus('Inactive')">❌ Inactive</button>
+        <button id="emStatusInactive" class="btn ${m.status !== 'Active' ? 'btn-danger' : 'btn-secondary'}" style="flex:1;padding:10px" onclick="setEditStatus('In Active')">❌ Inactive</button>
       </div>
     </div>
     <button class="btn btn-primary" style="width:100%;margin-top:6px" onclick="saveEditMember(${idx})">💾 Save Changes</button>
@@ -374,7 +374,7 @@ function openAddMember() {
       <label>Status</label>
       <div style="display:flex;gap:8px">
         <button id="nmStatusActive" class="btn btn-primary" style="flex:1;padding:10px" onclick="setNewMemberStatus('Active')">✅ Active</button>
-        <button id="nmStatusInactive" class="btn btn-secondary" style="flex:1;padding:10px" onclick="setNewMemberStatus('Inactive')">❌ Inactive</button>
+        <button id="nmStatusInactive" class="btn btn-secondary" style="flex:1;padding:10px" onclick="setNewMemberStatus('In Active')">❌ Inactive</button>
       </div>
     </div>
     <button class="btn btn-primary" style="width:100%;margin-top:6px" onclick="saveNewMember()">➕ Member Add Karein</button>

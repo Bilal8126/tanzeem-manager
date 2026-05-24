@@ -63,7 +63,7 @@ function renderExpenses() {
                 <div class="finance-dot red"></div>
                 <div>
                   <div class="finance-name">${e.desc}</div>
-                  <div class="finance-sub">${e.date || ''}${e.category ? ' · ' + e.category : ''}</div>
+                  <div class="finance-sub">${e.date || ''}</div>
                 </div>
               </div>
               <div style="display:flex;align-items:center;gap:8px">
@@ -130,10 +130,6 @@ function openFinanceForm(type, idx) {
         <label>Tarikh</label>
         <input id="ff_date" type="date" value="${item?.date || ''}">
       </div>
-      <div class="form-group">
-        <label>Category</label>
-        <input id="ff_cat" value="${(item?.category || '').replace(/"/g,'&quot;')}" placeholder="e.g. Transport, Food...">
-      </div>
     `}
     <button class="btn btn-primary" style="width:100%;margin-top:6px" onclick="saveFinanceForm()">
       ${isEdit ? '💾 Update Karein' : '➕ Add Karein'}
@@ -160,12 +156,12 @@ function saveFinanceForm() {
   const date   = (document.getElementById('ff_date').value   || '').trim();
   const extra  = isDonation
     ? (document.getElementById('ff_note').value || '').trim()
-    : (document.getElementById('ff_cat').value  || '').trim();
+    : '';
 
   if (!name)   { showToast('Naam/Wajah likhein', 'error'); return; }
   if (!amount || isNaN(parseFloat(amount))) { showToast('Sahi amount likhein', 'error'); return; }
 
-  const confirmBody = `<b>${name}</b><br>Rs.${amount}${date ? ' — ' + date : ''}${extra ? '<br>' + (isDonation ? 'Note: ' : 'Category: ') + extra : ''}`;
+  const confirmBody = `<b>${name}</b><br>Rs.${amount}${date ? ' — ' + date : ''}${extra ? '<br>Note: ' + extra : ''}`;
 
   showConfirm(
     isEdit ? (isDonation ? 'Donation update karein?' : 'Kharcha update karein?')
@@ -174,26 +170,28 @@ function saveFinanceForm() {
     async () => {
       try {
         if (isDonation) {
+          // Sheet columns: B=Name, C=Amount, D=Description, E=Date
           if (isEdit) {
             const d = STATE.allDonations[_ffIdx];
-            await sheetsPut(`${sheetName}!B${d.row}:E${d.row}`, [[name, amount, date, extra]]);
-            STATE.allDonations[_ffIdx] = { ...d, donor: name, amount, date, note: extra };
+            await sheetsPut(`${sheetName}!B${d.row}:E${d.row}`, [[name, amount, extra, date]]);
+            STATE.allDonations[_ffIdx] = { ...d, donor: name, amount, note: extra, date };
           } else {
             const sr     = STATE.allDonations.length + 1;
             const newRow = STATE.allDonations.length + 2;
-            await sheetsAppend(sheetName, [[sr, name, amount, date, extra]]);
-            STATE.allDonations.push({ row: newRow, sr: String(sr), donor: name, amount, date, note: extra });
+            await sheetsAppend(sheetName, [[sr, name, amount, extra, date]]);
+            STATE.allDonations.push({ row: newRow, sr: String(sr), donor: name, amount, note: extra, date });
           }
         } else {
+          // Sheet columns: B=Description, C=Amount, D=Month(Date), E=Session
           if (isEdit) {
             const e = STATE.allExpenses[_ffIdx];
-            await sheetsPut(`${sheetName}!B${e.row}:F${e.row}`, [[name, amount, date, extra, session.label]]);
-            STATE.allExpenses[_ffIdx] = { ...e, desc: name, amount, date, category: extra };
+            await sheetsPut(`${sheetName}!B${e.row}:E${e.row}`, [[name, amount, date, session.label]]);
+            STATE.allExpenses[_ffIdx] = { ...e, desc: name, amount, date };
           } else {
             const sr     = STATE.allExpenses.length + 1;
             const newRow = STATE.allExpenses.length + 2;
-            await sheetsAppend(sheetName, [[sr, name, amount, date, extra, session.label]]);
-            STATE.allExpenses.push({ row: newRow, sr: String(sr), desc: name, amount, date, category: extra, session: session.label });
+            await sheetsAppend(sheetName, [[sr, name, amount, date, session.label]]);
+            STATE.allExpenses.push({ row: newRow, sr: String(sr), desc: name, amount, date, session: session.label });
           }
         }
         saveCache(session.label);

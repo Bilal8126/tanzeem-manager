@@ -115,7 +115,7 @@ async function loadAllData(forceRefresh = false) {
     const [membersRaw, sessionRaw, donationsRaw, expensesRaw] = await Promise.all([
       sheetsGet('Members List!A:H'),
       sheetsGet(session.sheet + '!A:P'),
-      sheetsGet(session.donations + '!A:E').catch(() => []),
+      sheetsGet(session.donations + '!A:F').catch(() => []),
       sheetsGet(session.expenses  + '!A:F').catch(() => [])
     ]);
     parseMembers(membersRaw);
@@ -241,7 +241,8 @@ function parseDonations(rows) {
     const r = rows[i];
     if (!r || !r[1]) continue;
     if (_FOOTER.some(w => r[1].toString().toLowerCase().includes(w))) continue;
-    STATE.allDonations.push({ row: i+1, sr: r[0], donor: r[1], amount: r[2], date: r[3], note: r[4] });
+    // Sheet columns: A=Sr, B=Name, C=Amount, D=Description, E=Date, F=Session
+    STATE.allDonations.push({ row: i+1, sr: r[0], donor: r[1], amount: r[2], note: r[3], date: r[4] });
   }
 }
 
@@ -252,6 +253,7 @@ function parseExpenses(rows) {
     const r = rows[i];
     if (!r || !r[1]) continue;
     if (_FOOTER.some(w => r[1].toString().toLowerCase().includes(w))) continue;
-    STATE.allExpenses.push({ row: i+1, sr: r[0], desc: r[1], amount: r[2], date: r[3], category: r[4], session: r[5] });
+    // Sheet columns: A=Sr, B=Description, C=Amount, D=Month(Date), E=Session
+    STATE.allExpenses.push({ row: i+1, sr: r[0], desc: r[1], amount: r[2], date: r[3], session: r[4] });
   }
 }
