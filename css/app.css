@@ -895,6 +895,28 @@ input:focus, select:focus, textarea:focus {
 .empty-state-icon { font-size: 52px; margin-bottom: 14px; opacity: 0.55; }
 .empty-state p { font-size: 14px; margin-top: 6px; font-weight: 500; }
 
+/* ── WhatsApp Share Button ───────────────────────────── */
+.whatsapp-btn {
+  width: 100%;
+  padding: 14px 18px;
+  border-radius: var(--radius);
+  background: linear-gradient(135deg, #075e54, #25d366);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  box-shadow: 0 4px 16px rgba(37,211,102,.32);
+  transition: transform 0.15s, box-shadow 0.15s;
+  letter-spacing: -0.1px;
+}
+.whatsapp-btn:active { transform: scale(0.97); box-shadow: 0 2px 8px rgba(37,211,102,.2); }
+
 /* ── Member profile modal ────────────────────────────── */
 .member-card { cursor: pointer; }
 
