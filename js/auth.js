@@ -107,7 +107,7 @@ async function syncData() {
 function signOut() {
   showConfirm(
     'Sign Out',
-    'Tanzeem Abd-e-Mustafa se sign out karna chahte hain?<br><span style="font-size:12px;color:#94a3b8">Aapka cached data safe rahega</span>',
+    'Tanzeem Abd-e-Mustafa se sign out karna chahte hain?',
     () => {
       STATE.accessToken = null;
       localStorage.removeItem(_AUTH_FLAG);
