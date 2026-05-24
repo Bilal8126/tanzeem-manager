@@ -378,7 +378,7 @@ function shareWhatsApp() {
 
   let msg = '';
   msg += `Assalamualkum wa Rahmatullahi wa Barakatuh! 🕌\n\n`;
-  msg += `*Tanzeem Abd-e-Mustafa — Basauli*\n`;
+  msg += `*Tanzeem Abd-e-Mustafa — Bisauli*\n`;
   msg += `*Session: ${session}*\n`;
   msg += `━━━━━━━━━━━━━━━━━━━\n\n`;
 
