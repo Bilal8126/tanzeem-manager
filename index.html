@@ -66,6 +66,7 @@
         <option value="0" selected>2025-26</option>
         <option value="1">2024-25</option>
       </select>
+      <button id="addMemberBtn" onclick="openAddMember()" title="Naya Member" style="display:none;background:rgba(255,255,255,0.18);border:none;border-radius:10px;padding:6px 12px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;letter-spacing:.3px">+ Add</button>
       <div class="user-avatar" id="userAvatar" title="Tap to sign out" onclick="signOut()">A</div>
     </div>
   </div>
@@ -87,7 +88,6 @@
       <button class="filter-tab" onclick="setMemberFilter('Inactive',this)">Inactive</button>
     </div>
     <div id="membersList"><div class="loading">Loading...</div></div>
-    <button class="btn btn-primary" style="width:100%;margin-top:4px" onclick="openAddMember()">➕ Naya Member Add Karein</button>
   </div>
 
   <!-- Payments Screen -->
