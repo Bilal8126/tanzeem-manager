@@ -66,7 +66,6 @@
         <option value="0" selected>2025-26</option>
         <option value="1">2024-25</option>
       </select>
-      <button id="addMemberBtn" onclick="openAddMember()" title="Naya Member" style="display:none;background:rgba(255,255,255,0.18);border:none;border-radius:10px;padding:6px 12px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;letter-spacing:.3px">+ Add</button>
       <div class="user-avatar" id="userAvatar" title="Tap to sign out" onclick="signOut()">A</div>
     </div>
   </div>
@@ -82,10 +81,13 @@
       <span class="search-icon">⌕</span>
       <input type="text" id="memberSearch" placeholder="Search by name or mobile…" oninput="filterMembers()">
     </div>
-    <div class="filter-tabs">
-      <button class="filter-tab active" onclick="setMemberFilter('all',this)">All</button>
-      <button class="filter-tab" onclick="setMemberFilter('Active',this)">Active</button>
-      <button class="filter-tab" onclick="setMemberFilter('Inactive',this)">Inactive</button>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <div class="filter-tabs" style="margin-bottom:0">
+        <button class="filter-tab active" onclick="setMemberFilter('all',this)">All</button>
+        <button class="filter-tab" onclick="setMemberFilter('Active',this)">Active</button>
+        <button class="filter-tab" onclick="setMemberFilter('Inactive',this)">Inactive</button>
+      </div>
+      <button onclick="openAddMember()" style="background:#0f4a29;border:none;border-radius:10px;padding:7px 14px;color:#fff;font-size:13px;font-weight:600;cursor:pointer">+ Add</button>
     </div>
     <div id="membersList"><div class="loading">Loading...</div></div>
   </div>
