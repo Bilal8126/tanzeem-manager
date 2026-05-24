@@ -327,22 +327,26 @@ function renderPayments() {
             </tr>
           </thead>
           <tbody>
-            ${stats.map(m => `
+            ${stats.map(m => {
+              const payIdx = STATE.allPayments.findIndex(p => p.name === m.name);
+              return `
               <tr style="${m.isOverdue ? 'background:#fff9f0' : ''}">
                 <td class="name-col">
                   ${m.name.replace(/\(.*?\)/g,'').trim()}
                   ${m.isOverdue ? `<span style="color:${C_RED};font-size:9px;margin-left:2px">●</span>` : ''}
                 </td>
                 ${months.map(mo => {
-                  if (isPaid(m.months[mo]))   return `<td class="cell-paid">${isPastOrCurrent(mo) ? '✓' : '↑'}</td>`;
-                  if (!isPastOrCurrent(mo))   return `<td class="cell-empty" style="opacity:0.4">—</td>`;
-                  return `<td class="cell-unpaid">✗</td>`;
+                  const oc = payIdx !== -1 ? `onclick="togglePaymentCell(${payIdx},'${mo}')" style="cursor:pointer"` : '';
+                  if (isPaid(m.months[mo]))  return `<td class="cell-paid" ${oc}>${isPastOrCurrent(mo) ? '✓' : '↑'}</td>`;
+                  if (!isPastOrCurrent(mo))  return `<td class="cell-empty" style="opacity:0.4${payIdx !== -1 ? ';cursor:pointer' : ''}" ${payIdx !== -1 ? `onclick="togglePaymentCell(${payIdx},'${mo}')"` : ''}>—</td>`;
+                  return `<td class="cell-unpaid" ${oc}>✗</td>`;
                 }).join('')}
                 <td style="color:${C_GREEN};font-weight:600;white-space:nowrap">${formatCurrency(m.totalPaid)}</td>
                 <td style="color:${m.totalPending > 0 ? C_RED : C_MUTED};font-weight:600;white-space:nowrap">
                   ${m.totalPending > 0 ? formatCurrency(m.totalPending) : '—'}
                 </td>
-              </tr>`).join('')}
+              </tr>`;
+            }).join('')}
           </tbody>
         </table>
       </div>
@@ -417,4 +421,37 @@ function shareWhatsApp() {
   msg += `\nJazakallah Khair 🤲`;
 
   window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
+}
+
+// ── Toggle payment cell ───────────────────────────────────
+
+function togglePaymentCell(payIdx, mo) {
+  if (!STATE.accessToken) { showToast('Write ke liye pehle Sync karein 🔄', 'error'); return; }
+  const p = STATE.allPayments[payIdx];
+  if (!p) return;
+  const months = Object.keys(p.months);
+  const mIdx   = months.indexOf(mo);
+  if (mIdx === -1) return;
+  const col      = colLetter(3 + mIdx);
+  const newVal   = isPaid(p.months[mo]) ? '' : 'Paid';
+  const action   = newVal === 'Paid' ? 'Paid mark karein' : 'Unpaid mark karein';
+  const cleanName = p.name.replace(/\(.*?\)/g, '').trim();
+  showConfirm(
+    `${action}?`,
+    `<b>${cleanName}</b> — ${mo}<br><span style="color:var(--muted);font-size:12px">${isPaid(p.months[mo]) ? 'Abhi Paid ✓ hai → Unpaid karna chahte hain?' : 'Abhi Unpaid ✗ hai → Paid karna chahte hain?'}</span>`,
+    async () => {
+      try {
+        const session = STATE.currentSession;
+        await sheetsPut(`${session.sheet}!${col}${p.row}`, [[newVal]]);
+        STATE.allPayments[payIdx].months[mo] = newVal;
+        const paidCount = Object.values(STATE.allPayments[payIdx].months).filter(v => isPaid(v)).length;
+        STATE.allPayments[payIdx].total = String(paidCount * FEE);
+        saveCache(session.label);
+        showToast(newVal === 'Paid' ? '✅ Paid ho gaya!' : '✗ Unpaid ho gaya!');
+        renderPayments();
+      } catch(e) {
+        showToast(e.message === 'AUTH_EXPIRED' ? 'Session expired — sync karein' : 'Error: ' + e.message, 'error');
+      }
+    }
+  );
 }

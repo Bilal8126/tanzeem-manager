@@ -130,6 +130,52 @@ async function installApp() {
   _installPrompt = null;
 }
 
+// ── Column letter helper (0-indexed) ─────────────────────
+function colLetter(n) {
+  let s = '';
+  n++;
+  while (n > 0) {
+    n--;
+    s = String.fromCharCode(65 + (n % 26)) + s;
+    n = Math.floor(n / 26);
+  }
+  return s;
+}
+
+// ── Confirmation modal ────────────────────────────────────
+function showConfirm(title, body, onYes) {
+  let overlay = document.getElementById('confirmOverlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'confirmOverlay';
+    overlay.className = 'modal-overlay';
+    overlay.style.zIndex = '300';
+    overlay.innerHTML = `
+      <div class="modal" onclick="event.stopPropagation()">
+        <div class="modal-handle"></div>
+        <div id="confirmContent"></div>
+      </div>`;
+    overlay.addEventListener('click', closeConfirm);
+    document.body.appendChild(overlay);
+  }
+  document.getElementById('confirmContent').innerHTML = `
+    <div class="modal-header">
+      <div class="modal-title">${title}</div>
+      <button class="close-btn" onclick="closeConfirm()">×</button>
+    </div>
+    <p style="color:var(--muted);font-size:14px;margin-bottom:22px;line-height:1.6">${body}</p>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-secondary" style="flex:1" onclick="closeConfirm()">Nahi, Cancel</button>
+      <button class="btn btn-primary" style="flex:1" id="confirmYesBtn">Haan, Confirm</button>
+    </div>`;
+  document.getElementById('confirmYesBtn').onclick = () => { closeConfirm(); onYes(); };
+  overlay.classList.add('open');
+}
+
+function closeConfirm() {
+  document.getElementById('confirmOverlay')?.classList.remove('open');
+}
+
 // ── App Init ─────────────────────────────────────────────
 window.addEventListener('load', () => {
   STATE.currentSession = CONFIG.SESSIONS[STATE.currentSessionIdx];

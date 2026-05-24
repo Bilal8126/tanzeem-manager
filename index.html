@@ -179,6 +179,17 @@
 </div>
 
 
+<!-- Finance Form Modal -->
+<div id="financeFormOverlay" class="modal-overlay" onclick="closeFinanceForm()">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div id="financeFormContent"></div>
+  </div>
+</div>
+
+<!-- Finance FAB -->
+<button id="financeFab" class="fab" onclick="openFinanceForm(STATE.currentFinanceTab==='donations'?'donation':'expense',null)" style="display:none" title="Add">+</button>
+
 <!-- Member Profile Modal -->
 <div id="memberProfileOverlay" class="modal-overlay" onclick="closeMemberProfile()">
   <div class="modal" onclick="event.stopPropagation()">

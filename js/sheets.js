@@ -7,6 +7,32 @@ async function sheetsGet(range) {
   return d.values || [];
 }
 
+async function sheetsPut(range, values) {
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/${encodeURIComponent(range)}?valueInputOption=USER_ENTERED`;
+  const r = await fetch(url, {
+    method: 'PUT',
+    headers: { Authorization: 'Bearer ' + STATE.accessToken, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ values })
+  });
+  if (r.status === 401) throw new Error('AUTH_EXPIRED');
+  const d = await r.json();
+  if (d.error) throw new Error(d.error.message);
+  return d;
+}
+
+async function sheetsAppend(sheetTab, values) {
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/${encodeURIComponent(sheetTab + '!A1')}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
+  const r = await fetch(url, {
+    method: 'POST',
+    headers: { Authorization: 'Bearer ' + STATE.accessToken, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ values })
+  });
+  if (r.status === 401) throw new Error('AUTH_EXPIRED');
+  const d = await r.json();
+  if (d.error) throw new Error(d.error.message);
+  return d;
+}
+
 // ── Local cache (per session) ─────────────────────────
 function _cacheKey(label) { return 'tanzeem_v1_' + label; }
 
@@ -174,12 +200,15 @@ function parsePayments(rows) {
   }
 }
 
+const _FOOTER = ['total', 'grand', '---', 'subtotal', 'sum'];
+
 function parseDonations(rows) {
   STATE.allDonations = [];
   if (rows.length < 2) return;
   for (let i = 1; i < rows.length; i++) {
     const r = rows[i];
     if (!r || !r[1]) continue;
+    if (_FOOTER.some(w => r[1].toString().toLowerCase().includes(w))) continue;
     STATE.allDonations.push({ row: i+1, sr: r[0], donor: r[1], amount: r[2], date: r[3], note: r[4] });
   }
 }
@@ -190,6 +219,7 @@ function parseExpenses(rows) {
   for (let i = 1; i < rows.length; i++) {
     const r = rows[i];
     if (!r || !r[1]) continue;
+    if (_FOOTER.some(w => r[1].toString().toLowerCase().includes(w))) continue;
     STATE.allExpenses.push({ row: i+1, sr: r[0], desc: r[1], amount: r[2], date: r[3], category: r[4], session: r[5] });
   }
 }

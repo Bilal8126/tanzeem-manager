@@ -109,7 +109,10 @@ function openMemberProfile(idx) {
           ${member.address ? `<div style="font-size:11px;color:var(--muted);margin-top:2px">${member.address}</div>` : ''}
         </div>
       </div>
-      <button class="close-btn" onclick="closeMemberProfile()">×</button>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="close-btn" style="background:#f0fdf4;color:var(--green-dark);font-size:15px" onclick="openEditMember(${idx})">✏</button>
+        <button class="close-btn" onclick="closeMemberProfile()">×</button>
+      </div>
     </div>
 
     ${monthKeys.length > 0 ? `
@@ -215,3 +218,62 @@ function shareWhatsAppMember(idx) {
   window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
 }
 
+// ── Member Edit ───────────────────────────────────────────
+
+let _editMemberStatus = null;
+
+function openEditMember(idx) {
+  const m = STATE.allMembers[idx];
+  if (!m) return;
+  _editMemberStatus = m.status;
+  document.getElementById('memberProfileContent').innerHTML = `
+    <div class="modal-header">
+      <div class="modal-title">Edit Member</div>
+      <button class="close-btn" onclick="openMemberProfile(${idx})">×</button>
+    </div>
+    <div class="form-group">
+      <label>Naam</label>
+      <input id="em_name" value="${m.name.replace(/"/g, '&quot;')}" placeholder="Naam likhein...">
+    </div>
+    <div class="form-group">
+      <label>Status</label>
+      <div style="display:flex;gap:8px">
+        <button id="emStatusActive" class="btn ${m.status === 'Active' ? 'btn-primary' : 'btn-secondary'}" style="flex:1;padding:10px" onclick="setEditStatus('Active')">✅ Active</button>
+        <button id="emStatusInactive" class="btn ${m.status !== 'Active' ? 'btn-danger' : 'btn-secondary'}" style="flex:1;padding:10px" onclick="setEditStatus('Inactive')">❌ Inactive</button>
+      </div>
+    </div>
+    <button class="btn btn-primary" style="width:100%;margin-top:6px" onclick="saveEditMember(${idx})">💾 Save Changes</button>
+  `;
+}
+
+function setEditStatus(s) {
+  _editMemberStatus = s;
+  document.getElementById('emStatusActive').className   = 'btn ' + (s === 'Active' ? 'btn-primary'   : 'btn-secondary');
+  document.getElementById('emStatusInactive').className = 'btn ' + (s !== 'Active' ? 'btn-danger' : 'btn-secondary');
+}
+
+function saveEditMember(idx) {
+  const m = STATE.allMembers[idx];
+  if (!m) return;
+  if (!STATE.accessToken) { showToast('Write ke liye pehle Sync karein 🔄', 'error'); return; }
+  const newName   = (document.getElementById('em_name').value || '').trim();
+  const newStatus = _editMemberStatus || m.status;
+  if (!newName) { showToast('Naam khali nahi ho sakta', 'error'); return; }
+  const changes = [];
+  if (newName !== m.name)     changes.push(`Naam: <b>${m.name}</b> → <b>${newName}</b>`);
+  if (newStatus !== m.status) changes.push(`Status: <b>${m.status}</b> → <b>${newStatus}</b>`);
+  if (!changes.length) { openMemberProfile(idx); return; }
+  showConfirm('Yeh changes save karein?', changes.join('<br>'), async () => {
+    try {
+      if (newName !== m.name)     await sheetsPut(`Members List!B${m.row}`, [[newName]]);
+      if (newStatus !== m.status) await sheetsPut(`Members List!G${m.row}`, [[newStatus]]);
+      STATE.allMembers[idx].name   = newName;
+      STATE.allMembers[idx].status = newStatus;
+      saveCache(STATE.currentSession.label);
+      showToast('Member update ho gaya! ✅');
+      openMemberProfile(idx);
+    } catch(e) {
+      showToast(e.message === 'AUTH_EXPIRED' ? 'Session expired — sync karein' : 'Error: ' + e.message, 'error');
+    }
+  });
+}

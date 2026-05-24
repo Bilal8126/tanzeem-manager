@@ -9,6 +9,8 @@ function showScreen(name, el) {
   document.getElementById('screen-' + name).classList.add('active');
   if (el) el.classList.add('active');
   STATE.currentScreen = name;
+  const fab = document.getElementById('financeFab');
+  if (fab) fab.style.display = name === 'finance' ? 'flex' : 'none';
   const titles = { dashboard: 'Dashboard', members: 'Members', payments: 'Payments', finance: 'Finance', ai: 'AI Chat' };
   document.getElementById('screenTitle').textContent = titles[name] || name;
   renderCurrentScreen();
