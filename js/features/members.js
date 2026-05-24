@@ -367,8 +367,16 @@ function openAddMember() {
       <input id="nm_mobile" type="tel" placeholder="Mobile number...">
     </div>
     <div class="form-group">
+      <label>Date of Joining (DOJ)</label>
+      <input id="nm_doj" type="date">
+    </div>
+    <div class="form-group">
       <label>Address</label>
       <input id="nm_address" placeholder="Ghar ka pata...">
+    </div>
+    <div class="form-group">
+      <label>Aadhar Card Number</label>
+      <input id="nm_aadhar" type="tel" placeholder="Aadhar number...">
     </div>
     <div class="form-group">
       <label>Status</label>
@@ -392,22 +400,25 @@ function setNewMemberStatus(s) {
 }
 
 function saveNewMember() {
-  const name    = (document.getElementById('nm_name').value    || '').trim();
-  const mobile  = (document.getElementById('nm_mobile').value  || '').trim();
-  const address = (document.getElementById('nm_address').value || '').trim();
-  const status  = _newMemberStatus;
+  const name   = (document.getElementById('nm_name').value   || '').trim();
+  const mobile = (document.getElementById('nm_mobile').value || '').trim();
+  const doj    = (document.getElementById('nm_doj').value    || '').trim();
+  const address= (document.getElementById('nm_address').value|| '').trim();
+  const aadhar = (document.getElementById('nm_aadhar').value || '').trim();
+  const status = _newMemberStatus;
   if (!name) { showToast('Naam likhein', 'error'); return; }
   const nextId = STATE.allMembers.length + 1;
   showConfirm(
     'Member add karein?',
-    `<b>${name}</b>${mobile ? '<br>📞 ' + mobile : ''}${address ? '<br>🏠 ' + address : ''}<br>Status: ${status}`,
+    `<b>${name}</b>${mobile ? '<br>📞 ' + mobile : ''}${doj ? '<br>DOJ: ' + doj : ''}${address ? '<br>🏠 ' + address : ''}<br>Status: ${status}`,
     async () => {
       try {
-        await sheetsAppend('Members List', [[nextId, name, mobile, '', address, '', status, '']]);
+        // Sheet columns: A=#, B=Name, C=Mobile, D=DOJ, E=Address, F=Aadhar, G=Status, H=DOE
+        await sheetsAppend('Members List', [[nextId, name, mobile, doj, address, aadhar, status, '']]);
         const newRow = STATE.allMembers.length > 0
           ? Math.max(...STATE.allMembers.map(m => m.row)) + 1
           : 2;
-        STATE.allMembers.push({ row: newRow, id: String(nextId), name, mobile, doj: '', address, aadhar: '', status, doe: '' });
+        STATE.allMembers.push({ row: newRow, id: String(nextId), name, mobile, doj, address, aadhar, status, doe: '' });
         saveCache(STATE.currentSession.label);
         showToast('Member add ho gaya! ✅');
         closeMemberProfile();
