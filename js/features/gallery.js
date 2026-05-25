@@ -15,6 +15,11 @@ function _thumbUrl(id, size = 400) {
   return `https://drive.google.com/thumbnail?id=${id}&sz=w${size}`;
 }
 
+// Worker uses admin credentials — only need to know user is signed in, not have their token
+function _gallerySgnedIn() {
+  return !!STATE.accessToken || !!localStorage.getItem('tanzeem_signed_in');
+}
+
 // ── Worker API helpers ────────────────────────────────────────
 
 async function _wGet(path) {
@@ -43,7 +48,7 @@ async function loadGalleryPhotos() {
   const el = document.getElementById('galleryContent');
   if (el && !_gLoaded) el.innerHTML = '<div class="loading">Loading...</div>';
 
-  if (!STATE.accessToken) {
+  if (!_gallerySgnedIn()) {
     renderGallery();
     return;
   }
@@ -77,7 +82,7 @@ function renderGallery() {
         </button>`).join('')}
     </div>`;
 
-  if (!STATE.accessToken) {
+  if (!_gallerySgnedIn()) {
     el.innerHTML = filterBar + `
       <div class="empty-state">
         <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -186,7 +191,7 @@ function cancelGalleryMultiSelect() {
 // ── Upload ────────────────────────────────────────────────────
 
 function openGalleryUpload() {
-  if (!STATE.accessToken) { showToast('Upload ke liye pehle Sign in karein', 'error'); return; }
+  if (!_gallerySgnedIn()) { showToast('Upload ke liye pehle Sign in karein', 'error'); return; }
   document.getElementById('galleryUploadOverlay').classList.add('open');
 }
 
