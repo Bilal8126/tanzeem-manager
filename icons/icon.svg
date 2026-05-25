@@ -1,44 +1,176 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#16a34a"/>
-      <stop offset="100%" stop-color="#052e16"/>
+    <!-- Rich deep-green radial background -->
+    <radialGradient id="bgG" cx="50%" cy="38%" r="68%">
+      <stop offset="0%"   stop-color="#1e7a45"/>
+      <stop offset="52%"  stop-color="#0f4a29"/>
+      <stop offset="100%" stop-color="#041d10"/>
+    </radialGradient>
+    <!-- Gold gradient for text & ornaments -->
+    <linearGradient id="goldG" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%"   stop-color="#fef3c7"/>
+      <stop offset="50%"  stop-color="#fbbf24"/>
+      <stop offset="100%" stop-color="#b45309"/>
     </linearGradient>
+    <!-- White-blue gradient for mosque body -->
+    <linearGradient id="wG" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%"   stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#e0f2fe"/>
+    </linearGradient>
+    <!-- Crescent cutout mask -->
+    <mask id="cMask">
+      <circle cx="0" cy="0" r="26" fill="white"/>
+      <circle cx="11" cy="-7" r="20" fill="black"/>
+    </mask>
   </defs>
 
-  <!-- Background -->
-  <rect width="512" height="512" rx="80" fill="url(#bg)"/>
+  <!-- ── Background ─────────────────────────────────── -->
+  <rect width="512" height="512" rx="90" fill="url(#bgG)"/>
+  <!-- Subtle vignette overlay -->
+  <rect width="512" height="512" rx="90" fill="none"
+        stroke="rgba(255,255,255,0.055)" stroke-width="30"/>
+
+  <!-- ── Outer gold decorative border ──────────────── -->
+  <rect x="12" y="12" width="488" height="488" rx="80"
+        fill="none" stroke="#b45309" stroke-width="2.5" stroke-dasharray="10 7" opacity="0.75"/>
+  <rect x="20" y="20" width="472" height="472" rx="73"
+        fill="none" stroke="#fbbf24" stroke-width="1" opacity="0.28"/>
+
+  <!-- ── Islamic 8-pointed star ornaments (corners) ─ -->
+  <!-- Each star = two overlapping squares rotated 45° apart -->
+  <g opacity="0.50" fill="#fbbf24">
+    <!-- top-left -->
+    <g transform="translate(64,64)">
+      <polygon points="0,-16 3.8,-6.3 12.5,-12.5 6.3,-3.8 16,0 6.3,3.8 12.5,12.5 3.8,6.3 0,16 -3.8,6.3 -12.5,12.5 -6.3,3.8 -16,0 -6.3,-3.8 -12.5,-12.5 -3.8,-6.3"/>
+      <circle r="4.5"/>
+    </g>
+    <!-- top-right -->
+    <g transform="translate(448,64)">
+      <polygon points="0,-16 3.8,-6.3 12.5,-12.5 6.3,-3.8 16,0 6.3,3.8 12.5,12.5 3.8,6.3 0,16 -3.8,6.3 -12.5,12.5 -6.3,3.8 -16,0 -6.3,-3.8 -12.5,-12.5 -3.8,-6.3"/>
+      <circle r="4.5"/>
+    </g>
+    <!-- bottom-left -->
+    <g transform="translate(64,448)">
+      <polygon points="0,-16 3.8,-6.3 12.5,-12.5 6.3,-3.8 16,0 6.3,3.8 12.5,12.5 3.8,6.3 0,16 -3.8,6.3 -12.5,12.5 -6.3,3.8 -16,0 -6.3,-3.8 -12.5,-12.5 -3.8,-6.3"/>
+      <circle r="4.5"/>
+    </g>
+    <!-- bottom-right -->
+    <g transform="translate(448,448)">
+      <polygon points="0,-16 3.8,-6.3 12.5,-12.5 6.3,-3.8 16,0 6.3,3.8 12.5,12.5 3.8,6.3 0,16 -3.8,6.3 -12.5,12.5 -6.3,3.8 -16,0 -6.3,-3.8 -12.5,-12.5 -3.8,-6.3"/>
+      <circle r="4.5"/>
+    </g>
+  </g>
+
+  <!-- ── Crescent Moon + Star ───────────────────────── -->
+  <g transform="translate(256,118)">
+    <!-- Crescent (gold circle with offset cutout via mask) -->
+    <circle r="26" fill="#fbbf24" mask="url(#cMask)"/>
+    <!-- Glow ring behind crescent -->
+    <circle r="32" fill="none" stroke="#fbbf24" stroke-width="1" opacity="0.22"/>
+    <!-- 5-pointed star beside crescent -->
+    <g transform="translate(32,-10)">
+      <polygon
+        points="0,-13 3.1,-4.3 12.4,-4.0 5.0,1.6 7.6,11 0,5.4 -7.6,11 -5.0,1.6 -12.4,-4.0 -3.1,-4.3"
+        fill="#fbbf24"/>
+    </g>
+  </g>
+
+  <!-- ── Mosque ─────────────────────────────────────── -->
 
   <!-- Left minaret -->
-  <rect x="112" y="180" width="32" height="195" fill="white" opacity="0.95"/>
-  <polygon points="112,180 128,142 144,180" fill="white" opacity="0.95"/>
-  <circle cx="128" cy="135" r="8" fill="#22c55e"/>
+  <g opacity="0.96">
+    <rect x="92" y="228" width="30" height="152" fill="url(#wG)" rx="3"/>
+    <path d="M92,230 L107,188 L122,230Z" fill="url(#wG)"/>
+    <!-- Minaret cap finial -->
+    <circle cx="107" cy="183" r="8"  fill="#fbbf24"/>
+    <circle cx="107" cy="172" r="5"  fill="#fbbf24" opacity="0.75"/>
+    <circle cx="107" cy="164" r="3"  fill="#fbbf24" opacity="0.5"/>
+    <!-- Gold band -->
+    <rect x="92" y="244" width="30" height="5" fill="#fbbf24" rx="1" opacity="0.55"/>
+    <!-- Windows -->
+    <rect x="99" y="260" width="16" height="20" fill="#052e16" rx="4" opacity="0.55"/>
+    <rect x="99" y="292" width="16" height="20" fill="#052e16" rx="4" opacity="0.55"/>
+  </g>
 
   <!-- Right minaret -->
-  <rect x="368" y="180" width="32" height="195" fill="white" opacity="0.95"/>
-  <polygon points="368,180 384,142 400,180" fill="white" opacity="0.95"/>
-  <circle cx="384" cy="135" r="8" fill="#22c55e"/>
+  <g opacity="0.96">
+    <rect x="390" y="228" width="30" height="152" fill="url(#wG)" rx="3"/>
+    <path d="M390,230 L405,188 L420,230Z" fill="url(#wG)"/>
+    <circle cx="405" cy="183" r="8"  fill="#fbbf24"/>
+    <circle cx="405" cy="172" r="5"  fill="#fbbf24" opacity="0.75"/>
+    <circle cx="405" cy="164" r="3"  fill="#fbbf24" opacity="0.5"/>
+    <rect x="390" y="244" width="30" height="5" fill="#fbbf24" rx="1" opacity="0.55"/>
+    <rect x="397" y="260" width="16" height="20" fill="#052e16" rx="4" opacity="0.55"/>
+    <rect x="397" y="292" width="16" height="20" fill="#052e16" rx="4" opacity="0.55"/>
+  </g>
 
-  <!-- Side domes -->
-  <path d="M152 258 Q188 212 224 258Z" fill="white" opacity="0.85"/>
-  <path d="M288 258 Q324 212 360 258Z" fill="white" opacity="0.85"/>
+  <!-- Flanking small domes -->
+  <path d="M122 280 Q154 244 186 280Z" fill="url(#wG)" opacity="0.90"/>
+  <path d="M326 280 Q358 244 390 280Z" fill="url(#wG)" opacity="0.90"/>
+  <circle cx="154" cy="240" r="7" fill="#fbbf24" opacity="0.90"/>
+  <circle cx="358" cy="240" r="7" fill="#fbbf24" opacity="0.90"/>
 
   <!-- Main dome -->
-  <path d="M168 258 Q256 152 344 258Z" fill="white"/>
+  <path d="M146 280 Q256 142 366 280Z" fill="url(#wG)"/>
+  <!-- Dome highlight sheen -->
+  <path d="M178 270 Q256 158 334 270"
+        fill="none" stroke="rgba(255,255,255,0.30)" stroke-width="4" stroke-linecap="round"/>
+  <!-- Dome tip finial -->
+  <circle cx="256" cy="153" r="6" fill="#fbbf24"/>
 
-  <!-- Crescent on dome -->
-  <path d="M248 196 a18 18 0 1 1 18 0 a11 11 0 1 0 -18 0Z" fill="#16a34a"/>
+  <!-- Mosque main body -->
+  <rect x="146" y="280" width="220" height="100" fill="url(#wG)"/>
 
-  <!-- Main body -->
-  <rect x="168" y="258" width="176" height="112" fill="white"/>
+  <!-- Central pointed doorway arch -->
+  <path d="M226,380 L226,332 Q226,305 256,305 Q286,305 286,332 L286,380Z"
+        fill="#052e16" opacity="0.55"/>
 
-  <!-- Door arch -->
-  <path d="M234 370 L234 308 a22 22 0 0 1 44 0 L278 370Z" fill="#0b3d20"/>
+  <!-- Side arched windows -->
+  <path d="M157,376 L157,338 a13,13 0 0 1 26,0 L183,376Z" fill="#052e16" opacity="0.35"/>
+  <path d="M329,376 L329,338 a13,13 0 0 1 26,0 L355,376Z" fill="#052e16" opacity="0.35"/>
 
-  <!-- Windows -->
-  <ellipse cx="200" cy="288" rx="12" ry="16" fill="#0b3d20" opacity="0.45"/>
-  <ellipse cx="312" cy="288" rx="12" ry="16" fill="#0b3d20" opacity="0.45"/>
+  <!-- Small oval windows -->
+  <ellipse cx="202" cy="300" rx="10" ry="14" fill="#052e16" opacity="0.32"/>
+  <ellipse cx="310" cy="300" rx="10" ry="14" fill="#052e16" opacity="0.32"/>
 
-  <!-- Base -->
-  <rect x="100" y="370" width="312" height="10" rx="5" fill="white" opacity="0.9"/>
+  <!-- Ground base platform -->
+  <rect x="86"  y="378" width="340" height="11" fill="url(#wG)" rx="5.5" opacity="0.92"/>
+  <rect x="100" y="387" width="312" height="5"  fill="rgba(255,255,255,0.40)" rx="2.5"/>
+
+  <!-- ── Gold ornamental divider ─────────────────────── -->
+  <g transform="translate(0,403)">
+    <line x1="52"  y1="0" x2="454" y2="0" stroke="#b45309" stroke-width="1.5" opacity="0.80"/>
+    <line x1="52"  y1="5" x2="454" y2="5" stroke="#fbbf24" stroke-width="0.7" opacity="0.35"/>
+    <!-- Central diamond -->
+    <polygon points="256,-7 263,0 256,7 249,0" fill="#fbbf24"/>
+    <!-- Flanking dots -->
+    <circle cx="218" cy="2.5" r="2.2" fill="#fbbf24" opacity="0.65"/>
+    <circle cx="294" cy="2.5" r="2.2" fill="#fbbf24" opacity="0.65"/>
+    <circle cx="188" cy="2.5" r="1.4" fill="#fbbf24" opacity="0.40"/>
+    <circle cx="324" cy="2.5" r="1.4" fill="#fbbf24" opacity="0.40"/>
+  </g>
+
+  <!-- ── Urdu text: تنظیم عبد مصطفیٰ ──────────────── -->
+  <text
+    x="256" y="448"
+    font-family="'Noto Naskh Arabic','Scheherazade New','Amiri','Traditional Arabic','Arabic Typesetting',serif"
+    font-size="34"
+    font-weight="700"
+    fill="url(#goldG)"
+    text-anchor="middle"
+    dominant-baseline="middle"
+    direction="rtl"
+    unicode-bidi="embed">تنظیم عبد مصطفیٰ</text>
+
+  <!-- ── English name ───────────────────────────────── -->
+  <text
+    x="256" y="484"
+    font-family="-apple-system,'Segoe UI',Roboto,sans-serif"
+    font-size="13"
+    font-weight="600"
+    fill="rgba(255,255,255,0.52)"
+    text-anchor="middle"
+    dominant-baseline="middle"
+    letter-spacing="2.2">TANZEEM ABD-E-MUSTAFA</text>
+
 </svg>
