@@ -126,7 +126,7 @@ function renderPayments() {
 
   if (STATE.allPayments.length === 0) {
     document.getElementById('paymentsContent').innerHTML =
-      '<div class="empty-state"><div class="empty-state-icon">💳</div><p>No payment data for this session</p></div>';
+      '<div class="empty-state"><div class="empty-state-icon"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/><path d="M6 15h4"/></svg></div><p>No payment data for this session</p></div>';
     return;
   }
 
@@ -202,7 +202,7 @@ function renderPayments() {
             <span>Total</span><span>${paidThisMon.length + paidThisMonInactive.length}</span>
           </div>
         </div>
-        <div class="metric-bg-icon">✅</div>
+        <div class="metric-bg-icon"><svg width="58" height="58" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.18"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg></div>
       </div>
       <div class="metric" style="background:linear-gradient(135deg,#b91c1c,#e53e3e)">
         <div class="metric-label">Pending · ${sel}</div>
@@ -218,7 +218,7 @@ function renderPayments() {
             <span>Total</span><span>${pendingThisMon.length + pendingThisMonInact.length}</span>
           </div>
         </div>` : `<div class="metric-value">—</div>`}
-        <div class="metric-bg-icon">⏳</div>
+        <div class="metric-bg-icon"><svg width="58" height="58" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.18"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
       </div>
       <div class="metric blue">
         <div class="metric-label">Total Collected</div>
@@ -233,7 +233,7 @@ function renderPayments() {
             <span>Total</span><span>${formatCurrency(collectedTotal)}</span>
           </div>
         </div>
-        <div class="metric-bg-icon">💰</div>
+        <div class="metric-bg-icon"><svg width="58" height="58" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.18"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 6v2m0 8v2"/></svg></div>
       </div>
       <div class="metric orange">
         <div class="metric-label">Total Pending</div>
@@ -249,21 +249,24 @@ function renderPayments() {
             <span>Total</span><span>${formatCurrency(pendingTotalSel)}</span>
           </div>
         </div>
-        <div class="metric-bg-icon">📋</div>
+        <div class="metric-bg-icon"><svg width="58" height="58" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.18"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg></div>
       </div>
     </div>` : ''}
 
     <!-- Year Target Bar (current session only) -->
     ${isCurrentSession ? `
     <div style="background:linear-gradient(135deg,#0f4a29,#1a6b3c);border-radius:12px;padding:10px 14px;color:#fff;margin-bottom:12px">
-      <div style="font-size:12px;font-weight:600;margin-bottom:2px">📅 Is Session Ka Expected Amount</div>
+      <div style="font-size:12px;font-weight:600;margin-bottom:2px;display:flex;align-items:center;gap:6px">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Is Session Ka Expected Amount
+      </div>
       <div style="font-size:10px;opacity:0.7;margin-bottom:8px">Agar tamam members pura saal dein — 12 mahine × Rs.${FEE}</div>
-      <div style="display:flex;justify-content:space-between;font-size:12px;opacity:0.88;margin-bottom:4px">
-        <span>✅ Active (${activeStats.length} members)</span>
+      <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;opacity:0.88;margin-bottom:4px">
+        <span style="display:flex;align-items:center;gap:5px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>Active (${activeStats.length} members)</span>
         <span style="font-weight:700">${formatCurrency(activeStats.length * 12 * FEE)}</span>
       </div>
-      <div style="display:flex;justify-content:space-between;font-size:12px;opacity:0.88;margin-bottom:6px">
-        <span>🚫 In Active (${inactiveStats.length} members)</span>
+      <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;opacity:0.88;margin-bottom:6px">
+        <span style="display:flex;align-items:center;gap:5px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fca5a5" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>In Active (${inactiveStats.length} members)</span>
         <span style="font-weight:700">${formatCurrency(inactiveStats.length * 12 * FEE)}</span>
       </div>
       <div style="display:flex;justify-content:space-between;font-size:14px;font-weight:700;border-top:1px solid rgba(255,255,255,0.3);padding-top:6px">
@@ -276,13 +279,13 @@ function renderPayments() {
     ${isCurrentSession ? `
     <button class="whatsapp-btn" onclick="showWhatsAppPopup()"
       style="justify-content:center;gap:10px;font-size:14px">
-      ${WA_SVG} 📤 WhatsApp Share — ${sel}
+      ${WA_SVG} WhatsApp Share — ${sel}
     </button>` : ''}
 
     ${isCurrentSession ? `<!-- Overdue Threshold Picker -->
     <div class="card" style="padding:10px 14px">
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-        <span style="font-size:12px;font-weight:600;color:${C_ORANGE};white-space:nowrap">⚠️ Overdue if unpaid ≥</span>
+        <span style="font-size:12px;font-weight:600;color:${C_ORANGE};white-space:nowrap;display:inline-flex;align-items:center;gap:5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="${C_ORANGE}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Overdue if unpaid ≥</span>
         <div class="month-pills" style="flex:1">
           ${[1,2,3,4,5,6].map(n => `
             <button class="month-pill ${_overdueThreshold === n ? 'active' : ''}"
@@ -297,8 +300,8 @@ function renderPayments() {
     <div class="card overdue-card">
       <div class="toggle-header" onclick="toggleOverdue()"
         style="cursor:pointer;display:flex;align-items:center;gap:8px">
-        <span style="font-size:13px;font-weight:600;flex:1;color:${C_RED}">
-          ⚠️ Overdue — ${_overdueThreshold}+ Months Unpaid
+        <span style="font-size:13px;font-weight:600;flex:1;color:${C_RED};display:flex;align-items:center;gap:6px">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="${C_RED}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Overdue — ${_overdueThreshold}+ Months Unpaid
         </span>
         <span class="section-count" style="background:#fecaca;color:${C_RED}">${overdue.length}</span>
         ${chevron(_showOverdue)}
@@ -325,8 +328,8 @@ function renderPayments() {
     <div class="card" style="border-left:3px solid ${C_GREY}">
       <div class="toggle-header" onclick="toggleInactive()"
         style="cursor:pointer;display:flex;align-items:center;gap:8px">
-        <span style="font-size:13px;font-weight:600;flex:1;color:${C_GREY}">
-          🚫 In Active Members
+        <span style="font-size:13px;font-weight:600;flex:1;color:${C_GREY};display:flex;align-items:center;gap:6px">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="${C_GREY}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>In Active Members
         </span>
         <span class="section-count" style="background:#f1f5f9;color:${C_GREY}">${inactiveStats.length}</span>
         ${chevron(_showInactive)}
@@ -413,7 +416,7 @@ function renderPayments() {
       <div class="toggle-header" onclick="toggleSummary()"
         style="cursor:pointer;display:flex;align-items:center;gap:8px">
         <span style="font-size:13px;font-weight:600;flex:1">Member-wise Summary
-          <span style="font-size:10px;font-weight:400;color:${C_MUTED};margin-left:4px">(active only)</span>
+          <span style="font-size:10px;font-weight:400;color:${C_MUTED};margin-left:4px">(Active Only)</span>
         </span>
         <span class="section-count" style="background:#f0fdf4;color:${C_GREEN}">${activeStats.length}</span>
         ${chevron(_showSummary)}
@@ -456,7 +459,7 @@ function renderPayments() {
       <div class="toggle-header" onclick="toggleGrid()"
         style="cursor:pointer;display:flex;align-items:center;gap:8px;margin-bottom:0">
         <span style="font-size:13px;font-weight:600;flex:1">Full Payment Grid
-          <span style="font-size:10px;font-weight:400;color:${C_MUTED};margin-left:4px">(Regular members)</span>
+          <span style="font-size:10px;font-weight:400;color:${C_MUTED};margin-left:4px">(Regular Members)</span>
         </span>
         <span class="section-count" style="background:#f0f9ff;color:#0369a1">${stats.length}</span>
         ${chevron(_showGrid)}
@@ -676,18 +679,18 @@ function showWhatsAppPopup() {
     <div class="modal" onclick="event.stopPropagation()">
       <div class="modal-handle"></div>
       <div class="modal-header">
-        <div class="modal-title">📤 WhatsApp Share — ${sel}</div>
+        <div class="modal-title">WhatsApp Share — ${sel}</div>
         <button class="close-btn" onclick="closeWhatsAppPopup()">×</button>
       </div>
       <div style="display:flex;flex-direction:column;gap:10px;padding-top:4px">
         <button class="whatsapp-btn" style="margin:0" onclick="closeWhatsAppPopup();shareWhatsApp('active')">
-          ${WA_SVG} ✅ Active Members
+          ${WA_SVG} Active Members
         </button>
         <button class="whatsapp-btn" style="margin:0;background:linear-gradient(135deg,#b45309,#d97706)" onclick="closeWhatsAppPopup();shareWhatsApp('overdue')">
-          ${WA_SVG} ⚠️ Overdue Members
+          ${WA_SVG} <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Overdue Members
         </button>
         <button class="whatsapp-btn" style="margin:0;background:linear-gradient(135deg,#1d4ed8,#2563eb)" onclick="closeWhatsAppPopup();shareWhatsApp('all')">
-          ${WA_SVG} 📋 All Members (Active + In Active)
+          ${WA_SVG} All Members (Active + In Active)
         </button>
       </div>
     </div>`;
@@ -774,7 +777,7 @@ function _renderWaPaidPopup() {
     <div class="modal" onclick="event.stopPropagation()">
       <div class="modal-handle"></div>
       <div class="modal-header">
-        <div class="modal-title">📤 Payment Confirm — ${clean(_waPaidName)}</div>
+        <div class="modal-title">Payment Confirm — ${clean(_waPaidName)}</div>
         <button class="close-btn" onclick="closeWaPaidPopup()">×</button>
       </div>
       <div style="font-size:12px;color:#64748b;margin-bottom:12px">Kis mahine ki payment confirm karni hai? (multiple select ho sakta hai)</div>

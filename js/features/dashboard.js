@@ -19,22 +19,22 @@ function renderDashboard() {
       <div class="metric green">
         <div class="metric-label">Total Members</div>
         <div class="metric-value">${STATE.allMembers.length}</div>
-        <div class="metric-bg-icon">👥</div>
+        <div class="metric-bg-icon"><svg width="58" height="58" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.18"><circle cx="9" cy="7" r="3"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.13a4 4 0 0 1 0 7.75M21 21v-2a4 4 0 0 0-3-3.87"/></svg></div>
       </div>
       <div class="metric blue">
         <div class="metric-label">Regular Active</div>
         <div class="metric-value">${regularActive}</div>
-        <div class="metric-bg-icon">✅</div>
+        <div class="metric-bg-icon"><svg width="58" height="58" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.18"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg></div>
       </div>
       <div class="metric orange">
         <div class="metric-label">Grand Total</div>
         <div class="metric-value sm">${formatCurrency(s.grandTotal)}</div>
-        <div class="metric-bg-icon">💰</div>
+        <div class="metric-bg-icon"><svg width="58" height="58" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.18"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 6v2m0 8v2"/></svg></div>
       </div>
       <div class="metric purple">
         <div class="metric-label">Balance</div>
         <div class="metric-value sm" style="color:${balanceColor}">${formatCurrency(s.balance)}</div>
-        <div class="metric-bg-icon">📊</div>
+        <div class="metric-bg-icon"><svg width="58" height="58" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.18"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
       </div>
     </div>
 
@@ -58,10 +58,30 @@ function renderDashboard() {
 
     <div class="card">
       <div class="card-title">Member Overview</div>
-      <div class="stat-row"><span class="muted" style="font-weight:600">👤 Regular</span><span style="font-weight:700">${regular.length}</span></div>
-      <div class="stat-row" style="padding-left:14px"><span class="muted">Active</span><span style="color:#1a6b3c;font-weight:600">${regularActive}</span></div>
-      <div class="stat-row" style="padding-left:14px"><span class="muted">In Active</span><span style="color:#e53e3e;font-weight:600">${regularInactive}</span></div>
-      <div class="stat-row"><span class="muted" style="font-weight:600">🎁 Donors</span><span style="color:#1d4ed8;font-weight:700">${donors.length}</span></div>
+      <div class="stat-row">
+        <span style="display:flex;align-items:center;gap:7px;font-weight:600;color:var(--muted)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><circle cx="12" cy="8" r="4"/><path d="M4 20v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>Regular
+        </span>
+        <span style="font-weight:700">${regular.length}</span>
+      </div>
+      <div class="stat-row">
+        <span style="display:flex;align-items:center;gap:7px;font-weight:600;color:var(--muted)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1a6b3c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>Active
+        </span>
+        <span style="color:#1a6b3c;font-weight:600">${regularActive}</span>
+      </div>
+      <div class="stat-row">
+        <span style="display:flex;align-items:center;gap:7px;font-weight:600;color:var(--muted)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#e53e3e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>In Active
+        </span>
+        <span style="color:#e53e3e;font-weight:600">${regularInactive}</span>
+      </div>
+      <div class="stat-row">
+        <span style="display:flex;align-items:center;gap:7px;font-weight:600;color:var(--muted)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>Donors
+        </span>
+        <span style="color:#1d4ed8;font-weight:700">${donors.length}</span>
+      </div>
       <div class="stat-row total-row"><span>Total Members</span><span>${STATE.allMembers.length}</span></div>
     </div>`;
 

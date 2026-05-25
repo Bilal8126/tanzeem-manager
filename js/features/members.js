@@ -14,7 +14,7 @@ function renderMembers() {
   const initials = name => name.trim().split(' ').slice(0,2).map(w => w[0]).join('').toUpperCase();
 
   document.getElementById('membersList').innerHTML = list.length === 0
-    ? `<div class="empty-state"><div class="empty-state-icon">👤</div><p>No members found</p></div>`
+    ? `<div class="empty-state"><div class="empty-state-icon"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg></div><p>No members found</p></div>`
     : `<div class="section-header">
          <span class="section-title">Members</span>
          <span class="section-count">${list.length} found</span>
@@ -28,7 +28,12 @@ function renderMembers() {
             <div class="member-name">
               ${m.name}
               <span class="badge ${isActive(m) ? 'badge-active' : 'badge-inactive'}">${m.status}</span>
-              <span style="font-size:10px;padding:2px 6px;border-radius:8px;font-weight:600;${m.type === 'Donor' ? 'background:#dbeafe;color:#1d4ed8' : 'background:#f0fdf4;color:#15803d'}">${m.type || 'Regular'}</span>
+              <span style="display:inline-flex;align-items:center;gap:3px;font-size:10px;padding:2px 7px;border-radius:8px;font-weight:600;${m.type === 'Donor' ? 'background:#dbeafe;color:#1d4ed8' : 'background:#f0fdf4;color:#15803d'}">
+                ${m.type === 'Donor'
+                  ? `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>`
+                  : `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>`
+                }${m.type || 'Regular'}
+              </span>
             </div>
             <div class="member-sub">${m.mobile || 'No mobile'}</div>
             ${m.address ? `<div class="member-sub">${m.address}</div>` : ''}
@@ -100,7 +105,7 @@ function openMemberProfile(idx) {
           <span class="txn-month">${mo}</span>
           ${chip}
           ${amt}
-          ${canEdit ? `<span style="font-size:10px;color:#cbd5e1;flex-shrink:0">✏</span>` : ''}
+          ${canEdit ? `<span style="color:#cbd5e1;flex-shrink:0;display:flex;align-items:center"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></span>` : ''}
         </div>`;
     });
   }
@@ -113,14 +118,19 @@ function openMemberProfile(idx) {
           <div class="modal-title" style="font-size:16px">${member.name}</div>
           <div style="display:flex;align-items:center;gap:7px;margin-top:4px;flex-wrap:wrap">
             <span class="badge ${isActive ? 'badge-active' : 'badge-inactive'}">${member.status}</span>
-            <span style="font-size:10px;padding:2px 6px;border-radius:8px;font-weight:600;${(member.type||'Regular')==='Donor' ? 'background:#dbeafe;color:#1d4ed8' : 'background:#f0fdf4;color:#15803d'}">${member.type || 'Regular'}</span>
+            <span style="display:inline-flex;align-items:center;gap:3px;font-size:10px;padding:2px 7px;border-radius:8px;font-weight:600;${(member.type||'Regular')==='Donor' ? 'background:#dbeafe;color:#1d4ed8' : 'background:#f0fdf4;color:#15803d'}">
+              ${(member.type||'Regular')==='Donor'
+                ? `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>`
+                : `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>`
+              }${member.type || 'Regular'}
+            </span>
             ${member.mobile ? `<span style="font-size:12px;color:var(--muted)">${member.mobile}</span>` : ''}
           </div>
           ${member.address ? `<div style="font-size:11px;color:var(--muted);margin-top:2px">${member.address}</div>` : ''}
         </div>
       </div>
       <div style="display:flex;gap:8px;align-items:center">
-        <button class="close-btn" style="background:#f0fdf4;color:var(--green-dark);font-size:15px" onclick="openEditMember(${idx})">✏</button>
+        <button class="close-btn" style="background:#f0fdf4;color:var(--green-dark);display:flex;align-items:center;justify-content:center" onclick="openEditMember(${idx})"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
         <button class="close-btn" onclick="closeMemberProfile()">×</button>
       </div>
     </div>
@@ -286,19 +296,19 @@ function openEditMember(idx) {
     <div class="form-group">
       <label>Status</label>
       <div style="display:flex;gap:8px">
-        <button id="emStatusActive" class="btn ${m.status === 'Active' ? 'btn-primary' : 'btn-secondary'}" style="flex:1;padding:10px" onclick="setEditStatus('Active')">✅ Active</button>
-        <button id="emStatusInactive" class="btn ${m.status !== 'Active' ? 'btn-danger' : 'btn-secondary'}" style="flex:1;padding:10px" onclick="setEditStatus('In Active')">❌ Inactive</button>
+        <button id="emStatusActive" class="btn ${m.status === 'Active' ? 'btn-primary' : 'btn-secondary'}" style="flex:1;padding:10px;display:flex;align-items:center;justify-content:center;gap:7px" onclick="setEditStatus('Active')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>Active</button>
+        <button id="emStatusInactive" class="btn ${m.status !== 'Active' ? 'btn-danger' : 'btn-secondary'}" style="flex:1;padding:10px;display:flex;align-items:center;justify-content:center;gap:7px" onclick="setEditStatus('In Active')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>In Active</button>
       </div>
     </div>
     <div class="form-group">
       <label>Type</label>
       <div style="display:flex;gap:8px">
-        <button id="emTypeRegular" class="btn ${(m.type||'Regular')==='Regular' ? 'btn-primary' : 'btn-secondary'}" style="flex:1;padding:10px" onclick="setEditType('Regular')">👤 Regular</button>
-        <button id="emTypeDonor"   class="btn ${m.type==='Donor' ? 'btn-primary' : 'btn-secondary'}" style="flex:1;padding:10px" onclick="setEditType('Donor')">🎁 Donor</button>
+        <button id="emTypeRegular" class="btn ${(m.type||'Regular')==='Regular' ? 'btn-primary' : 'btn-secondary'}" style="flex:1;padding:10px;display:flex;align-items:center;justify-content:center;gap:7px" onclick="setEditType('Regular')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg> Regular</button>
+        <button id="emTypeDonor"   class="btn ${m.type==='Donor' ? 'btn-primary' : 'btn-secondary'}" style="flex:1;padding:10px;display:flex;align-items:center;justify-content:center;gap:7px" onclick="setEditType('Donor')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg> Donor</button>
       </div>
     </div>
-    <button class="btn btn-primary" style="width:100%;margin-top:6px" onclick="saveEditMember(${idx})">💾 Save Changes</button>
-    <button class="btn btn-danger" style="width:100%;margin-top:8px" onclick="deleteMember(${idx})">🗑 Member Delete Karein</button>
+    <button class="btn btn-primary" style="width:100%;margin-top:6px;display:flex;align-items:center;justify-content:center;gap:8px" onclick="saveEditMember(${idx})"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>Save Changes</button>
+    <button class="btn btn-danger" style="width:100%;margin-top:8px;display:flex;align-items:center;justify-content:center;gap:8px" onclick="deleteMember(${idx})"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>Member Delete Karein</button>
   `;
 }
 
@@ -400,25 +410,25 @@ function openAddMember() {
     <div class="form-group">
       <label>Aadhar Card</label>
       <div style="display:flex;gap:8px">
-        <button id="nmAadharNo" class="btn btn-secondary" style="flex:1;padding:10px" onclick="setNewMemberAadhar('No')">❌ No</button>
-        <button id="nmAadharYes" class="btn btn-secondary" style="flex:1;padding:10px" onclick="setNewMemberAadhar('Yes')">✅ Yes</button>
+        <button id="nmAadharNo" class="btn btn-secondary" style="flex:1;padding:10px;display:flex;align-items:center;justify-content:center;gap:7px" onclick="setNewMemberAadhar('No')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>No</button>
+        <button id="nmAadharYes" class="btn btn-secondary" style="flex:1;padding:10px;display:flex;align-items:center;justify-content:center;gap:7px" onclick="setNewMemberAadhar('Yes')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>Yes</button>
       </div>
     </div>
     <div class="form-group">
       <label>Type</label>
       <div style="display:flex;gap:8px">
-        <button id="nmTypeRegular" class="btn btn-primary" style="flex:1;padding:10px" onclick="setNewMemberType('Regular')">👤 Regular</button>
-        <button id="nmTypeDonor"   class="btn btn-secondary" style="flex:1;padding:10px" onclick="setNewMemberType('Donor')">🎁 Donor</button>
+        <button id="nmTypeRegular" class="btn btn-primary" style="flex:1;padding:10px;display:flex;align-items:center;justify-content:center;gap:7px" onclick="setNewMemberType('Regular')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg> Regular</button>
+        <button id="nmTypeDonor"   class="btn btn-secondary" style="flex:1;padding:10px;display:flex;align-items:center;justify-content:center;gap:7px" onclick="setNewMemberType('Donor')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg> Donor</button>
       </div>
     </div>
     <div class="form-group">
       <label>Status</label>
       <div style="display:flex;gap:8px">
-        <button id="nmStatusActive" class="btn btn-primary" style="flex:1;padding:10px" onclick="setNewMemberStatus('Active')">✅ Active</button>
-        <button id="nmStatusInactive" class="btn btn-secondary" style="flex:1;padding:10px" onclick="setNewMemberStatus('In Active')">❌ Inactive</button>
+        <button id="nmStatusActive" class="btn btn-primary" style="flex:1;padding:10px;display:flex;align-items:center;justify-content:center;gap:7px" onclick="setNewMemberStatus('Active')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>Active</button>
+        <button id="nmStatusInactive" class="btn btn-secondary" style="flex:1;padding:10px;display:flex;align-items:center;justify-content:center;gap:7px" onclick="setNewMemberStatus('In Active')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>In Active</button>
       </div>
     </div>
-    <button class="btn btn-primary" style="width:100%;margin-top:6px" onclick="saveNewMember()">➕ Member Add Karein</button>
+    <button class="btn btn-primary" style="width:100%;margin-top:6px;display:flex;align-items:center;justify-content:center;gap:8px" onclick="saveNewMember()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Member Add Karein</button>
   `;
   _newMemberStatus = 'Active';
   _newMemberAadhar = 'No';

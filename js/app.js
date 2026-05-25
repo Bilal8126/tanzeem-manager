@@ -105,7 +105,7 @@ function _showInstallBanner(type) {
   ].join(';');
 
   banner.innerHTML = `
-    <span style="font-size:22px">🕌</span>
+    <img src="icons/icon.svg" style="width:28px;height:28px;border-radius:8px;flex-shrink:0" alt="">
     <span style="flex:1;line-height:1.4">${msg}</span>
     ${isIOS ? '' : '<button onclick="installApp()" style="background:#22c55e;color:#fff;border:none;border-radius:10px;padding:7px 14px;font-weight:600;cursor:pointer;white-space:nowrap;font-size:13px">Install</button>'}
     <button onclick="_hideInstallBanner()" style="background:rgba(255,255,255,0.15);color:#fff;border:none;border-radius:8px;padding:6px 10px;cursor:pointer;font-size:16px;line-height:1">×</button>

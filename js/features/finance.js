@@ -12,7 +12,7 @@ function renderDonations() {
       <div class="metric green">
         <div class="metric-label">Total Donations</div>
         <div class="metric-value sm">${formatCurrency(total)}</div>
-        <div class="metric-bg-icon">🎁</div>
+        <div class="metric-bg-icon"><svg width="58" height="58" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.18"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg></div>
       </div>
       <div class="metric blue">
         <div class="metric-label">Count</div>
@@ -22,7 +22,7 @@ function renderDonations() {
     </div>
     <div class="card">
       ${STATE.allDonations.length === 0
-        ? '<div class="empty-state"><div class="empty-state-icon">🎁</div><p>Koi donation nahi. + dabayein add karne ke liye.</p></div>'
+        ? '<div class="empty-state"><div class="empty-state-icon"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg></div><p>Koi donation nahi. + dabayein add karne ke liye.</p></div>'
         : STATE.allDonations.map((d, i) => `
             <div class="finance-item">
               <div class="finance-left">
@@ -35,8 +35,8 @@ function renderDonations() {
               <div style="display:flex;align-items:center;gap:8px">
                 <div class="finance-amount green">${formatCurrency(d.amount)}</div>
                 ${STATE.currentSessionIdx === 0 ? `
-                <button onclick="openFinanceForm('donation',${i})" style="background:none;border:none;cursor:pointer;font-size:15px;padding:4px 6px;color:#94a3b8;border-radius:8px;transition:background .15s" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='none'">✏</button>
-                <button onclick="deleteFinanceItem('donation',${i})" style="background:none;border:none;cursor:pointer;font-size:15px;padding:4px 6px;color:#fca5a5;border-radius:8px;transition:background .15s" onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background='none'">🗑</button>` : ''}
+                <button onclick="openFinanceForm('donation',${i})" style="background:none;border:none;cursor:pointer;padding:5px 6px;color:#94a3b8;border-radius:8px;transition:background .15s;display:flex;align-items:center" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='none'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                <button onclick="deleteFinanceItem('donation',${i})" style="background:none;border:none;cursor:pointer;padding:5px 6px;color:#fca5a5;border-radius:8px;transition:background .15s;display:flex;align-items:center" onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background='none'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>` : ''}
               </div>
             </div>`).join('')}
     </div>`;
@@ -49,7 +49,7 @@ function renderExpenses() {
       <div class="metric" style="background:linear-gradient(135deg,#b91c1c,#e53e3e)">
         <div class="metric-label">Total Expenses</div>
         <div class="metric-value sm">${formatCurrency(total)}</div>
-        <div class="metric-bg-icon">📤</div>
+        <div class="metric-bg-icon"><svg width="58" height="58" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.18"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div>
       </div>
       <div class="metric blue">
         <div class="metric-label">Count</div>
@@ -59,7 +59,7 @@ function renderExpenses() {
     </div>
     <div class="card">
       ${STATE.allExpenses.length === 0
-        ? '<div class="empty-state"><div class="empty-state-icon">📤</div><p>Koi kharcha nahi. + dabayein add karne ke liye.</p></div>'
+        ? '<div class="empty-state"><div class="empty-state-icon"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div><p>Koi kharcha nahi. + dabayein add karne ke liye.</p></div>'
         : STATE.allExpenses.map((e, i) => `
             <div class="finance-item">
               <div class="finance-left">
@@ -72,8 +72,8 @@ function renderExpenses() {
               <div style="display:flex;align-items:center;gap:8px">
                 <div class="finance-amount red">${formatCurrency(e.amount)}</div>
                 ${STATE.currentSessionIdx === 0 ? `
-                <button onclick="openFinanceForm('expense',${i})" style="background:none;border:none;cursor:pointer;font-size:15px;padding:4px 6px;color:#94a3b8;border-radius:8px;transition:background .15s" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='none'">✏</button>
-                <button onclick="deleteFinanceItem('expense',${i})" style="background:none;border:none;cursor:pointer;font-size:15px;padding:4px 6px;color:#fca5a5;border-radius:8px;transition:background .15s" onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background='none'">🗑</button>` : ''}
+                <button onclick="openFinanceForm('expense',${i})" style="background:none;border:none;cursor:pointer;padding:5px 6px;color:#94a3b8;border-radius:8px;transition:background .15s;display:flex;align-items:center" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='none'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                <button onclick="deleteFinanceItem('expense',${i})" style="background:none;border:none;cursor:pointer;padding:5px 6px;color:#fca5a5;border-radius:8px;transition:background .15s;display:flex;align-items:center" onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background='none'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>` : ''}
               </div>
             </div>`).join('')}
     </div>`;
@@ -135,8 +135,10 @@ function openFinanceForm(type, idx) {
         <input id="ff_date" type="date" value="${item?.date || ''}">
       </div>
     `}
-    <button class="btn btn-primary" style="width:100%;margin-top:6px" onclick="saveFinanceForm()">
-      ${isEdit ? '💾 Update Karein' : '➕ Add Karein'}
+    <button class="btn btn-primary" style="width:100%;margin-top:6px;display:flex;align-items:center;justify-content:center;gap:8px" onclick="saveFinanceForm()">
+      ${isEdit
+        ? '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>Update Karein'
+        : '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add Karein'}
     </button>
   `;
 
