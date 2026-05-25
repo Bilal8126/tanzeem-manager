@@ -40,7 +40,7 @@ async function getAdminToken(env) {
     }),
   });
   const d = await res.json();
-  if (!d.access_token) throw new Error('Token refresh failed: ' + (d.error_description || d.error));
+  if (!d.access_token) throw new Error('Token refresh: ' + JSON.stringify(d));
   return d.access_token;
 }
 
