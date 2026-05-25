@@ -26,6 +26,9 @@ function json(data, status = 200, origin = '*') {
 
 // ── Admin Drive token (refresh → access) ─────────────────────
 async function getAdminToken(env) {
+  if (!env.DRIVE_CLIENT_ID)     throw new Error('Secret DRIVE_CLIENT_ID not set');
+  if (!env.DRIVE_CLIENT_SECRET) throw new Error('Secret DRIVE_CLIENT_SECRET not set');
+  if (!env.DRIVE_REFRESH_TOKEN) throw new Error('Secret DRIVE_REFRESH_TOKEN not set');
   const res = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
