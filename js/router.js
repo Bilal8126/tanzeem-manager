@@ -11,7 +11,9 @@ function showScreen(name, el) {
   STATE.currentScreen = name;
   const fab = document.getElementById('financeFab');
   if (fab) fab.style.display = (name === 'finance' && STATE.currentSessionIdx === 0) ? 'flex' : 'none';
-  const titles = { dashboard: 'Dashboard', members: 'Members', payments: 'Payments', finance: 'Finance', ai: 'AI Chat' };
+  const gFab = document.getElementById('galleryFab');
+  if (gFab) gFab.style.display = name === 'gallery' ? 'flex' : 'none';
+  const titles = { dashboard: 'Dashboard', members: 'Members', payments: 'Payments', finance: 'Finance', gallery: 'Gallery', ai: 'AI Chat' };
   document.getElementById('screenTitle').textContent = titles[name] || name;
   renderCurrentScreen();
 
@@ -26,6 +28,7 @@ function renderCurrentScreen() {
   else if (STATE.currentScreen === 'members') renderMembers();
   else if (STATE.currentScreen === 'payments') renderPayments();
   else if (STATE.currentScreen === 'finance') renderFinance();
+  else if (STATE.currentScreen === 'gallery') loadGalleryPhotos();
 }
 
 function onSessionChange() {

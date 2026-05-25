@@ -4,7 +4,7 @@
 const CONFIG = {
   CLIENT_ID:  'YOUR_GOOGLE_CLIENT_ID',
   SHEET_ID:   'YOUR_GOOGLE_SHEET_ID',
-  SCOPES:     'https://www.googleapis.com/auth/spreadsheets.readonly',
+  SCOPES:     'https://www.googleapis.com/auth/spreadsheets',
   WORKER_URL: 'https://tanzeem-proxy.YOUR_SUBDOMAIN.workers.dev',
   SESSIONS: [
     { label: '2025-26', sheet: 'Session (2025-26)', expenses: 'Expense List (25-26)', donations: 'Donation (25-26)' },

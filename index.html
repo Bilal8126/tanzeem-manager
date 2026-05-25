@@ -122,6 +122,11 @@
     <div id="financeContent"><div class="loading">Loading...</div></div>
   </div>
 
+  <!-- Gallery Screen -->
+  <div id="screen-gallery" class="screen">
+    <div id="galleryContent"><div class="loading">Loading...</div></div>
+  </div>
+
   <!-- AI Chat Screen -->
   <div id="screen-ai" class="screen">
     <div class="ai-header">
@@ -184,6 +189,14 @@
       </svg>
       Finance
     </button>
+    <button class="nav-item" onclick="showScreen('gallery',this)">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <rect x="3" y="3" width="18" height="18" rx="2"/>
+        <circle cx="8.5" cy="8.5" r="1.5"/>
+        <polyline points="21 15 16 10 5 21"/>
+      </svg>
+      Gallery
+    </button>
     <button class="nav-item" onclick="showScreen('ai',this)">
       <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
         <path d="M12 2a10 10 0 0 1 10 10c0 5.52-4.48 10-10 10a9.96 9.96 0 0 1-5.19-1.45L2 21l1.45-4.81A9.96 9.96 0 0 1 2 12 10 10 0 0 1 12 2z"/>
@@ -191,7 +204,7 @@
         <circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/>
         <circle cx="16" cy="12" r="1" fill="currentColor" stroke="none"/>
       </svg>
-      AI Chat
+      AI
     </button>
   </nav>
 
@@ -208,6 +221,53 @@
 
 <!-- Finance FAB -->
 <button id="financeFab" class="fab" onclick="openFinanceForm(STATE.currentFinanceTab==='donations'?'donation':'expense',null)" style="display:none" title="Add">+</button>
+
+<!-- Gallery FAB -->
+<button id="galleryFab" class="fab" onclick="openGalleryUpload()" style="display:none" title="Photo Upload">
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+    <polyline points="17 8 12 3 7 8"/>
+    <line x1="12" y1="3" x2="12" y2="15"/>
+  </svg>
+</button>
+
+<!-- Hidden file inputs for gallery -->
+<input id="galleryFileInput"   type="file" accept="image/*"                    style="display:none" onchange="_galleryFileChanged(this)">
+<input id="galleryCameraInput" type="file" accept="image/*" capture="environment" style="display:none" onchange="_galleryFileChanged(this)">
+
+<!-- Gallery Upload Modal -->
+<div id="galleryUploadOverlay" class="modal-overlay" onclick="closeGalleryUpload()">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div class="modal-title">Photo Upload</div>
+      <button class="close-btn" onclick="closeGalleryUpload()">×</button>
+    </div>
+    <div style="display:flex;gap:12px;padding-bottom:8px">
+      <button class="btn btn-secondary" style="flex:1;display:flex;align-items:center;justify-content:center;gap:9px;padding:16px 12px" onclick="document.getElementById('galleryFileInput').click()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        <div style="text-align:left"><div style="font-size:14px;font-weight:700;color:var(--green-dark)">Gallery</div><div style="font-size:11px;color:var(--muted);font-weight:500">Device se chunein</div></div>
+      </button>
+      <button class="btn btn-secondary" style="flex:1;display:flex;align-items:center;justify-content:center;gap:9px;padding:16px 12px" onclick="document.getElementById('galleryCameraInput').click()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        <div style="text-align:left"><div style="font-size:14px;font-weight:700;color:var(--green-dark)">Camera</div><div style="font-size:11px;color:var(--muted);font-weight:500">Abhi kheenchein</div></div>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Gallery Occasion Picker Modal -->
+<div id="galleryOccasionOverlay" class="modal-overlay" onclick="closeOccasionPicker()">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div id="galleryOccasionContent"></div>
+  </div>
+</div>
+
+<!-- Gallery Lightbox -->
+<div id="galleryLightboxOverlay" class="gallery-lightbox-overlay" onclick="closeLightbox()">
+  <div id="galleryLightboxContent" onclick="event.stopPropagation()"></div>
+</div>
 
 <!-- Member Profile Modal -->
 <div id="memberProfileOverlay" class="modal-overlay" onclick="closeMemberProfile()">
@@ -227,6 +287,7 @@
 <script src="js/features/members.js"></script>
 <script src="js/features/payments.js"></script>
 <script src="js/features/finance.js"></script>
+<script src="js/features/gallery.js"></script>
 <script src="js/features/ai.js"></script>
 
 </body>
