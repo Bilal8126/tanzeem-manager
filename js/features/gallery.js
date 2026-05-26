@@ -4,11 +4,12 @@
 // Users don't need drive.file scope — Worker handles Drive authentication.
 
 const OCCASIONS = ['General', 'Eid-ul-Fitr', 'Eid-ul-Adha', 'Moharram', 'Ramazan', 'Meeting', 'Celebrations', 'Others'];
-let _gPhotos  = [];
-let _gFilter  = 'All';
+let _gPhotos   = [];
+let _gFilter   = 'All';
+let _gSort     = 'latest'; // latest | date | occasion | description
 let _gSelected = new Set();
-let _gMulti   = false;
-let _gLoaded  = false;
+let _gMulti    = false;
+let _gLoaded   = false;
 
 // Public Drive thumbnail URL (works for files made public on upload)
 function _thumbUrl(id, size = 400) {
@@ -18,6 +19,29 @@ function _thumbUrl(id, size = 400) {
 // Worker uses admin credentials — only need to know user is signed in, not have their token
 function _gallerySgnedIn() {
   return !!STATE.accessToken || !!localStorage.getItem('tanzeem_signed_in');
+}
+
+// ── Sort ──────────────────────────────────────────────────────
+
+function _sortPhotos(photos) {
+  const arr = [...photos];
+  switch (_gSort) {
+    case 'latest':
+      return arr.sort((a, b) => new Date(b.createdTime || 0) - new Date(a.createdTime || 0));
+    case 'date':
+      return arr.sort((a, b) => new Date(a.createdTime || 0) - new Date(b.createdTime || 0));
+    case 'occasion':
+      return arr.sort((a, b) => (a.occasion || '').localeCompare(b.occasion || ''));
+    case 'description':
+      return arr.sort((a, b) => (a.note || '').localeCompare(b.note || ''));
+    default:
+      return arr;
+  }
+}
+
+function setGallerySort(val) {
+  _gSort = val;
+  renderGallery();
 }
 
 // ── Worker API helpers ────────────────────────────────────────
@@ -42,16 +66,15 @@ async function _wUpload(formData) {
   return res.json();
 }
 
-// ── Load photos from Worker ───────────────────────────────────
+// ── Load photos (cached — only hits API once per session) ─────
 
 async function loadGalleryPhotos() {
-  const el = document.getElementById('galleryContent');
-  if (el && !_gLoaded) el.innerHTML = '<div class="loading">Loading...</div>';
+  if (_gLoaded) { renderGallery(); return; }
 
-  if (!_gallerySgnedIn()) {
-    renderGallery();
-    return;
-  }
+  const el = document.getElementById('galleryContent');
+  if (el) el.innerHTML = '<div class="loading">Loading...</div>';
+
+  if (!_gallerySgnedIn()) { renderGallery(); return; }
 
   try {
     const res = await _wGet('/api/gallery/list');
@@ -65,6 +88,12 @@ async function loadGalleryPhotos() {
     showToast('Gallery error: ' + e.message, 'error');
   }
   renderGallery();
+}
+
+async function refreshGallery() {
+  _gLoaded = false;
+  showToast('Refresh ho raha hai...');
+  await loadGalleryPhotos();
 }
 
 // ── Render ────────────────────────────────────────────────────
@@ -85,24 +114,19 @@ function renderGallery() {
   if (!_gallerySgnedIn()) {
     el.innerHTML = filterBar + `
       <div class="empty-state">
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
-          <polyline points="21 15 16 10 5 21"/>
-        </svg>
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
         <p>Photos dekhne ke liye Sign in karein</p>
       </div>`;
     return;
   }
 
-  const photos = _gFilter === 'All' ? _gPhotos : _gPhotos.filter(p => p.occasion === _gFilter);
+  const filtered = _gFilter === 'All' ? _gPhotos : _gPhotos.filter(p => p.occasion === _gFilter);
+  const photos   = _sortPhotos(filtered);
 
   if (_gPhotos.length === 0 && _gLoaded) {
     el.innerHTML = filterBar + `
       <div class="empty-state">
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
-          <polyline points="21 15 16 10 5 21"/>
-        </svg>
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
         <p>Abhi koi Photo nahi — pehli photo upload karein!</p>
       </div>`;
     return;
@@ -111,10 +135,7 @@ function renderGallery() {
   if (photos.length === 0 && _gLoaded) {
     el.innerHTML = filterBar + `
       <div class="empty-state">
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
-          <polyline points="21 15 16 10 5 21"/>
-        </svg>
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
         <p>${_gFilter} mein koi photo nahi</p>
       </div>`;
     return;
@@ -122,23 +143,42 @@ function renderGallery() {
 
   const multiBar = _gMulti ? `
     <div class="gallery-multi-bar">
-      <span>${_gSelected.size} photo${_gSelected.size !== 1 ? 'en' : ''} select ki hain</span>
+      <span>${_gSelected.size} photo${_gSelected.size !== 1 ? 'ein' : ''} select ki hain</span>
       <div style="display:flex;gap:8px">
         <button class="btn btn-sm btn-secondary" onclick="cancelGalleryMultiSelect()">Cancel</button>
         ${_gSelected.size > 0 ? `
           <button class="btn btn-sm" style="background:#fee2e2;color:#991b1b;font-weight:700;border-radius:10px;padding:7px 14px;font-size:12px;border:none;cursor:pointer" onclick="deleteSelectedPhotos()">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle;margin-right:4px"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>Delete
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="display:inline;vertical-align:middle;margin-right:4px"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>Delete
           </button>` : ''}
       </div>
     </div>` : '';
 
   const header = `
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-      <span style="font-size:12px;color:var(--muted);font-weight:600">${_gPhotos.length} photo${_gPhotos.length !== 1 ? 'ein' : ''}</span>
-      ${_gPhotos.length > 0 ? `
-        <button onclick="enterGalleryMultiSelect()" style="background:rgba(22,163,74,.1);color:var(--green-dark);border:none;border-radius:20px;padding:5px 13px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Select
-        </button>` : ''}
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:8px">
+      <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+        <span style="font-size:12px;color:var(--muted);font-weight:600">${_gPhotos.length} photo${_gPhotos.length !== 1 ? 'ein' : ''}</span>
+        <button onclick="refreshGallery()" title="Refresh / Resync"
+          style="background:none;border:none;cursor:pointer;padding:4px;color:var(--muted);display:flex;align-items:center" >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+          </svg>
+        </button>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <select onchange="setGallerySort(this.value)"
+          style="font-size:11px;font-weight:600;color:var(--green-dark);background:rgba(22,163,74,.08);border:none;border-radius:20px;padding:5px 10px;cursor:pointer;outline:none">
+          <option value="latest"${_gSort==='latest'?' selected':''}>Latest First</option>
+          <option value="date"${_gSort==='date'?' selected':''}>Oldest First</option>
+          <option value="occasion"${_gSort==='occasion'?' selected':''}>By Occasion</option>
+          <option value="description"${_gSort==='description'?' selected':''}>By Description</option>
+        </select>
+        ${_gPhotos.length > 0 ? `
+          <button onclick="enterGalleryMultiSelect()"
+            style="background:rgba(22,163,74,.1);color:var(--green-dark);border:none;border-radius:20px;padding:5px 13px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;white-space:nowrap">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Select
+          </button>` : ''}
+      </div>
     </div>`;
 
   const grid = `
@@ -148,7 +188,7 @@ function renderGallery() {
         const badge = (p.occasion && p.occasion !== 'General') ? `<div class="gallery-badge">${p.occasion}</div>` : '';
         const check = _gMulti ? `
           <div class="gallery-check${_gSelected.has(p.id) ? ' checked' : ''}">
-            ${_gSelected.has(p.id) ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' : ''}
+            ${_gSelected.has(p.id) ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><polyline points="20 6 9 17 4 12"/></svg>' : ''}
           </div>` : '';
         return `
           <div class="gallery-item${_gMulti && _gSelected.has(p.id) ? ' selected' : ''}"
@@ -156,7 +196,7 @@ function renderGallery() {
             <img src="${thumb}" alt="" loading="lazy"
                  onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
             <div class="gallery-placeholder" style="display:none">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
             </div>
             ${badge}${check}
           </div>`;
@@ -211,16 +251,11 @@ function _galleryFileChanged(input) {
   _pendingUploadFile = file;
   closeGalleryUpload();
 
-  // Show occasion picker
   document.getElementById('galleryOccasionContent').innerHTML = _occasionPickerHTML(file);
   document.getElementById('galleryOccasionOverlay').classList.add('open');
 
-  // Show preview
   const reader = new FileReader();
-  reader.onload = e => {
-    const img = document.getElementById('previewImg');
-    if (img) img.src = e.target.result;
-  };
+  reader.onload = e => { const img = document.getElementById('previewImg'); if (img) img.src = e.target.result; };
   reader.readAsDataURL(file);
 }
 
@@ -245,7 +280,7 @@ function _occasionPickerHTML(file) {
       <input type="text" id="pickerNote" placeholder="e.g. Eid Milan 2025" maxlength="100">
     </div>
     <button class="btn btn-primary" style="width:100%;margin-top:4px;display:flex;align-items:center;justify-content:center;gap:8px" onclick="confirmUpload()">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
       Upload Karein
     </button>`;
 }
@@ -325,7 +360,7 @@ function openPhotoDetail(id) {
   document.getElementById('galleryLightboxContent').innerHTML = `
     <div class="lightbox-header">
       <button class="lightbox-close" onclick="closeLightbox()">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
       <div class="lightbox-meta">
         <span class="lightbox-occasion">${photo.occasion || 'General'}</span>
@@ -344,15 +379,15 @@ function openPhotoDetail(id) {
     </div>
     <div class="lightbox-actions">
       <button class="lightbox-btn" onclick="downloadPhoto('${photo.id}','${photo.name}')">
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         Download
       </button>
       <button class="lightbox-btn" onclick="sharePhoto('${photo.id}','${photo.name}')">
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
         Share
       </button>
       <button class="lightbox-btn lightbox-btn-danger" onclick="deletePhoto('${photo.id}')">
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
         Delete
       </button>
     </div>`;
