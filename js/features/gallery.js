@@ -185,7 +185,7 @@ function renderGallery() {
     <div class="gallery-grid">
       ${photos.map(p => {
         const thumb = _thumbUrl(p.id, 400);
-        const badge = (p.occasion && p.occasion !== 'General') ? `<div class="gallery-badge">${p.occasion}</div>` : '';
+        const badge = `<div class="gallery-footer">${p.occasion || 'General'}</div>`;
         const check = _gMulti ? `
           <div class="gallery-check${_gSelected.has(p.id) ? ' checked' : ''}">
             ${_gSelected.has(p.id) ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><polyline points="20 6 9 17 4 12"/></svg>' : ''}
