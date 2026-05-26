@@ -143,7 +143,7 @@ function renderGallery() {
 
   const multiBar = _gMulti ? `
     <div class="gallery-multi-bar">
-      <span>${_gSelected.size} photo${_gSelected.size !== 1 ? 'ein' : ''} select ki hain</span>
+      <span>${_gSelected.size} Photo${_gSelected.size !== 1 ? 's' : ''} selected</span>
       <div style="display:flex;gap:8px">
         <button class="btn btn-sm btn-secondary" onclick="cancelGalleryMultiSelect()">Cancel</button>
         ${_gSelected.size > 0 ? `
@@ -156,7 +156,7 @@ function renderGallery() {
   const header = `
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:8px">
       <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
-        <span style="font-size:12px;color:var(--muted);font-weight:600">${_gPhotos.length} photo${_gPhotos.length !== 1 ? 'ein' : ''}</span>
+        <span style="font-size:12px;color:var(--muted);font-weight:600">${_gPhotos.length} Photo${_gPhotos.length !== 1 ? 's' : ''}</span>
         <button onclick="refreshGallery()" title="Refresh / Resync"
           style="background:none;border:none;cursor:pointer;padding:4px;color:var(--muted);display:flex;align-items:center" >
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -185,7 +185,8 @@ function renderGallery() {
     <div class="gallery-grid">
       ${photos.map(p => {
         const thumb = _thumbUrl(p.id, 400);
-        const badge = `<div class="gallery-footer">${p.occasion || 'General'}</div>`;
+        const badge = `<div class="gallery-badge">${p.occasion || 'General'}</div>
+          <div class="gallery-footer">${p.occasion || 'General'}</div>`;
         const check = _gMulti ? `
           <div class="gallery-check${_gSelected.has(p.id) ? ' checked' : ''}">
             ${_gSelected.has(p.id) ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><polyline points="20 6 9 17 4 12"/></svg>' : ''}
