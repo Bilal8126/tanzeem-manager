@@ -64,6 +64,7 @@ function renderDashboard() {
         </span>
         <span style="font-weight:700">${regular.length}</span>
       </div>
+      
       <div class="stat-row">
         <span style="display:flex;align-items:center;gap:7px;font-weight:600;color:var(--muted)">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1a6b3c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>Active
