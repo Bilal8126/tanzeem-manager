@@ -14,8 +14,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Copy worker files to clean temp dir
+        run: |
+          mkdir -p /tmp/worker-deploy
+          cp worker.js /tmp/worker-deploy/
+          cp wrangler.toml /tmp/worker-deploy/
+
       - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CF_API_TOKEN }}
           wranglerVersion: '3.99.0'
+          workingDirectory: '/tmp/worker-deploy'
