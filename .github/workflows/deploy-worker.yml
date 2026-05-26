@@ -14,12 +14,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Deploy to Cloudflare Workers
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+      - name: Prepare clean deploy directory
         run: |
           mkdir -p /tmp/worker-deploy
           cp worker.js /tmp/worker-deploy/
           cp wrangler.toml /tmp/worker-deploy/
-          cd /tmp/worker-deploy
-          npx --yes wrangler@3.99.0 deploy
+
+      - name: Deploy to Cloudflare Workers
+        working-directory: /tmp/worker-deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          GITHUB_WORKSPACE: /tmp/worker-deploy
+        run: npx --yes wrangler@3.70.0 deploy
