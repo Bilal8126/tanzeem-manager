@@ -14,15 +14,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Prepare clean deploy directory
-        run: |
-          mkdir -p /tmp/worker-deploy
-          cp worker.js /tmp/worker-deploy/
-          cp wrangler.toml /tmp/worker-deploy/
-
       - name: Deploy to Cloudflare Workers
-        working-directory: /tmp/worker-deploy
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
-          GITHUB_WORKSPACE: /tmp/worker-deploy
-        run: npx --yes wrangler@3.70.0 deploy
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+        run: |
+          curl -sS -X PUT \
+            "https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/workers/scripts/tanzeem-manager" \
+            -H "Authorization: Bearer ${CF_API_TOKEN}" \
+            -F "worker.js=@worker.js;type=application/javascript+module" \
+            -F 'metadata={"main_module":"worker.js","compatibility_date":"2025-01-01"};type=application/json' \
+            | python3 -c "
+          import sys, json
+          r = json.load(sys.stdin)
+          print(json.dumps(r, indent=2))
+          sys.exit(0 if r.get('success') else 1)
+          "
