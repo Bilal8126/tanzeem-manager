@@ -6,17 +6,15 @@
 const OCCASIONS = ['General', 'Eid-ul-Fitr', 'Eid-ul-Adha', 'Moharram', 'Ramazan', 'Meeting', 'Celebrations', 'Others'];
 let _gPhotos   = [];
 let _gFilter   = 'All';
-let _gSort     = 'latest'; // latest | date | occasion | description
+let _gSort     = 'latest';
 let _gSelected = new Set();
 let _gMulti    = false;
 let _gLoaded   = false;
 
-// Public Drive thumbnail URL (works for files made public on upload)
 function _thumbUrl(id, size = 400) {
   return `https://drive.google.com/thumbnail?id=${id}&sz=w${size}`;
 }
 
-// Worker uses admin credentials — only need to know user is signed in, not have their token
 function _gallerySgnedIn() {
   return !!STATE.accessToken || !!localStorage.getItem('tanzeem_signed_in');
 }
@@ -26,23 +24,15 @@ function _gallerySgnedIn() {
 function _sortPhotos(photos) {
   const arr = [...photos];
   switch (_gSort) {
-    case 'latest':
-      return arr.sort((a, b) => new Date(b.createdTime || 0) - new Date(a.createdTime || 0));
-    case 'date':
-      return arr.sort((a, b) => new Date(a.createdTime || 0) - new Date(b.createdTime || 0));
-    case 'occasion':
-      return arr.sort((a, b) => (a.occasion || '').localeCompare(b.occasion || ''));
-    case 'description':
-      return arr.sort((a, b) => (a.note || '').localeCompare(b.note || ''));
-    default:
-      return arr;
+    case 'latest':      return arr.sort((a, b) => new Date(b.createdTime || 0) - new Date(a.createdTime || 0));
+    case 'date':        return arr.sort((a, b) => new Date(a.createdTime || 0) - new Date(b.createdTime || 0));
+    case 'occasion':    return arr.sort((a, b) => (a.occasion || '').localeCompare(b.occasion || ''));
+    case 'description': return arr.sort((a, b) => (a.note || '').localeCompare(b.note || ''));
+    default: return arr;
   }
 }
 
-function setGallerySort(val) {
-  _gSort = val;
-  renderGallery();
-}
+function setGallerySort(val) { _gSort = val; renderGallery(); }
 
 // ── Worker API helpers ────────────────────────────────────────
 
@@ -58,35 +48,27 @@ async function _wDelete(path) {
 }
 
 async function _wUpload(formData) {
-  const res = await fetch(CONFIG.WORKER_URL + '/api/gallery/upload', {
-    method: 'POST',
-    body: formData,
-  });
+  const res = await fetch(CONFIG.WORKER_URL + '/api/gallery/upload', { method: 'POST', body: formData });
   if (!res.ok) throw new Error(await res.text().catch(() => res.status));
   return res.json();
 }
 
-// ── Load photos (cached — only hits API once per session) ─────
+// ── Load (cached — only hits API once per session) ────────────
 
 async function loadGalleryPhotos() {
   if (_gLoaded) { renderGallery(); return; }
-
   const el = document.getElementById('galleryContent');
   if (el) el.innerHTML = '<div class="loading">Loading...</div>';
-
   if (!_gallerySgnedIn()) { renderGallery(); return; }
-
   try {
     const res = await _wGet('/api/gallery/list');
     _gPhotos = (res.files || []).map(f => {
       let meta = { occasion: 'General', note: '' };
-      try { if (f.description) meta = { ...meta, ...JSON.parse(f.description) }; } catch (e) { /* keep defaults */ }
+      try { if (f.description) meta = { ...meta, ...JSON.parse(f.description) }; } catch (e) {}
       return { ...f, occasion: meta.occasion, note: meta.note };
     });
     _gLoaded = true;
-  } catch (e) {
-    showToast('Gallery error: ' + e.message, 'error');
-  }
+  } catch (e) { showToast('Gallery error: ' + e.message, 'error'); }
   renderGallery();
 }
 
@@ -105,18 +87,13 @@ function renderGallery() {
   const all = ['All', ...OCCASIONS];
   const filterBar = `
     <div class="month-pills" style="margin-bottom:14px">
-      ${all.map(o => `
-        <button class="month-pill${_gFilter === o ? ' active' : ''}" onclick="setGalleryFilter('${o}')">
-          ${o}
-        </button>`).join('')}
+      ${all.map(o => `<button class="month-pill${_gFilter===o?' active':''}" onclick="setGalleryFilter('${o}')">${o}</button>`).join('')}
     </div>`;
 
   if (!_gallerySgnedIn()) {
-    el.innerHTML = filterBar + `
-      <div class="empty-state">
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-        <p>Photos dekhne ke liye Sign in karein</p>
-      </div>`;
+    el.innerHTML = filterBar + `<div class="empty-state">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+      <p>Photos dekhne ke liye Sign in karein</p></div>`;
     return;
   }
 
@@ -124,31 +101,36 @@ function renderGallery() {
   const photos   = _sortPhotos(filtered);
 
   if (_gPhotos.length === 0 && _gLoaded) {
-    el.innerHTML = filterBar + `
-      <div class="empty-state">
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-        <p>Abhi koi Photo nahi — pehli photo upload karein!</p>
-      </div>`;
+    el.innerHTML = filterBar + `<div class="empty-state">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+      <p>Abhi koi Photo nahi — pehli photo upload karein!</p></div>`;
     return;
   }
 
   if (photos.length === 0 && _gLoaded) {
-    el.innerHTML = filterBar + `
-      <div class="empty-state">
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-        <p>${_gFilter} mein koi photo nahi</p>
-      </div>`;
+    el.innerHTML = filterBar + `<div class="empty-state">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+      <p>${_gFilter} mein koi photo nahi</p></div>`;
     return;
   }
 
   const multiBar = _gMulti ? `
     <div class="gallery-multi-bar">
       <span>${_gSelected.size} Photo${_gSelected.size !== 1 ? 's' : ''} selected</span>
-      <div style="display:flex;gap:8px">
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
         <button class="btn btn-sm btn-secondary" onclick="cancelGalleryMultiSelect()">Cancel</button>
         ${_gSelected.size > 0 ? `
-          <button class="btn btn-sm" style="background:#fee2e2;color:#991b1b;font-weight:700;border-radius:10px;padding:7px 14px;font-size:12px;border:none;cursor:pointer" onclick="deleteSelectedPhotos()">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="display:inline;vertical-align:middle;margin-right:4px"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>Delete
+          <button class="btn btn-sm" style="background:rgba(22,163,74,.12);color:var(--green-dark);border-radius:10px;padding:7px 12px;font-size:12px;font-weight:700;border:none;cursor:pointer"
+            onclick="downloadSelectedPhotos()">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="display:inline;vertical-align:middle;margin-right:3px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download
+          </button>
+          <button class="btn btn-sm" style="background:rgba(59,130,246,.12);color:#1d4ed8;border-radius:10px;padding:7px 12px;font-size:12px;font-weight:700;border:none;cursor:pointer"
+            onclick="shareSelectedPhotos()">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="display:inline;vertical-align:middle;margin-right:3px"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>Share
+          </button>
+          <button class="btn btn-sm" style="background:#fee2e2;color:#991b1b;border-radius:10px;padding:7px 12px;font-size:12px;font-weight:700;border:none;cursor:pointer"
+            onclick="deleteSelectedPhotos()">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="display:inline;vertical-align:middle;margin-right:3px"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>Delete
           </button>` : ''}
       </div>
     </div>` : '';
@@ -158,7 +140,7 @@ function renderGallery() {
       <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
         <span style="font-size:12px;color:var(--muted);font-weight:600">${_gPhotos.length} Photo${_gPhotos.length !== 1 ? 's' : ''}</span>
         <button onclick="refreshGallery()" title="Refresh / Resync"
-          style="background:none;border:none;cursor:pointer;padding:4px;color:var(--muted);display:flex;align-items:center" >
+          style="background:none;border:none;cursor:pointer;padding:4px;color:var(--muted);display:flex;align-items:center">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/>
             <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
@@ -185,8 +167,8 @@ function renderGallery() {
     <div class="gallery-grid">
       ${photos.map(p => {
         const thumb = _thumbUrl(p.id, 400);
-        const badge = `<div class="gallery-badge">${p.occasion || 'General'}</div>
-          <div class="gallery-footer">${p.occasion || 'General'}</div>`;
+        const badge = `<div class="gallery-badge">${p.occasion || 'General'}</div>`;
+
         const check = _gMulti ? `
           <div class="gallery-check${_gSelected.has(p.id) ? ' checked' : ''}">
             ${_gSelected.has(p.id) ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><polyline points="20 6 9 17 4 12"/></svg>' : ''}
@@ -207,27 +189,13 @@ function renderGallery() {
   el.innerHTML = filterBar + header + multiBar + grid;
 }
 
-function setGalleryFilter(f) {
-  _gFilter = f;
-  renderGallery();
-}
-
-function enterGalleryMultiSelect() {
-  _gMulti = true;
-  renderGallery();
-}
-
+function setGalleryFilter(f) { _gFilter = f; renderGallery(); }
+function enterGalleryMultiSelect() { _gMulti = true; renderGallery(); }
 function togglePhotoSelect(id) {
-  if (_gSelected.has(id)) _gSelected.delete(id);
-  else _gSelected.add(id);
+  if (_gSelected.has(id)) _gSelected.delete(id); else _gSelected.add(id);
   renderGallery();
 }
-
-function cancelGalleryMultiSelect() {
-  _gMulti = false;
-  _gSelected.clear();
-  renderGallery();
-}
+function cancelGalleryMultiSelect() { _gMulti = false; _gSelected.clear(); renderGallery(); }
 
 // ── Upload ────────────────────────────────────────────────────
 
@@ -242,36 +210,47 @@ function closeGalleryUpload() {
   document.getElementById('galleryCameraInput').value = '';
 }
 
-let _pendingUploadFile = null;
+let _pendingUploadFiles = [];
 
 function _galleryFileChanged(input) {
-  const file = input.files[0];
-  if (!file) return;
-  if (!file.type.startsWith('image/')) { showToast('Sirf images upload kar sakte hain', 'error'); return; }
-  if (file.size > 30 * 1024 * 1024) { showToast('Photo 30MB se choti honi chahiye', 'error'); return; }
-  _pendingUploadFile = file;
+  const files = Array.from(input.files || []);
+  if (!files.length) return;
+  if (files.some(f => !f.type.startsWith('image/'))) { showToast('Sirf images upload kar sakte hain', 'error'); return; }
+  if (files.length > 20) { showToast('Maximum 20 photos ek baar mein select karein', 'error'); return; }
+
+  _pendingUploadFiles = files;
   closeGalleryUpload();
 
-  document.getElementById('galleryOccasionContent').innerHTML = _occasionPickerHTML(file);
+  document.getElementById('galleryOccasionContent').innerHTML = _occasionPickerHTML(files);
   document.getElementById('galleryOccasionOverlay').classList.add('open');
 
   const reader = new FileReader();
   reader.onload = e => { const img = document.getElementById('previewImg'); if (img) img.src = e.target.result; };
-  reader.readAsDataURL(file);
+  reader.readAsDataURL(files[0]);
 }
 
-function _occasionPickerHTML(file) {
-  const opts = OCCASIONS.map(o => `<option value="${o}">${o}</option>`).join('');
-  const sizeMB = (file.size / 1024 / 1024).toFixed(1);
+function _occasionPickerHTML(files) {
+  const fileArr = Array.isArray(files) ? files : [files];
+  const opts    = OCCASIONS.map(o => `<option value="${o}">${o}</option>`).join('');
+  const isMulti = fileArr.length > 1;
+  const info    = isMulti
+    ? `${fileArr.length} photos selected (ek occasion sabhi ke liye lagega)`
+    : `${fileArr[0].name} · ${(fileArr[0].size / 1024 / 1024).toFixed(1)} MB`;
+
+  const preview = isMulti
+    ? `<div style="text-align:center;padding:16px;background:rgba(22,163,74,.08);border-radius:12px;margin-bottom:10px">
+         <div style="font-size:28px;font-weight:800;color:var(--green-dark)">${fileArr.length}</div>
+         <div style="font-size:12px;color:var(--muted);font-weight:600">Photos</div>
+       </div>`
+    : `<div class="gallery-preview-wrap"><img id="previewImg" style="max-height:160px;border-radius:12px;object-fit:cover;width:100%" alt=""></div>`;
+
   return `
     <div class="modal-header">
-      <div class="modal-title">Photo Details</div>
+      <div class="modal-title">${isMulti ? 'Batch Upload' : 'Photo Details'}</div>
       <button class="close-btn" onclick="closeOccasionPicker()">×</button>
     </div>
-    <div class="gallery-preview-wrap">
-      <img id="previewImg" style="max-height:160px;border-radius:12px;object-fit:cover;width:100%" alt="">
-    </div>
-    <p style="font-size:11px;color:var(--muted);margin-bottom:14px;text-align:center">${file.name} &middot; ${sizeMB} MB</p>
+    ${preview}
+    <p style="font-size:11px;color:var(--muted);margin-bottom:14px;text-align:center">${info}</p>
     <div class="form-group">
       <label>Occasion</label>
       <select id="pickerOccasion">${opts}</select>
@@ -282,22 +261,23 @@ function _occasionPickerHTML(file) {
     </div>
     <button class="btn btn-primary" style="width:100%;margin-top:4px;display:flex;align-items:center;justify-content:center;gap:8px" onclick="confirmUpload()">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-      Upload Karein
+      ${isMulti ? `${fileArr.length} Photos Upload Karein` : 'Upload Karein'}
     </button>`;
 }
 
 function closeOccasionPicker() {
   document.getElementById('galleryOccasionOverlay').classList.remove('open');
-  _pendingUploadFile = null;
+  _pendingUploadFiles = [];
 }
 
 async function confirmUpload() {
-  const file     = _pendingUploadFile;
+  const files   = _pendingUploadFiles;
   const occasion = document.getElementById('pickerOccasion')?.value || 'General';
   const note     = (document.getElementById('pickerNote')?.value || '').trim();
   closeOccasionPicker();
-  if (!file) return;
-  await _doUpload(file, occasion, note);
+  if (!files.length) return;
+  if (files.length === 1) await _doUpload(files[0], occasion, note);
+  else await _doBatchUpload(files, occasion, note);
 }
 
 function _compressImage(file) {
@@ -310,8 +290,7 @@ function _compressImage(file) {
         let { width, height } = img;
         if (width > maxDim || height > maxDim) {
           const r = Math.min(maxDim / width, maxDim / height);
-          width  = Math.round(width  * r);
-          height = Math.round(height * r);
+          width = Math.round(width * r); height = Math.round(height * r);
         }
         const canvas = document.createElement('canvas');
         canvas.width = width; canvas.height = height;
@@ -333,18 +312,37 @@ async function _doUpload(file, occasion, note) {
     const form = new FormData();
     form.append('file', compressed);
     form.append('metadata', JSON.stringify({ occasion, note, date: todayDate() }));
-
     const uploaded = await _wUpload(form);
     let m = { occasion: 'General', note: '' };
-    try { if (uploaded.description) m = { ...m, ...JSON.parse(uploaded.description) }; } catch (e) { /* keep defaults */ }
-
+    try { if (uploaded.description) m = { ...m, ...JSON.parse(uploaded.description) }; } catch (e) {}
     _gPhotos.unshift({ ...uploaded, occasion: m.occasion, note: m.note });
     _gLoaded = true;
     showToast('Photo upload ho gayi!');
     renderGallery();
-  } catch (e) {
-    showToast('Upload error: ' + e.message, 'error');
+  } catch (e) { showToast('Upload error: ' + e.message, 'error'); }
+}
+
+async function _doBatchUpload(files, occasion, note) {
+  let success = 0;
+  showToast(`0 / ${files.length} upload ho rahi hain...`);
+  for (const file of files) {
+    try {
+      const compressed = await _compressImage(file);
+      const form = new FormData();
+      form.append('file', compressed);
+      form.append('metadata', JSON.stringify({ occasion, note, date: todayDate() }));
+      const uploaded = await _wUpload(form);
+      let m = { occasion: 'General', note: '' };
+      try { if (uploaded.description) m = { ...m, ...JSON.parse(uploaded.description) }; } catch (e) {}
+      _gPhotos.unshift({ ...uploaded, occasion: m.occasion, note: m.note });
+      success++;
+      showToast(`${success} / ${files.length} upload ho gayi...`);
+    } catch (e) { /* continue uploading remaining */ }
   }
+  _gLoaded = true;
+  const failed = files.length - success;
+  showToast(failed > 0 ? `${success} upload hui, ${failed} fail hui` : `${success} Photos upload ho gayi!`, failed > 0 ? 'error' : '');
+  renderGallery();
 }
 
 // ── Lightbox ──────────────────────────────────────────────────
@@ -352,7 +350,6 @@ async function _doUpload(file, occasion, note) {
 function openPhotoDetail(id) {
   const photo = _gPhotos.find(p => p.id === id);
   if (!photo) return;
-
   const imgSrc = _thumbUrl(id, 1600);
   const date   = photo.createdTime
     ? new Date(photo.createdTime).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
@@ -373,8 +370,7 @@ function openPhotoDetail(id) {
       <div class="lightbox-spinner" id="lbSpinner">
         <div style="color:rgba(255,255,255,.5);font-size:13px">Loading...</div>
       </div>
-      <img src="${imgSrc}" alt=""
-           style="display:none"
+      <img src="${imgSrc}" alt="" style="display:none"
            onload="this.style.display='block';document.getElementById('lbSpinner').style.display='none'"
            onerror="this.src='${_thumbUrl(id, 800)}'">
     </div>
@@ -392,13 +388,10 @@ function openPhotoDetail(id) {
         Delete
       </button>
     </div>`;
-
   document.getElementById('galleryLightboxOverlay').classList.add('open');
 }
 
-function closeLightbox() {
-  document.getElementById('galleryLightboxOverlay')?.classList.remove('open');
-}
+function closeLightbox() { document.getElementById('galleryLightboxOverlay')?.classList.remove('open'); }
 
 // ── Download ──────────────────────────────────────────────────
 
@@ -415,9 +408,30 @@ async function downloadPhoto(id, name) {
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     setTimeout(() => URL.revokeObjectURL(blobUrl), 8000);
     showToast('Download ho gayi!');
-  } catch (e) {
-    showToast('Download error: ' + e.message, 'error');
+  } catch (e) { showToast('Download error: ' + e.message, 'error'); }
+}
+
+async function downloadSelectedPhotos() {
+  const ids = [..._gSelected];
+  if (!ids.length) return;
+  showToast(`${ids.length} Photos download ho rahi hain...`);
+  for (const id of ids) {
+    const photo = _gPhotos.find(p => p.id === id);
+    if (!photo) continue;
+    try {
+      const url = `${CONFIG.WORKER_URL}/api/gallery/download?id=${id}&name=${encodeURIComponent(photo.name || 'photo.jpg')}`;
+      const res = await fetch(url);
+      if (!res.ok) continue;
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl; a.download = photo.name || 'tanzeem-photo.jpg';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 8000);
+      await new Promise(r => setTimeout(r, 600));
+    } catch (e) { /* skip failed */ }
   }
+  showToast('Download complete!');
 }
 
 // ── Share ─────────────────────────────────────────────────────
@@ -430,7 +444,6 @@ async function sharePhoto(id, name) {
     if (!res.ok) throw new Error('Fetch failed');
     const blob = await res.blob();
     const file = new File([blob], name || 'tanzeem-photo.jpg', { type: blob.type });
-
     if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
       await navigator.share({ files: [file], title: name || 'Tanzeem Photo' });
     } else {
@@ -441,49 +454,62 @@ async function sharePhoto(id, name) {
       setTimeout(() => URL.revokeObjectURL(blobUrl), 8000);
       showToast('Photo save ho gayi device mein');
     }
-  } catch (e) {
-    if (e.name !== 'AbortError') showToast('Share error: ' + e.message, 'error');
-  }
+  } catch (e) { if (e.name !== 'AbortError') showToast('Share error: ' + e.message, 'error'); }
+}
+
+async function shareSelectedPhotos() {
+  const ids = [..._gSelected];
+  if (!ids.length) return;
+  showToast(`${ids.length} Photos prepare ho rahi hain...`);
+  try {
+    const files = await Promise.all(ids.map(async id => {
+      const photo = _gPhotos.find(p => p.id === id);
+      const url = `${CONFIG.WORKER_URL}/api/gallery/download?id=${id}&name=${encodeURIComponent(photo?.name || 'photo.jpg')}`;
+      const res = await fetch(url);
+      const blob = await res.blob();
+      return new File([blob], photo?.name || 'tanzeem-photo.jpg', { type: blob.type });
+    }));
+    if (navigator.share && navigator.canShare && navigator.canShare({ files })) {
+      await navigator.share({ files, title: 'Tanzeem Photos' });
+    } else {
+      for (const file of files) {
+        const blobUrl = URL.createObjectURL(file);
+        const a = document.createElement('a');
+        a.href = blobUrl; a.download = file.name;
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 8000);
+        await new Promise(r => setTimeout(r, 400));
+      }
+      showToast('Photos save ho gayi device mein');
+    }
+  } catch (e) { if (e.name !== 'AbortError') showToast('Share error: ' + e.message, 'error'); }
 }
 
 // ── Delete ────────────────────────────────────────────────────
 
 function deletePhoto(id) {
   closeLightbox();
-  showConfirm(
-    'Photo Delete',
-    'Yeh photo permanently delete ho jayegi. Kya aap sure hain?',
-    async () => {
-      try {
-        await _wDelete('/api/gallery/delete?id=' + id);
-        _gPhotos = _gPhotos.filter(p => p.id !== id);
-        _gSelected.delete(id);
-        showToast('Photo delete ho gayi');
-        renderGallery();
-      } catch (e) {
-        showToast('Delete error: ' + e.message, 'error');
-      }
-    }
-  );
+  showConfirm('Photo Delete', 'Yeh photo permanently delete ho jayegi. Kya aap sure hain?', async () => {
+    try {
+      await _wDelete('/api/gallery/delete?id=' + id);
+      _gPhotos = _gPhotos.filter(p => p.id !== id);
+      _gSelected.delete(id);
+      showToast('Photo delete ho gayi');
+      renderGallery();
+    } catch (e) { showToast('Delete error: ' + e.message, 'error'); }
+  });
 }
 
 function deleteSelectedPhotos() {
   const ids = [..._gSelected];
   if (!ids.length) return;
-  showConfirm(
-    'Photos Delete',
-    `${ids.length} photo${ids.length !== 1 ? 'ein' : ''} permanently delete ho jayengi. Sure hain?`,
-    async () => {
-      try {
-        await Promise.all(ids.map(id => _wDelete('/api/gallery/delete?id=' + id)));
-        _gPhotos = _gPhotos.filter(p => !ids.includes(p.id));
-        _gSelected.clear();
-        _gMulti = false;
-        showToast(`${ids.length} photos delete ho gayi`);
-        renderGallery();
-      } catch (e) {
-        showToast('Delete error: ' + e.message, 'error');
-      }
-    }
-  );
+  showConfirm('Photos Delete', `${ids.length} Photo${ids.length !== 1 ? 's' : ''} permanently delete ho jayengi. Sure hain?`, async () => {
+    try {
+      await Promise.all(ids.map(id => _wDelete('/api/gallery/delete?id=' + id)));
+      _gPhotos = _gPhotos.filter(p => !ids.includes(p.id));
+      _gSelected.clear(); _gMulti = false;
+      showToast(`${ids.length} Photos delete ho gayi`);
+      renderGallery();
+    } catch (e) { showToast('Delete error: ' + e.message, 'error'); }
+  });
 }
