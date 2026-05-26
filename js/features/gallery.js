@@ -3,7 +3,7 @@
 // Photos are always stored in the admin's Google Drive "Tanzeem Gallery" folder.
 // Users don't need drive.file scope — Worker handles Drive authentication.
 
-const OCCASIONS = ['General', 'Eid', 'Muharram', 'Milad', 'Annual Meet', 'Jalsa', 'Other'];
+const OCCASIONS = ['General', 'Eid-ul-Fitr', 'Eid-ul-Adha', 'Moharram', 'Ramazan', 'Meeting', 'Celebrations', 'Others'];
 let _gPhotos  = [];
 let _gFilter  = 'All';
 let _gSelected = new Set();
