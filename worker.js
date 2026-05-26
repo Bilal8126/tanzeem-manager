@@ -1,4 +1,4 @@
-const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent';
+const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
 const DRIVE_BASE  = 'https://www.googleapis.com/drive/v3';
 const DRIVE_UPL   = 'https://www.googleapis.com/upload/drive/v3';
 
