@@ -177,6 +177,8 @@ function _rebuildSessionDropdown() {
       ${s.label}${s.active ? ' ●' : ''}
     </option>`
   ).join('');
+  // Sync AI nav visibility whenever dropdown rebuilds (on load / session change)
+  if (typeof syncAiNav === 'function') syncAiNav();
 }
 
 async function _persistSessions() {
@@ -273,6 +275,7 @@ async function _doSetActive(idx) {
     loadAllData(true);
   } catch(e) { showToast('Set locally. Sync to persist.', 'error'); }
   closeNewSessionModal();
+  if (typeof syncAiNav === 'function') syncAiNav();
   if (STATE.currentScreen === 'settings') renderSettings();
 }
 

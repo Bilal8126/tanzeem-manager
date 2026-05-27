@@ -1,5 +1,16 @@
 const _scrollPos = {};
 
+// Show AI nav only for the active session; redirect to dashboard if on AI screen
+function syncAiNav() {
+  const isActive = !!(CONFIG.SESSIONS[STATE.currentSessionIdx]?.active);
+  const aiBtn    = document.getElementById('aiNavBtn');
+  if (aiBtn) aiBtn.style.display = isActive ? '' : 'none';
+  // If user is currently on AI screen and switches to a non-active session → go to dashboard
+  if (!isActive && STATE.currentScreen === 'ai') {
+    showScreen('dashboard', document.querySelector('.nav-item'));
+  }
+}
+
 function showScreen(name, el) {
   // Save scroll position for the screen we're leaving
   _scrollPos[STATE.currentScreen] = window.scrollY;
@@ -38,5 +49,6 @@ function onSessionChange() {
   STATE.currentSessionIdx = idx;
   STATE.currentSession = CONFIG.SESSIONS[idx];
   STATE.selectedPaymentMonth = null; // reset so default month recalculates for new session
+  syncAiNav();   // hide/show AI tab based on whether this session is active
   loadAllData();
 }
