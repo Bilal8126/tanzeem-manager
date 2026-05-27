@@ -104,7 +104,13 @@ function openFinanceForm(type, idx) {
   const item       = isEdit ? (isDonation ? STATE.allDonations[idx] : STATE.allExpenses[idx]) : null;
   const title      = (isEdit ? 'Edit ' : 'Add ') + (isDonation ? 'Donation' : 'Expense');
 
+  // Member name suggestions for datalist (all members, active + inactive)
+  const _memberOptions = STATE.allMembers
+    .map(m => `<option value="${m.name.replace(/"/g,'&quot;')}">`)
+    .join('');
+
   document.getElementById('financeFormContent').innerHTML = `
+    <datalist id="ff_memberList">${_memberOptions}</datalist>
     <div class="modal-header">
       <div class="modal-title">${title}</div>
       <button class="close-btn" onclick="closeFinanceForm()">×</button>
@@ -112,7 +118,13 @@ function openFinanceForm(type, idx) {
     ${isDonation ? `
       <div class="form-group">
         <label>Donor Ka Naam *</label>
-        <input id="ff_name" value="${(item?.donor || '').replace(/"/g,'&quot;')}" placeholder="Naam likhein...">
+        <input id="ff_name" list="ff_memberList"
+          value="${(item?.donor || '').replace(/"/g,'&quot;')}"
+          placeholder="Naam likhein ya list se chunein…"
+          autocomplete="off">
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">
+          Member chunein ya koi bhi naam likhein
+        </div>
       </div>
       <div class="form-group">
         <label>Amount (Rs.) *</label>
@@ -129,7 +141,13 @@ function openFinanceForm(type, idx) {
     ` : `
       <div class="form-group">
         <label>Kharcha Ki Wajah *</label>
-        <input id="ff_name" value="${(item?.desc || '').replace(/"/g,'&quot;')}" placeholder="Kya kharcha hua...">
+        <input id="ff_name" list="ff_memberList"
+          value="${(item?.desc || '').replace(/"/g,'&quot;')}"
+          placeholder="Kya kharcha hua ya kisko diya…"
+          autocomplete="off">
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">
+          Member chunein ya kuch bhi likhein
+        </div>
       </div>
       <div class="form-group">
         <label>Amount (Rs.) *</label>
