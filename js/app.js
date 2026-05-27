@@ -207,21 +207,28 @@ window.addEventListener('load', () => {
   if (sel) sel.value = STATE.currentSessionIdx;
 
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js').then(reg => {
-      // When a new SW takes control, reload once so users get fresh UI automatically
+    // updateViaCache:'none' → browser always fetches sw.js fresh from network,
+    // never from HTTP cache — this is the #1 reason mobile apps miss updates
+    navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(reg => {
+
+      // When a new SW takes control → reload once to serve fresh cached files
       let reloading = false;
       navigator.serviceWorker.addEventListener('controllerchange', () => {
         if (!reloading) {
           reloading = true;
-          showToast('Naya update aa gaya — reload ho raha hai... 🔄');
+          showToast('Naya update mil gaya — reload ho raha hai...');
           setTimeout(() => window.location.reload(), 1200);
         }
       });
 
-      // Re-check for SW updates whenever the user brings the app back to foreground
+      // Check for SW update every 4 minutes while app is open
+      setInterval(() => reg.update(), 4 * 60 * 1000);
+
+      // Also check immediately when user brings app to foreground
       document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible') reg.update();
       });
+
     }).catch(() => {});
   }
 
