@@ -1,50 +1,46 @@
 const _chatHistory = [];
 
 function buildDataContext() {
-  const active   = STATE.allMembers.filter(m => m.status === 'Active');
-  const inactive = STATE.allMembers.filter(m => m.status !== 'Active');
+  const activeMembers  = STATE.allMembers.filter(m => m.status === 'Active');
+  const inactiveMembers = STATE.allMembers.filter(m => m.status !== 'Active');
 
-  const totalCollected = STATE.allPayments.reduce((s, p) => s + (parseInt(p.total) || 0), 0);
   const totalDonations = STATE.allDonations.reduce((s, d) => s + (parseFloat(d.amount) || 0), 0);
-  const totalExpenses  = STATE.allExpenses.reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
-  const balance        = totalCollected + totalDonations - totalExpenses;
+  const totalExpenses  = STATE.allExpenses.reduce((s, e)  => s + (parseFloat(e.amount) || 0), 0);
 
   const months       = STATE.allPayments.length > 0 ? Object.keys(STATE.allPayments[0].months) : [];
   const currentMonth = months.length > 0 ? detectCurrentMonth(months) : 'N/A';
 
-  // "Paid" = paid; blank / null / "Un Paid" / anything else = unpaid
-  const isPaidCell = v => v === 'Paid';
+  // Use buildMemberStats() — same function as Payments screen — so AI sees identical data.
+  // It handles: blank = unpaid, isPastOrCurrent filtering, ghost members, inactive members.
+  const stats         = STATE.allPayments.length > 0 ? buildMemberStats(STATE.allPayments) : [];
+  const activeStats   = stats.filter(s => !s.isInactive);
+  const inactiveStats = stats.filter(s =>  s.isInactive);
 
-  // Monthly collection summary — only past/current months show unpaid count
+  const totalCollected = stats.reduce((s, m) => s + m.totalPaid, 0);
+  const balance        = totalCollected + totalDonations - totalExpenses;
+
+  // Monthly breakdown — paid count / unpaid count per month
   const monthSummary = months.map(m => {
-    const past   = typeof isPastOrCurrent === 'function' ? isPastOrCurrent(m) : true;
-    const paid   = STATE.allPayments.filter(p => isPaidCell(p.months[m])).length;
-    const unpaid = past
-      ? STATE.allPayments.filter(p => !isPaidCell(p.months[m])).length
-      : 0;
+    const past   = isPastOrCurrent(m);
+    const paidCt = stats.filter(s => isPaid(s.months[m])).length;
+    // blank / null / anything ≠ 'Paid' → unpaid (only for past months)
+    const unpaidCt = past ? stats.filter(s => !isPaid(s.months[m])).length : 0;
     const tag = m === currentMonth ? ' ← THIS MONTH' : (!past ? ' (future)' : '');
-    return `  ${m}${tag}: ${paid} paid, ${unpaid} unpaid`;
+    return `  ${m}${tag}: ${paidCt} paid, ${unpaidCt} unpaid`;
   }).join('\n');
 
-  // Per-member payment detail — blank = unpaid (only past months)
-  const memberDetails = STATE.allPayments.map(p => {
-    const paidMonths   = months.filter(m => isPaidCell(p.months[m]));
-    const unpaidMonths = months.filter(m => {
-      const past = typeof isPastOrCurrent === 'function' ? isPastOrCurrent(m) : true;
-      return past && !isPaidCell(p.months[m]);
-    });
-    const member = STATE.allMembers.find(mb => mb.name === p.name);
-    const status = member ? member.status : 'Active';
-    return `  ${p.name} [${status}]: Paid months: ${paidMonths.join(', ') || 'none'} | Unpaid months: ${unpaidMonths.join(', ') || 'none'}`;
+  // Per-member detail — uses pre-computed paidList / unpaidList from buildMemberStats
+  // paidList = months with 'Paid'; unpaidList = past months without 'Paid' (blank = unpaid)
+  const memberDetails = stats.map(s => {
+    const label = s.isInactive ? '[Inactive]' : '[Active]';
+    return `  ${s.name} ${label}: Paid: ${s.paidList.join(', ') || 'none'} | Unpaid: ${s.unpaidList.join(', ') || 'none'} | Total collected: Rs.${s.totalPaid} | Total pending: Rs.${s.totalPending}`;
   }).join('\n');
 
   // Top members: paid in every past month
-  const pastMonths = months.filter(m =>
-    typeof isPastOrCurrent === 'function' ? isPastOrCurrent(m) : true
-  );
-  const topMembers = STATE.allPayments.filter(p =>
-    pastMonths.length > 0 && pastMonths.every(m => isPaidCell(p.months[m]))
-  ).map(p => p.name);
+  const pastMonths = months.filter(isPastOrCurrent);
+  const topMembers = activeStats.filter(s =>
+    pastMonths.length > 0 && pastMonths.every(m => isPaid(s.months[m]))
+  ).map(s => s.name);
 
   // Donation list
   const donationList = STATE.allDonations.map(d =>
@@ -56,9 +52,8 @@ function buildDataContext() {
     `  ${e.description || e.title || 'Expense'}: Rs.${e.amount} (${e.date || ''})`
   ).join('\n') || '  None';
 
-  // Today's date for AI reference
-  const now       = new Date();
-  const todayStr  = now.toLocaleDateString('en-IN', { day:'numeric', month:'long', year:'numeric' });
+  const now          = new Date();
+  const todayStr     = now.toLocaleDateString('en-IN', { day:'numeric', month:'long', year:'numeric' });
   const sessionLabel = STATE.currentSession?.label || 'Unknown';
 
   return `You are a smart assistant for Tanzeem Abd e Mustafa, a community organization.
@@ -67,26 +62,27 @@ IMPORTANT: Always reply in Hinglish (mix of Hindi and English). Be friendly, cle
 === DATE & SESSION ===
 Today's date: ${todayStr}
 Current session: ${sessionLabel}
-Session months: ${months.join(', ') || 'N/A'}
+Session months (in order): ${months.join(', ') || 'N/A'}
 Current month in this session: ${currentMonth}
-(NOTE: "this month" / "is mahine" always refers to "${currentMonth}" in the data below)
+RULE: When user says "is mahine" or "this month" — always mean "${currentMonth}".
+RULE: "Paid" = paid. Blank / empty / null / "Un Paid" = UNPAID. Never say someone is paid if their cell is blank.
 
 === OVERVIEW ===
-Total members: ${STATE.allMembers.length} (Active: ${active.length}, Inactive: ${inactive.length})
-Inactive members: ${inactive.map(m => m.name).join(', ') || 'none'}
+Total members: ${STATE.allMembers.length} (Active: ${activeMembers.length}, Inactive: ${inactiveMembers.length})
+Inactive members: ${inactiveMembers.map(m => m.name).join(', ') || 'none'}
 Total subscription collected: Rs.${totalCollected}
 Total donations: Rs.${totalDonations}
 Total expenses: Rs.${totalExpenses}
 Balance: Rs.${balance}
 
-=== TOP MEMBERS (paid every past month) ===
+=== TOP MEMBERS (paid every past month so far) ===
 ${topMembers.length > 0 ? topMembers.join(', ') : 'Koi nahi jisne sab past months pay kiye ho'}
 
 === MONTHLY BREAKDOWN ===
-(Rule: "Paid" = paid; blank/null/Un Paid = unpaid)
 ${monthSummary || 'No data'}
 
-=== MEMBER PAYMENT DETAILS ===
+=== EVERY MEMBER — PAID & UNPAID MONTHS ===
+(unpaidList = months where payment is blank or not marked Paid)
 ${memberDetails || 'No data'}
 
 === DONATIONS ===
@@ -133,6 +129,15 @@ async function sendChat() {
 function quickAsk(q) {
   document.getElementById('chatInput').value = q;
   sendChat();
+}
+
+function clearChat() {
+  _chatHistory.length = 0; // wipe conversation history
+  const c = document.getElementById('chatMessages');
+  if (c) c.innerHTML = `
+    <div class="msg ai">
+      <div class="msg-bubble">Assalamu Alaikum! I am your Tanzeem assistant. Ask me anything about members, payments, or finances.</div>
+    </div>`;
 }
 
 function appendMessage(role, text) {
