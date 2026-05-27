@@ -140,19 +140,6 @@
         <h4>AI Assistant</h4>
         <p>Tanzeem ka AI — Apna sawal poochein</p>
       </div>
-      <button onclick="clearChat()" title="Clear chat"
-        style="background:#f1f5f9;border:none;border-radius:10px;padding:7px 10px;
-               cursor:pointer;display:flex;align-items:center;gap:5px;
-               font-size:12px;font-weight:600;color:#64748b;flex-shrink:0">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-             stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="3 6 5 6 21 6"/>
-          <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-          <path d="M10 11v6M14 11v6"/>
-          <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
-        </svg>
-        Clear
-      </button>
     </div>
     <div class="quick-chips">
       <span class="chip" onclick="quickAsk('Inactive members')">Inactive members</span>
@@ -170,6 +157,18 @@
       <div class="chat-input-row">
         <input type="text" id="chatInput" placeholder="Type your question…" onkeydown="if(event.key==='Enter') sendChat()">
         <button class="btn btn-primary btn-sm" onclick="sendChat()">Send</button>
+        <button onclick="clearChat()" title="Clear chat"
+          style="flex-shrink:0;background:#f1f5f9;border:none;border-radius:10px;
+                 padding:0 11px;height:36px;cursor:pointer;display:flex;align-items:center;
+                 justify-content:center;color:#64748b">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 6 5 6 21 6"/>
+            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+            <path d="M10 11v6M14 11v6"/>
+            <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+          </svg>
+        </button>
       </div>
     </div>
   </div>
