@@ -10,10 +10,11 @@ function showScreen(name, el) {
   if (el) el.classList.add('active');
   STATE.currentScreen = name;
   const fab = document.getElementById('financeFab');
-  if (fab) fab.style.display = (name === 'finance' && STATE.currentSessionIdx === 0) ? 'flex' : 'none';
+  const isActiveSess = !!(CONFIG.SESSIONS[STATE.currentSessionIdx]?.active);
+  if (fab) fab.style.display = (name === 'finance' && isActiveSess) ? 'flex' : 'none';
   const gFab = document.getElementById('galleryFab');
   if (gFab) gFab.style.display = name === 'gallery' ? 'flex' : 'none';
-  const titles = { dashboard: 'Dashboard', members: 'Members', payments: 'Payments', finance: 'Finance', gallery: 'Gallery', ai: 'AI Chat' };
+  const titles = { dashboard: 'Dashboard', members: 'Members', payments: 'Payments', finance: 'Finance', gallery: 'Gallery', settings: 'Settings', ai: 'AI Chat' };
   document.getElementById('screenTitle').textContent = titles[name] || name;
   renderCurrentScreen();
 
@@ -29,6 +30,7 @@ function renderCurrentScreen() {
   else if (STATE.currentScreen === 'payments') renderPayments();
   else if (STATE.currentScreen === 'finance') renderFinance();
   else if (STATE.currentScreen === 'gallery') loadGalleryPhotos();
+  else if (STATE.currentScreen === 'settings') renderSettings();
 }
 
 function onSessionChange() {

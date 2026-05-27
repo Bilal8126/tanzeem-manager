@@ -133,9 +133,7 @@ function renderPayments() {
   const months = Object.keys(STATE.allPayments[0].months);
 
   if (!STATE.selectedPaymentMonth || !months.includes(STATE.selectedPaymentMonth)) {
-    STATE.selectedPaymentMonth = STATE.currentSessionIdx === 0
-      ? detectCurrentMonth(months)
-      : months[months.length - 1];
+    STATE.selectedPaymentMonth = detectCurrentMonth(months);
   }
   const sel = STATE.selectedPaymentMonth;
   const selIsPast = isPastOrCurrent(sel);
@@ -159,7 +157,7 @@ function renderPayments() {
     s + monthsTillSel.filter(mo => !isPaid(m.months[mo])).length * FEE, 0);
   const pendingTotalSel    = pendingActiveSel + pendingInactiveSel;
   const C_GREY           = '#64748b';
-  const isCurrentSession = STATE.currentSessionIdx === 0;
+  const isCurrentSession = !!(CONFIG.SESSIONS[STATE.currentSessionIdx]?.active); // editable only for active session
   const curCalMonth      = isCurrentSession ? detectCurrentMonth(months) : null;
 
   document.getElementById('paymentsContent').innerHTML = `

@@ -14,8 +14,10 @@ function loadGoogleScript() {
 // Called on page load — restores session from cache without needing a token
 function checkAutoSignIn() {
   const hasFlag = !!localStorage.getItem(_AUTH_FLAG);
-  // Also check for cached session data (covers users signed in before flag was added)
-  const hasCachedData = CONFIG.SESSIONS.some(s => !!localStorage.getItem('tanzeem_v1_' + s.label));
+  // Also check sessions cache or any tanzeem data cache (covers users before flag was added)
+  const hasSessionsCache  = !!localStorage.getItem('tanzeem_sessions_v1');
+  const hasCachedData     = hasSessionsCache ||
+    CONFIG.SESSIONS.some(s => !!localStorage.getItem('tanzeem_v1_' + s.label));
 
   if (!hasFlag && !hasCachedData) return;
 
@@ -25,6 +27,9 @@ function checkAutoSignIn() {
   // Restore saved user display name
   const savedName = localStorage.getItem('tanzeem_user_display');
   if (savedName) _setAvatar(savedName);
+
+  // Restore sessions from localStorage cache (no token needed)
+  if (typeof loadSessionsFromCache === 'function') loadSessionsFromCache();
 
   document.getElementById('setupScreen').style.display = 'none';
   document.getElementById('mainApp').style.display = 'block';
@@ -71,6 +76,7 @@ async function signIn() {
         document.getElementById('setupScreen').style.display = 'none';
         document.getElementById('mainApp').style.display = 'block';
         _fetchUserInfo(resp.access_token); // non-blocking — updates avatar in background
+        if (typeof loadSessionsConfig === 'function') await loadSessionsConfig();
         await loadAllData();
       }
     });
@@ -86,6 +92,7 @@ async function syncData() {
     const onToken = async (resp) => {
       if (resp.error) { showToast('Sync failed: ' + resp.error, 'error'); return; }
       STATE.accessToken = resp.access_token;
+      if (typeof reloadSessionsConfig === 'function') await reloadSessionsConfig();
       await loadAllData(true);
     };
     if (!_tokenClient) {

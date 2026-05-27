@@ -1,6 +1,11 @@
+// Helper: only the active/running session is editable; others are view-only
+function _isActiveSession() {
+  return !!(CONFIG.SESSIONS[STATE.currentSessionIdx]?.active);
+}
+
 function renderFinance() {
   const fab = document.getElementById('financeFab');
-  if (fab) fab.style.display = STATE.currentSessionIdx === 0 ? 'flex' : 'none';
+  if (fab) fab.style.display = _isActiveSession() ? 'flex' : 'none';
   if (STATE.currentFinanceTab === 'donations') renderDonations();
   else renderExpenses();
 }
@@ -34,7 +39,7 @@ function renderDonations() {
               </div>
               <div style="display:flex;align-items:center;gap:8px">
                 <div class="finance-amount green">${formatCurrency(d.amount)}</div>
-                ${STATE.currentSessionIdx === 0 ? `
+                ${_isActiveSession() ? `
                 <button onclick="openFinanceForm('donation',${i})" style="background:none;border:none;cursor:pointer;padding:5px 6px;color:#94a3b8;border-radius:8px;transition:background .15s;display:flex;align-items:center" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='none'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
                 <button onclick="deleteFinanceItem('donation',${i})" style="background:none;border:none;cursor:pointer;padding:5px 6px;color:#fca5a5;border-radius:8px;transition:background .15s;display:flex;align-items:center" onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background='none'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>` : ''}
               </div>
@@ -71,7 +76,7 @@ function renderExpenses() {
               </div>
               <div style="display:flex;align-items:center;gap:8px">
                 <div class="finance-amount red">${formatCurrency(e.amount)}</div>
-                ${STATE.currentSessionIdx === 0 ? `
+                ${_isActiveSession() ? `
                 <button onclick="openFinanceForm('expense',${i})" style="background:none;border:none;cursor:pointer;padding:5px 6px;color:#94a3b8;border-radius:8px;transition:background .15s;display:flex;align-items:center" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='none'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
                 <button onclick="deleteFinanceItem('expense',${i})" style="background:none;border:none;cursor:pointer;padding:5px 6px;color:#fca5a5;border-radius:8px;transition:background .15s;display:flex;align-items:center" onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background='none'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>` : ''}
               </div>
