@@ -56,8 +56,20 @@ function buildDataContext() {
   const todayStr     = now.toLocaleDateString('en-IN', { day:'numeric', month:'long', year:'numeric' });
   const sessionLabel = STATE.currentSession?.label || 'Unknown';
 
+  // Full member name list for disambiguation
+  const allMemberNames = stats.map(s => s.name.replace(/\(.*?\)/g, '').trim()).join(', ');
+
   return `You are a smart assistant for Tanzeem Abd e Mustafa, a community organization.
 IMPORTANT: Always reply in Hinglish (mix of Hindi and English). Be friendly, clear, and helpful. Use "Rs." for amounts.
+
+=== DISAMBIGUATION RULE (very important) ===
+Full member list: ${allMemberNames}
+When a user mentions a name (e.g. "Bilal", "Ahmed"), search the member list above for all members whose name CONTAINS that word (case-insensitive).
+- If EXACTLY ONE member matches → answer about that member directly.
+- If TWO OR MORE members match → DO NOT guess. Ask the user which one they mean.
+  Example reply: "Aap kaunse Bilal ke baare mein pooch rahe hain?\n1. Bilal Ansari\n2. Bilal Khan\nNumber batayein ya poora naam likhein."
+- If NO member matches → say "Yeh naam members mein nahi mila. Kripya poora naam likhein."
+Always apply this rule before answering any member-specific question.
 
 === DATE & SESSION ===
 Today's date: ${todayStr}
