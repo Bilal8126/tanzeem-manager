@@ -496,33 +496,22 @@ ${bodyHtml}
   <strong>Tanzeem Abd-e-Mustafa — Bisauli</strong><br>
   <em>⚠ This report is auto-generated — for reference only.</em>
 </div>
-${mode === 'export' ? '<script>setTimeout(()=>window.print(),600)<\\/script>' : ''}
+${mode === 'export' ? '<scr\x69pt>window.addEventListener("load",function(){setTimeout(window.print,900)})</scr\x69pt>' : ''}
 </body>
 </html>`;
 }
 
 function _openReportPdf(title, bodyHtml, mode) {
   const html = _buildPdfHtmlString(title, bodyHtml, mode);
-
-  if (mode === 'export') {
-    // Open blank tab + write HTML → auto-print triggers native PDF viewer on mobile
-    const win = window.open('', '_blank');
-    if (!win) { showToast('Popup blocked — allow popups in browser', 'error'); return; }
-    win.document.write(html);
-    win.document.close();
-    return;
-  }
-
-  // 'view' or 'share': Blob URL (reliable on mobile, no popup-block risk)
-  const blob = new Blob([html], { type: 'text/html' });
+  const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
   const url  = URL.createObjectURL(blob);
   const win  = window.open(url, '_blank');
   if (!win) {
     URL.revokeObjectURL(url);
-    showToast('Popup blocked — allow popups in browser', 'error');
+    showToast('Popup blocked — allow popups in browser settings', 'error');
     return;
   }
-  setTimeout(() => URL.revokeObjectURL(url), 60000);
+  setTimeout(() => URL.revokeObjectURL(url), 120000);
 }
 
 // ── Report builders ───────────────────────────────────────
