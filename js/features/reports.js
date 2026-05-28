@@ -364,7 +364,7 @@ async function _shareReportWA() {
 
   // Try Web Share API (works on Android Chrome / iOS Safari)
   if (navigator.share) {
-    const file = new File([htmlString], `${result.title.replace(/\s+/g,'-')}.html`, { type: 'text/html' });
+    const file = new File([htmlString], `${_genFileName(result.title)}.html`, { type: 'text/html' });
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
       try { await navigator.share({ files: [file], title: result.title }); return; }
       catch(e) { if (e.name === 'AbortError') return; }
@@ -380,10 +380,19 @@ async function _shareReportWA() {
   _openReportPdf(result.title, result.html, true);
 }
 
+function _genFileName(label) {
+  const d  = new Date();
+  const p  = n => String(n).padStart(2, '0');
+  const ts = `${p(d.getDate())}${p(d.getMonth()+1)}${String(d.getFullYear()).slice(-2)}${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;
+  const safe = label.replace(/[^a-zA-Z0-9]/g, '').slice(0, 24);
+  return `TanzeemAbdMustafa_${safe}_${ts}`;
+}
+
 function _buildPdfHtmlString(title, bodyHtml, forShare) {
-  const session = STATE.currentSession ? STATE.currentSession.label : '';
-  const dateStr = new Date().toLocaleDateString('en-IN', { day:'numeric', month:'long', year:'numeric' });
-  const logoUrl = new URL('icons/icon.svg', location.href).href;
+  const session  = STATE.currentSession ? STATE.currentSession.label : '';
+  const dateStr  = new Date().toLocaleDateString('en-IN', { day:'numeric', month:'long', year:'numeric' });
+  const logoUrl  = new URL('icons/icon.svg', location.href).href;
+  const fileName = _genFileName(title);
 
   const shareBanner = forShare ? `
 <div id="waBanner" style="position:fixed;top:0;left:0;right:0;z-index:9999;
@@ -407,7 +416,7 @@ function _buildPdfHtmlString(title, bodyHtml, forShare) {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${title} — Tanzeem Abd-e-Mustafa</title>
+<title>${fileName}</title>
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:Arial,sans-serif;font-size:12px;color:#1e293b;padding:24px;max-width:800px;margin:0 auto}

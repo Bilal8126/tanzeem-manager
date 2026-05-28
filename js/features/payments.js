@@ -522,6 +522,14 @@ function renderPayments() {
 
 // ── Share Format Picker (Text / PDF) ─────────────────────
 
+function _genFileName(label) {
+  const d  = new Date();
+  const p  = n => String(n).padStart(2, '0');
+  const ts = `${p(d.getDate())}${p(d.getMonth()+1)}${String(d.getFullYear()).slice(-2)}${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;
+  const safe = label.replace(/[^a-zA-Z0-9]/g, '').slice(0, 24);
+  return `TanzeemAbdMustafa_${safe}_${ts}`;
+}
+
 let _pendingShare = { msg: '', waLink: '' };
 
 function _askShareFormat(msg, waLink) {
@@ -577,7 +585,7 @@ async function _sendAsPdf() {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Receipt — Tanzeem Abd-e-Mustafa</title>
+<title>${_genFileName('Receipt')}</title>
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:Arial,sans-serif;font-size:13px;color:#1e293b;padding:32px;max-width:620px;margin:0 auto}
@@ -637,7 +645,7 @@ async function _sendAsPdf() {
 
   // Try Web Share API (native share sheet on mobile → pick WhatsApp)
   if (navigator.share) {
-    const file = new File([html], 'receipt.html', { type: 'text/html' });
+    const file = new File([html], `${_genFileName('Receipt')}.html`, { type: 'text/html' });
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
       try { await navigator.share({ files: [file], title: 'Receipt — Tanzeem Abd-e-Mustafa' }); return; }
       catch(e) { if (e.name === 'AbortError') return; }
