@@ -811,7 +811,7 @@ function _rptOverdue() {
 
 // ── 7. Donation Report ────────────────────────────────────
 function _rptDonation() {
-  const total = STATE.allDonations.reduce((s,d) => s+(parseFloat(d.amount)||0), 0);
+  const total = STATE.sessionSummary?.totalDonation || STATE.allDonations.reduce((s,d) => s+(parseFloat(d.amount)||0), 0);
   const html = `
     <h2>Donation Report (${STATE.allDonations.length} entries)</h2>
     <table>
@@ -835,7 +835,7 @@ function _rptDonation() {
 
 // ── 8. Expense Report ─────────────────────────────────────
 function _rptExpense() {
-  const total = STATE.allExpenses.reduce((s,e) => s+(parseFloat(e.amount)||0), 0);
+  const total = STATE.sessionSummary?.totalExpense || STATE.allExpenses.reduce((s,e) => s+(parseFloat(e.amount)||0), 0);
   const html = `
     <h2>Expense Report (${STATE.allExpenses.length} entries)</h2>
     <table>
@@ -1227,14 +1227,16 @@ function _rptImpact() {
 
 // ── 16. Balance Sheet ─────────────────────────────────────
 function _rptBalanceSheet() {
-  const stats = _rptAllStats();
-  const totalPayments  = stats.reduce((s,m) => s+m.totalPaid, 0);
-  const totalDonations = STATE.allDonations.reduce((s,d) => s+(parseFloat(d.amount)||0), 0);
-  const totalExpenses  = STATE.allExpenses.reduce((s,e)  => s+(parseFloat(e.amount)||0), 0);
-  const opening        = STATE.sessionSummary?.lastYearBalance || 0;
-  const totalIncome    = totalPayments + totalDonations + opening;
-  const balance        = totalIncome - totalExpenses;
+  const stats          = _rptAllStats();
+  const ss             = STATE.sessionSummary || {};
+  const opening        = ss.lastYearBalance || 0;
+  const totalPayments  = ss.currentTotal    || 0;
+  const totalDonations = ss.totalDonation   || 0;
+  const totalExpenses  = ss.totalExpense     || 0;
+  const totalIncome    = opening + totalPayments + totalDonations;
+  const balance        = ss.balance          || (totalIncome - totalExpenses);
   const session        = STATE.currentSession || {};
+  const paidMembers    = stats.filter(m => m.totalPaid > 0).length;
 
   const html = `
     <h2>Balance Sheet — ${session.label||''}</h2>
@@ -1243,7 +1245,7 @@ function _rptBalanceSheet() {
       <thead><tr><th>Source</th><th>Amount</th></tr></thead>
       <tbody>
         <tr><td>Opening Balance (Last Session)</td><td class="${opening>=0?'green':'red'}">${formatCurrency(opening)}</td></tr>
-        <tr><td>Member Payments (${stats.filter(m=>m.totalPaid>0).length} members)</td><td class="green">${formatCurrency(totalPayments)}</td></tr>
+        <tr><td>Member Payments (${paidMembers} members)</td><td class="green">${formatCurrency(totalPayments)}</td></tr>
         <tr><td>Donations (${STATE.allDonations.length} entries)</td><td class="green">${formatCurrency(totalDonations)}</td></tr>
         <tr style="font-weight:700;background:#f0fdf4">
           <td>Total Income</td><td class="green">${formatCurrency(totalIncome)}</td>
@@ -1263,7 +1265,20 @@ function _rptBalanceSheet() {
         </tr>
       </tbody>
     </table>
-    <div style="background:${balance>=0?'#f0fdf4':'#fef2f2'};border:2px solid ${balance>=0?'#16a34a':'#dc2626'};border-radius:10px;padding:14px 16px;margin-top:10px;display:flex;justify-content:space-between;align-items:center">
+    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;margin:10px 0">
+      <div style="font-size:10px;font-weight:700;color:#94a3b8;letter-spacing:.6px;margin-bottom:10px">BALANCE CALCULATION</div>
+      <div style="display:flex;align-items:flex-end;flex-wrap:wrap;gap:8px 12px">
+        ${opening > 0 ? `<div style="text-align:center"><div style="font-size:13px;font-weight:700;color:#0284c7">${formatCurrency(opening)}</div><div style="font-size:10px;color:#94a3b8;margin-top:3px">Prev. Year</div></div><span style="font-size:18px;color:#94a3b8;padding-bottom:14px">+</span>` : ''}
+        <div style="text-align:center"><div style="font-size:13px;font-weight:700;color:#15803d">${formatCurrency(totalPayments)}</div><div style="font-size:10px;color:#94a3b8;margin-top:3px">Collected</div></div>
+        <span style="font-size:18px;color:#94a3b8;padding-bottom:14px">+</span>
+        <div style="text-align:center"><div style="font-size:13px;font-weight:700;color:#0284c7">${formatCurrency(totalDonations)}</div><div style="font-size:10px;color:#94a3b8;margin-top:3px">Donations</div></div>
+        <span style="font-size:18px;color:#94a3b8;padding-bottom:14px">−</span>
+        <div style="text-align:center"><div style="font-size:13px;font-weight:700;color:#b91c1c">${formatCurrency(totalExpenses)}</div><div style="font-size:10px;color:#94a3b8;margin-top:3px">Expenses</div></div>
+        <span style="font-size:18px;color:#94a3b8;padding-bottom:14px">=</span>
+        <div style="text-align:center"><div style="font-size:16px;font-weight:800;color:${balance>=0?'#15803d':'#b91c1c'}">${formatCurrency(balance)}</div><div style="font-size:10px;color:#94a3b8;margin-top:3px">Balance</div></div>
+      </div>
+    </div>
+    <div style="background:${balance>=0?'#f0fdf4':'#fef2f2'};border:2px solid ${balance>=0?'#16a34a':'#dc2626'};border-radius:10px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center">
       <span style="font-size:14px;font-weight:700">Net Balance</span>
       <span style="font-size:20px;font-weight:700;color:${balance>=0?'#16a34a':'#dc2626'}">${formatCurrency(balance)}</span>
     </div>`;
@@ -1323,7 +1338,7 @@ function _rptCashFlow() {
       </tbody>
     </table>
     <div style="text-align:right;font-size:13px;font-weight:700;margin-top:6px">
-      Closing Balance: <span style="color:${balance>=0?'#15803d':'#b91c1c'}">${formatCurrency(balance)}</span>
+      Closing Balance: <span style="color:${balance>=0?'#15803d':'#b91c1c'}">${formatCurrency(STATE.sessionSummary?.balance || balance)}</span>
     </div>`;
   return { title: 'Cash Flow Report', html };
 }
