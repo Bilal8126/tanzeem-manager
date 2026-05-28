@@ -746,6 +746,7 @@ function waMemberUnpaid(name, month) {
 let _waPaidName     = '';
 let _waPaidMonths   = [];
 let _waPaidSelected = new Set();
+let _waAdvanceNote  = '';
 
 function waMemberPaidPopup(name) {
   const allStats = buildMemberStats(STATE.allPayments);
@@ -753,6 +754,7 @@ function waMemberPaidPopup(name) {
   if (!m || m.paidList.length === 0) { showToast('Is member ki koi paid entry nahi', 'error'); return; }
   _waPaidName     = name;
   _waPaidMonths   = m.paidList;
+  _waAdvanceNote  = '';
   const defMonth  = STATE.selectedPaymentMonth && m.paidList.includes(STATE.selectedPaymentMonth)
     ? STATE.selectedPaymentMonth
     : m.paidList[m.paidList.length - 1];
@@ -779,11 +781,30 @@ function _renderWaPaidPopup() {
         <button class="close-btn" onclick="closeWaPaidPopup()">×</button>
       </div>
       <div style="font-size:12px;color:#64748b;margin-bottom:12px">Kis mahine ki payment confirm karni hai? (multiple select ho sakta hai)</div>
-      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px">
-        ${_waPaidMonths.map(mo => `
-          <button onclick="toggleWaPaidMonth('${mo}')" id="wpm-${mo}"
-            class="month-pill ${_waPaidSelected.has(mo) ? 'active' : ''}"
-            style="scroll-snap-align:none">${mo}</button>`).join('')}
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px">
+        ${(() => {
+          const lastPaid = _waPaidMonths[_waPaidMonths.length - 1];
+          return _waPaidMonths.map(mo => {
+            const isSel  = _waPaidSelected.has(mo);
+            const isLast = mo === lastPaid;
+            let style = 'scroll-snap-align:none;';
+            if (isLast && !isSel) style += 'border-color:#f59e0b;color:#92400e;background:#fef3c7;font-weight:700;';
+            const badge = isLast
+              ? `<span style="display:block;font-size:9px;font-weight:700;color:${isSel ? 'rgba(255,255,255,0.85)' : '#b45309'};margin-top:-2px;letter-spacing:0.3px">last</span>`
+              : '';
+            return `<button onclick="toggleWaPaidMonth('${mo}')" id="wpm-${mo}"
+              class="month-pill ${isSel ? 'active' : ''}"
+              style="${style}">${mo}${badge}</button>`;
+          }).join('');
+        })()}
+      </div>
+      <div style="margin-bottom:16px">
+        <div style="font-size:12px;color:#64748b;margin-bottom:6px;font-weight:500">Advance Note <span style="font-weight:400;opacity:0.7">(optional — next session ke mahine ya extra amount)</span></div>
+        <input id="waAdvanceNoteInput" type="text"
+          placeholder="e.g. Agle session ka advance — Rs.450 mila"
+          value="${_waAdvanceNote.replace(/"/g,'&quot;')}"
+          oninput="_waAdvanceNote=this.value"
+          style="width:100%;border:1px solid #e2e8f0;border-radius:8px;padding:8px 10px;font-size:13px;box-sizing:border-box;color:#1e293b">
       </div>
       <button class="whatsapp-btn" style="margin:0;justify-content:center;gap:10px" onclick="sendWaMemberPaid()">
         ${WA_SVG} Send Karein
@@ -803,6 +824,7 @@ function toggleWaPaidMonth(mo) {
 
 function closeWaPaidPopup() {
   document.getElementById('waPaidPopupOverlay')?.classList.remove('open');
+  _waAdvanceNote = '';
 }
 
 function sendWaMemberPaid() {
@@ -821,6 +843,9 @@ function sendWaMemberPaid() {
   } else {
     msg += `📅 Mahine: *${months.join(', ')}*\n`;
     msg += `💰 Kul Rakam: Rs.${months.length * FEE}\n\n`;
+  }
+  if (_waAdvanceNote.trim()) {
+    msg += `📌 *Advance:* ${_waAdvanceNote.trim()}\n\n`;
   }
   msg += `Allah aapki kamai mein barkat farmaaye. 🤲\n`;
   msg += `━━━━━━━━━━━━━━━━━━━\n`;
