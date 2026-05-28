@@ -308,6 +308,26 @@
   </div>
 </div>
 
+<!-- Upload progress banner (persistent across tabs) -->
+<div id="uploadProgressBanner" style="display:none;position:fixed;bottom:80px;left:12px;right:12px;
+     z-index:8500;background:linear-gradient(135deg,#0f4a29,#1a6b3c);color:#fff;
+     border-radius:16px;padding:12px 16px;box-shadow:0 4px 20px rgba(0,0,0,.35);
+     align-items:center;gap:12px">
+  <svg id="uploadSpinner" width="28" height="28" viewBox="0 0 28 28" fill="none"
+       style="flex-shrink:0;animation:spin .9s linear infinite">
+    <circle cx="14" cy="14" r="11" stroke="rgba(255,255,255,.2)" stroke-width="3"/>
+    <path d="M14 3a11 11 0 0 1 11 11" stroke="#4ade80" stroke-width="3" stroke-linecap="round"/>
+  </svg>
+  <div style="flex:1;min-width:0">
+    <div id="uploadProgressLabel" style="font-size:13px;font-weight:600;margin-bottom:5px">Uploading...</div>
+    <div style="background:rgba(255,255,255,.2);border-radius:4px;height:5px;overflow:hidden">
+      <div id="uploadProgressBar"
+           style="background:#4ade80;height:5px;border-radius:4px;width:0%;transition:width .35s ease"></div>
+    </div>
+    <div id="uploadProgressSub" style="font-size:11px;opacity:.75;margin-top:4px"></div>
+  </div>
+</div>
+
 <!-- JS: load order matters -->
 <script src="js/config.js"></script>
 <script src="js/app.js"></script>

@@ -305,8 +305,23 @@ function _compressImage(file) {
   });
 }
 
+function _showUploadProgress(label, done, total, sub) {
+  const banner = document.getElementById('uploadProgressBanner');
+  if (!banner) return;
+  banner.style.display = 'flex';
+  const pct = total > 0 ? Math.round(done / total * 100) : 0;
+  document.getElementById('uploadProgressLabel').textContent = label;
+  document.getElementById('uploadProgressBar').style.width = pct + '%';
+  document.getElementById('uploadProgressSub').textContent = sub || (total > 1 ? `${done} of ${total} done` : '');
+}
+
+function _hideUploadProgress() {
+  const banner = document.getElementById('uploadProgressBanner');
+  if (banner) banner.style.display = 'none';
+}
+
 async function _doUpload(file, occasion, note) {
-  showToast('Upload ho raha hai...');
+  _showUploadProgress('Uploading photo...', 0, 1, 'Please wait...');
   try {
     const compressed = await _compressImage(file);
     const form = new FormData();
@@ -317,14 +332,19 @@ async function _doUpload(file, occasion, note) {
     try { if (uploaded.description) m = { ...m, ...JSON.parse(uploaded.description) }; } catch (e) {}
     _gPhotos.unshift({ ...uploaded, occasion: m.occasion, note: m.note });
     _gLoaded = true;
+    _showUploadProgress('Upload complete!', 1, 1, '');
+    setTimeout(_hideUploadProgress, 2000);
     showToast('Photo upload ho gayi!');
-    renderGallery();
-  } catch (e) { showToast('Upload error: ' + e.message, 'error'); }
+    if (STATE.currentScreen === 'gallery') renderGallery();
+  } catch (e) {
+    _hideUploadProgress();
+    showToast('Upload error: ' + e.message, 'error');
+  }
 }
 
 async function _doBatchUpload(files, occasion, note) {
-  let success = 0;
-  showToast(`0 / ${files.length} upload ho rahi hain...`);
+  let success = 0, failed = 0;
+  _showUploadProgress(`Uploading photos...`, 0, files.length, `0 of ${files.length} done`);
   for (const file of files) {
     try {
       const compressed = await _compressImage(file);
@@ -336,13 +356,19 @@ async function _doBatchUpload(files, occasion, note) {
       try { if (uploaded.description) m = { ...m, ...JSON.parse(uploaded.description) }; } catch (e) {}
       _gPhotos.unshift({ ...uploaded, occasion: m.occasion, note: m.note });
       success++;
-      showToast(`${success} / ${files.length} upload ho gayi...`);
-    } catch (e) { /* continue uploading remaining */ }
+    } catch (e) { failed++; }
+    _showUploadProgress(
+      `Uploading photos...`,
+      success + failed, files.length,
+      `${success + failed} of ${files.length} done${failed > 0 ? ` · ${failed} failed` : ''}`
+    );
   }
   _gLoaded = true;
-  const failed = files.length - success;
+  _showUploadProgress('Upload complete!', files.length, files.length,
+    failed > 0 ? `${success} ok · ${failed} failed` : `All ${success} photos done`);
+  setTimeout(_hideUploadProgress, 2500);
   showToast(failed > 0 ? `${success} upload hui, ${failed} fail hui` : `${success} Photos upload ho gayi!`, failed > 0 ? 'error' : '');
-  renderGallery();
+  if (STATE.currentScreen === 'gallery') renderGallery();
 }
 
 // ── Lightbox ──────────────────────────────────────────────────
