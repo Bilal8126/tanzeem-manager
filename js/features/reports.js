@@ -475,7 +475,11 @@ function _rptFilteredStats() {
 
 function _rptOrderedMonths() {
   const all = _rptMonths();
-  if (_rpt.months.size === 0) return all.filter(isPastOrCurrent);
+  if (_rpt.months.size === 0) {
+    const stats = _rptAllStats();
+    // include future months only if someone paid in advance
+    return all.filter(mo => isPastOrCurrent(mo) || stats.some(m => isPaid(m.months[mo])));
+  }
   return all.filter(m => _rpt.months.has(m));
 }
 
@@ -521,9 +525,9 @@ function _rptMonthWise() {
     </p>`;
 
   orderedMonths.forEach(mo => {
-    const isFut  = !isPastOrCurrent(mo);
-    const paid   = allStats.filter(m =>  isPaid(m.months[mo]));
-    const unpaid = isFut ? [] : allStats.filter(m => !isPaid(m.months[mo]));
+    const isFut    = !isPastOrCurrent(mo);
+    const paid     = allStats.filter(m =>  isPaid(m.months[mo]));
+    const unpaid   = isFut ? [] : allStats.filter(m => !isPaid(m.months[mo]));
     html += `
       <div class="section-title">${mo}${isFut ? ' <span style="font-size:10px;font-weight:400;color:#94a3b8">(Future)</span>' : ''}</div>
       <table>
@@ -531,18 +535,23 @@ function _rptMonthWise() {
         <tbody>
           ${allStats.map(m => {
             const p = isPaid(m.months[mo]);
+            const cell = p && isFut  ? '<span class="green">↑ Advance Paid</span>'
+                       : p           ? '<span class="green">✓ Paid</span>'
+                       : isFut       ? '<span class="grey">—</span>'
+                       :               '<span class="red">✗ Unpaid</span>';
             return `<tr>
               <td><strong>${_rptClean(m.name)}</strong></td>
               <td><span class="badge ${m.isInactive ? 'br' : 'bg'}">${m.isInactive ? 'Inactive' : 'Active'}</span></td>
-              <td>${isFut ? '<span class="grey">—</span>' : p ? '<span class="green">✓ Paid</span>' : '<span class="red">✗ Unpaid</span>'}</td>
+              <td>${cell}</td>
             </tr>`;
           }).join('')}
         </tbody>
       </table>
       <p style="font-size:11px;margin-bottom:6px">
-        Paid: <span class="green">${paid.length}</span> &nbsp;|&nbsp;
-        Unpaid: <span class="red">${unpaid.length}</span> &nbsp;|&nbsp;
-        Total: ${allStats.length}
+        ${isFut
+          ? `Advance Paid: <span class="green">${paid.length}</span> &nbsp;|&nbsp; Not Yet: <span class="grey">${allStats.length - paid.length}</span>`
+          : `Paid: <span class="green">${paid.length}</span> &nbsp;|&nbsp; Unpaid: <span class="red">${unpaid.length}</span>`}
+        &nbsp;|&nbsp; Total: ${allStats.length}
       </p>`;
   });
   return { title: 'Month Wise Report', html };
