@@ -235,7 +235,10 @@ function shareWhatsAppMember(idx) {
   if (advMonths.length > 0) msg += `• Advance: ${advMonths.length} mahine\n`;
   msg += `\nJazakallah Khair 🤲`;
 
-  window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
+  const _raw    = (member.mobile || '').replace(/\D/g, '').replace(/^0+/, '');
+  const _mobile = _raw.length === 10 ? '91' + _raw : _raw;
+  const _waLink = _mobile ? `https://wa.me/${_mobile}?text=` : 'https://wa.me/?text=';
+  _askShareFormat(msg, _waLink);
 }
 
 // ── Toggle payment from member profile ───────────────────

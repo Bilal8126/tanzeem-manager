@@ -520,6 +520,110 @@ function renderPayments() {
   });
 }
 
+// ── Share Format Picker (Text / PDF) ─────────────────────
+
+let _pendingShare = { msg: '', waLink: '' };
+
+function _askShareFormat(msg, waLink) {
+  _pendingShare = { msg, waLink };
+  let overlay = document.getElementById('shareFormatOverlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'shareFormatOverlay';
+    overlay.className = 'modal-overlay';
+    overlay.style.zIndex = '500';
+    overlay.addEventListener('click', _closeShareFormat);
+    document.body.appendChild(overlay);
+  }
+  overlay.innerHTML = `
+    <div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-handle"></div>
+      <div class="modal-header">
+        <div class="modal-title">Share Format Chunein</div>
+        <button class="close-btn" onclick="_closeShareFormat()">×</button>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;padding-top:4px">
+        <button class="whatsapp-btn" style="margin:0;justify-content:center;gap:10px" onclick="_closeShareFormat();_sendAsText()">
+          ${WA_SVG} Text Message (WhatsApp)
+        </button>
+        <button class="btn btn-primary" style="width:100%;display:flex;align-items:center;justify-content:center;gap:10px;font-size:14px;padding:12px" onclick="_closeShareFormat();_sendAsPdf()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          PDF Receipt
+        </button>
+      </div>
+    </div>`;
+  overlay.classList.add('open');
+}
+
+function _closeShareFormat() {
+  document.getElementById('shareFormatOverlay')?.classList.remove('open');
+}
+
+function _sendAsText() {
+  window.open(_pendingShare.waLink + encodeURIComponent(_pendingShare.msg), '_blank');
+}
+
+function _sendAsPdf() {
+  const session = STATE.currentSession ? STATE.currentSession.label : '';
+  const dateStr = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
+  const logoUrl = new URL('icons/icon.svg', location.href).href;
+  const content = _pendingShare.msg
+    .replace(/━+/g, '<hr>')
+    .replace(/\*([^*\n]+)\*/g, '<strong>$1</strong>')
+    .replace(/\n/g, '<br>');
+
+  const win = window.open('', '_blank');
+  if (!win) { showToast('Popup block hai — browser mein allow karein', 'error'); return; }
+  win.document.write(`<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Receipt — Tanzeem Abd-e-Mustafa</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:Arial,sans-serif;font-size:13px;color:#1e293b;padding:32px;max-width:620px;margin:0 auto}
+  .hdr{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2.5px solid #1a6b3c;padding-bottom:14px;margin-bottom:22px}
+  .hdr-left{display:flex;align-items:center;gap:12px}
+  .logo{width:52px;height:52px;border-radius:10px}
+  .org{font-size:16px;font-weight:700;color:#1a6b3c}
+  .org-sub{font-size:12px;color:#64748b;margin-top:2px}
+  .sess{display:inline-block;font-size:11px;font-weight:600;color:#0f4a29;background:#dcfce7;padding:2px 8px;border-radius:4px;margin-top:5px}
+  .hdr-right{text-align:right;font-size:11px;color:#64748b}
+  .hdr-right .date{font-weight:700;color:#1e293b;font-size:13px}
+  .body{line-height:1.9}
+  .body hr{border:none;border-top:1px solid #cbd5e1;margin:10px 0}
+  .ftr{margin-top:30px;border-top:1px solid #e2e8f0;padding-top:12px;text-align:center;font-size:11px;color:#94a3b8;line-height:1.7}
+  .ftr strong{color:#475569;font-size:12px}
+  .ftr em{font-size:10px}
+  @media print{body{padding:16px}@page{margin:.8cm}}
+</style>
+</head>
+<body>
+<div class="hdr">
+  <div class="hdr-left">
+    <img src="${logoUrl}" class="logo" onerror="this.style.display='none'">
+    <div>
+      <div class="org">Tanzeem Abd-e-Mustafa — Bisauli</div>
+      <div class="org-sub">تنظیم عبد مصطفیٰ — بسولی</div>
+      <span class="sess">Session: ${session}</span>
+    </div>
+  </div>
+  <div class="hdr-right">
+    <div class="date">${dateStr}</div>
+    <div style="margin-top:3px">Auto-Generated Receipt</div>
+  </div>
+</div>
+<div class="body">${content}</div>
+<div class="ftr">
+  <strong>Tanzeem Abd-e-Mustafa — Bisauli</strong><br>
+  <em>⚠ Yeh receipt automatically generate ki gayi hai — kisi dastakhat (signature) ki zaroorat nahi.</em>
+</div>
+<script>setTimeout(()=>window.print(),500)<\/script>
+</body>
+</html>`);
+  win.document.close();
+}
+
 // ── WhatsApp Share ────────────────────────────────────────
 
 function shareWhatsApp(filter) {
@@ -558,7 +662,7 @@ function shareWhatsApp(filter) {
     msg += `• Overdue members: ${overdueList.length} log\n`;
     //msg += `• Kul baqi: ${formatCurrency(overdueList.reduce((s, m) => s + m.totalPending, 0))}\n`;
     msg += `\nJazakallah Khair 🤲`;
-    window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
+    _askShareFormat(msg, 'https://wa.me/?text=');
     return;
   }
 
@@ -619,7 +723,7 @@ function shareWhatsApp(filter) {
   // msg += `• Kul baqi hai: ${formatCurrency(totalPending)}\n`;
   msg += `\nJazakallah Khair 🤲`;
 
-  window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
+  _askShareFormat(msg, 'https://wa.me/?text=');
 }
 
 // ── Toggle payment cell ───────────────────────────────────
@@ -719,7 +823,7 @@ function waMemberOverdue(name) {
   if (!m) return;
   const clean = n => n.replace(/\(.*?\)/g, '').trim();
   let msg = _waHeader();
-  msg += `Bhai *${clean(m.name)}*,\n\n`;
+  msg += `*${clean(m.name)}*,\n\n`;
   msg += `Tanzeem Abd-e-Mustafa ki taraf se yaad dahani:\n\n`;
   msg += `⚠️ *Aapki Baqi Mahine (${m.unpaidList.length} mahine):*\n`;
   msg += m.unpaidList.join(', ') + '\n\n';
@@ -728,18 +832,18 @@ function waMemberOverdue(name) {
   msg += `━━━━━━━━━━━━━━━━━━━\n`;
   msg += `Meherbani karke jald se jald ada kar dein.\n`;
   msg += `Jazakallah Khair 🤲`;
-  window.open(_memberWaLink(name) + encodeURIComponent(msg), '_blank');
+  _askShareFormat(msg, _memberWaLink(name));
 }
 
 function waMemberUnpaid(name, month) {
   const clean = n => n.replace(/\(.*?\)/g, '').trim();
   let msg = _waHeader();
-  msg += `Bhai *${clean(name)}*,\n\n`;
+  msg += `*${clean(name)}*,\n\n`;
   msg += `❌ *${month} Ki Payment Abhi Baqi Hai*\n\n`;
   msg += `Meherbani karke Rs.${FEE} jama kar dein.\n\n`;
   msg += `━━━━━━━━━━━━━━━━━━━\n`;
   msg += `Jazakallah Khair 🤲`;
-  window.open(_memberWaLink(name) + encodeURIComponent(msg), '_blank');
+  _askShareFormat(msg, _memberWaLink(name));
 }
 
 // Paid: show month picker popup
@@ -835,7 +939,7 @@ function sendWaMemberPaid() {
   });
   const clean = n => n.replace(/\(.*?\)/g, '').trim();
   let msg = _waHeader();
-  msg += `Bhai *${clean(_waPaidName)}*,\n\n`;
+  msg += `*${clean(_waPaidName)}*,\n\n`;
   msg += `✅ *Aapki Payment Haasil Ho Gayi!*\n\n`;
   if (months.length === 1) {
     msg += `📅 Mahina: *${months[0]}*\n`;
@@ -850,7 +954,7 @@ function sendWaMemberPaid() {
   msg += `Allah aapki kamai mein barkat farmaaye. 🤲\n`;
   msg += `━━━━━━━━━━━━━━━━━━━\n`;
   msg += `Jazakallah Khair 🤲`;
-  window.open(_memberWaLink(_waPaidName) + encodeURIComponent(msg), '_blank');
+  _askShareFormat(msg, _memberWaLink(_waPaidName));
 }
 
 function waMemberSummary(name) {

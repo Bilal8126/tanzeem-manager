@@ -107,6 +107,8 @@ function renderSettings() {
       </div>
     </div>
 
+    ${renderReportsSection()}
+
     <!-- App Info -->
     <div class="card" style="margin-bottom:14px">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
