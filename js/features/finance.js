@@ -104,18 +104,17 @@ function openFinanceForm(type, idx) {
   const item       = isEdit ? (isDonation ? STATE.allDonations[idx] : STATE.allExpenses[idx]) : null;
   const title      = (isEdit ? 'Edit ' : 'Add ') + (isDonation ? 'Donation' : 'Expense');
 
-  // Member name suggestions for datalist (all members, active + inactive)
-  const _memberOptions = STATE.allMembers
-    .map(m => `<option value="${m.name.replace(/"/g,'&quot;')}">`)
-    .join('');
+  const _memberOptions = isDonation
+    ? STATE.allMembers.map(m => `<option value="${m.name.replace(/"/g,'&quot;')}">`).join('')
+    : '';
 
   document.getElementById('financeFormContent').innerHTML = `
-    <datalist id="ff_memberList">${_memberOptions}</datalist>
     <div class="modal-header">
       <div class="modal-title">${title}</div>
       <button class="close-btn" onclick="closeFinanceForm()">×</button>
     </div>
     ${isDonation ? `
+      <datalist id="ff_memberList">${_memberOptions}</datalist>
       <div class="form-group">
         <label>Donor Ka Naam *</label>
         <input id="ff_name" list="ff_memberList"
@@ -141,13 +140,10 @@ function openFinanceForm(type, idx) {
     ` : `
       <div class="form-group">
         <label>Kharcha Ki Wajah *</label>
-        <input id="ff_name" list="ff_memberList"
+        <input id="ff_name"
           value="${(item?.desc || '').replace(/"/g,'&quot;')}"
           placeholder="Kya kharcha hua ya kisko diya…"
           autocomplete="off">
-        <div style="font-size:11px;color:var(--muted);margin-top:4px">
-          Member chunein ya kuch bhi likhein
-        </div>
       </div>
       <div class="form-group">
         <label>Amount (Rs.) *</label>
