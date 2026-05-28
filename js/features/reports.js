@@ -286,29 +286,37 @@ function _renderReportModal() {
 
   overlay.innerHTML = `
     <div class="modal" onclick="event.stopPropagation()"
-         style="max-height:88vh;overflow-y:auto;display:flex;flex-direction:column">
+         style="max-height:88vh;display:flex;flex-direction:column;overflow:hidden">
       <div class="modal-handle"></div>
-      <div class="modal-header">
-        <div class="modal-title" style="color:${rtype.color};display:flex;align-items:center;gap:8px">
-          ${_RSVG[rtype.id]} ${rtype.label}
+
+      <!-- scrollable filter area -->
+      <div style="overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch;padding-bottom:4px">
+        <div class="modal-header">
+          <div class="modal-title" style="color:${rtype.color};display:flex;align-items:center;gap:8px">
+            ${_RSVG[rtype.id]} ${rtype.label}
+          </div>
+          <button class="close-btn" onclick="_closeReport()">×</button>
         </div>
-        <button class="close-btn" onclick="_closeReport()">×</button>
+        <div style="font-size:11px;color:#64748b;margin-bottom:14px;
+                    background:#f8fafc;border-radius:8px;padding:7px 10px">
+          Session: <strong>${STATE.currentSession?.label || '—'}</strong>
+          ${STATE.allPayments.length === 0 && !['donation','expense','member'].includes(_rpt.type)
+            ? '<span style="color:#b91c1c;margin-left:8px">⚠ Data not loaded — sync first</span>' : ''}
+        </div>
+        ${monthPicker}${statusPicker}${memberPicker}${overduePicker}
       </div>
-      <div style="font-size:11px;color:#64748b;margin-bottom:14px;
-                  background:#f8fafc;border-radius:8px;padding:7px 10px">
-        Session: <strong>${STATE.currentSession?.label || '—'}</strong>
-        ${STATE.allPayments.length === 0 && !['donation','expense','member'].includes(_rpt.type)
-          ? '<span style="color:#b91c1c;margin-left:8px">⚠ Data not loaded — sync first</span>' : ''}
-      </div>
-      ${monthPicker}${statusPicker}${memberPicker}${overduePicker}
-      <div style="display:flex;flex-direction:column;gap:8px;padding-top:4px;margin-top:auto">
+
+      <!-- sticky action buttons — never inside the scroll area -->
+      <div style="flex-shrink:0;padding:10px 0 2px;border-top:1px solid #e2e8f0;display:flex;flex-direction:column;gap:8px">
         <button class="btn btn-primary"
-          style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;font-size:14px;padding:13px"
+          style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;
+                 font-size:14px;padding:13px;touch-action:manipulation"
           onclick="_exportReport()">
           ${_RSVG.pdf} Export PDF
         </button>
-        <button class="whatsapp-btn" style="margin:0;justify-content:center;gap:8px"
-                onclick="_shareReportWA()">
+        <button class="whatsapp-btn"
+          style="margin:0;justify-content:center;gap:8px;touch-action:manipulation"
+          onclick="_shareReportWA()">
           ${typeof WA_SVG !== 'undefined' ? WA_SVG : ''} WhatsApp Share (PDF)
         </button>
       </div>
