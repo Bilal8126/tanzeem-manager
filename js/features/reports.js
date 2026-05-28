@@ -211,7 +211,7 @@ function _renderReportModal() {
           <span style="font-weight:400;color:#94a3b8;margin-left:4px">(${_rpt.months.size === 0 ? 'none' : _rpt.months.size + ' selected'})</span>
         </span>
         <div style="display:flex;gap:12px">
-          <button onclick="_rptSelectAllMonths()" style="font-size:11px;color:#1a6b3c;background:none;border:none;cursor:pointer;font-weight:600">All</button>
+          ${!isMonthComp ? `<button onclick="_rptSelectAllMonths()" style="font-size:11px;color:#1a6b3c;background:none;border:none;cursor:pointer;font-weight:600">All</button>` : ''}
           <button onclick="_rptClearMonths()" style="font-size:11px;color:#b91c1c;background:none;border:none;cursor:pointer;font-weight:600">Clear</button>
         </div>
       </div>
