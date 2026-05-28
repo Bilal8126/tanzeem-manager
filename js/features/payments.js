@@ -401,7 +401,13 @@ function renderPayments() {
                     <b>${m.name.replace(/\(.*?\)/g,'').trim()}</b>
                     <span class="badge badge-active" style="font-size:10px;margin-left:4px">Active</span>
                   </div>
-                  <div class="pay-sub">Paid ${m.paidList.length} of ${months.filter(isPastOrCurrent).length} past months</div>
+                  <div class="pay-sub">${(() => {
+                    const pastCount = months.filter(isPastOrCurrent).length;
+                    const pastPaid  = m.paidList.filter(isPastOrCurrent).length;
+                    const advance   = m.paidList.length - pastPaid;
+                    if (advance > 0) return `Paid ${pastPaid}/${pastCount} past months + ${advance} advance`;
+                    return `Paid ${pastPaid} of ${pastCount} past months`;
+                  })()}</div>
                 </div>
                 <div class="pay-amount" style="color:${C_GREEN}">+${formatCurrency(FEE)}</div>
                 <button onclick="waMemberPaidPopup('${m.name.replace(/\(.*?\)/g,'').trim()}')" title="Payment Confirm WhatsApp" style="background:none;border:none;cursor:pointer;color:#25d366;padding:2px 6px;flex-shrink:0;line-height:1">${WA_SVG}</button>
