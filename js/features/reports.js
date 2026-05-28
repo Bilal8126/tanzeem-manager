@@ -10,20 +10,44 @@ const _RSVG = {
   donation:  `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>`,
   expense:   `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>`,
   summary:   `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>`,
-  pdf:       `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>`,
-  search:    `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`,
+  pdf:        `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>`,
+  search:     `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`,
+  advance:    `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>`,
+  fullpaid:   `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/><polyline points="15 6 17 8"/></svg>`,
+  partial:    `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>`,
+  collection: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg>`,
+  statement:  `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>`,
+  impact:     `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>`,
+  balance:    `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>`,
+  cashflow:   `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>`,
+  topdonors:  `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg>`,
+  monthcomp:  `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="9" height="18" rx="1"/><rect x="13" y="3" width="9" height="18" rx="1"/></svg>`,
 };
 
 const _RPT_TYPES = [
-  { id:'member',    label:'Member Report',    color:'#1d4ed8', bg:'#eff6ff' },
-  { id:'monthwise', label:'Month Wise',       color:'#7c3aed', bg:'#f5f3ff' },
-  { id:'session',   label:'Session Report',   color:'#0f4a29', bg:'#f0fdf4' },
-  { id:'unpaid',    label:'Unpaid Report',    color:'#b91c1c', bg:'#fef2f2' },
-  { id:'paid',      label:'Paid Report',      color:'#15803d', bg:'#f0fdf4' },
-  { id:'overdue',   label:'Overdue Report',   color:'#b45309', bg:'#fffbeb' },
-  { id:'donation',  label:'Donation Report',  color:'#0369a1', bg:'#f0f9ff' },
-  { id:'expense',   label:'Expense Report',   color:'#dc2626', bg:'#fef2f2' },
-  { id:'summary',   label:'Summary Report',   color:'#374151', bg:'#f8fafc' },
+  // ── Payment ──────────────────────────────────────────────
+  { id:'member',    label:'Member Report',        color:'#1d4ed8', bg:'#eff6ff' },
+  { id:'monthwise', label:'Month Wise',           color:'#7c3aed', bg:'#f5f3ff' },
+  { id:'session',   label:'Session Report',       color:'#0f4a29', bg:'#f0fdf4' },
+  { id:'unpaid',    label:'Unpaid Report',        color:'#b91c1c', bg:'#fef2f2' },
+  { id:'paid',      label:'Paid Report',          color:'#15803d', bg:'#f0fdf4' },
+  { id:'overdue',   label:'Overdue Report',       color:'#b45309', bg:'#fffbeb' },
+  { id:'advance',   label:'Advance Payments',     color:'#0891b2', bg:'#ecfeff' },
+  { id:'fullpaid',  label:'Full Payment',         color:'#16a34a', bg:'#f0fdf4' },
+  { id:'partial',   label:'Partial Payment',      color:'#ca8a04', bg:'#fefce8' },
+  { id:'collection',label:'Collection Rate',      color:'#6d28d9', bg:'#f5f3ff' },
+  // ── Member ───────────────────────────────────────────────
+  { id:'statement', label:'Member Statement',     color:'#0369a1', bg:'#f0f9ff' },
+  { id:'impact',    label:'Inactive Impact',      color:'#64748b', bg:'#f8fafc' },
+  // ── Financial ────────────────────────────────────────────
+  { id:'donation',  label:'Donation Report',      color:'#0369a1', bg:'#f0f9ff' },
+  { id:'expense',   label:'Expense Report',       color:'#dc2626', bg:'#fef2f2' },
+  { id:'topdonors', label:'Top Donors',           color:'#b45309', bg:'#fffbeb' },
+  { id:'balance',   label:'Balance Sheet',        color:'#15803d', bg:'#f0fdf4' },
+  { id:'cashflow',  label:'Cash Flow',            color:'#0284c7', bg:'#f0f9ff' },
+  // ── Summary / Comparison ─────────────────────────────────
+  { id:'summary',   label:'Summary Report',       color:'#374151', bg:'#f8fafc' },
+  { id:'monthcomp', label:'Month Comparison',     color:'#7c3aed', bg:'#f5f3ff' },
 ];
 
 // ── Report state ──────────────────────────────────────────
@@ -172,10 +196,11 @@ function _renderReportModal() {
   const rtype  = _RPT_TYPES.find(r => r.id === _rpt.type);
   const months = _rptMonths();
 
-  const needsMonths  = ['monthwise','unpaid','paid'].includes(_rpt.type);
-  const needsMembers = ['monthwise','unpaid','paid','overdue'].includes(_rpt.type);
-  const needsStatus  = ['member','monthwise','unpaid','paid'].includes(_rpt.type);
+  const needsMonths  = ['monthwise','unpaid','paid','monthcomp'].includes(_rpt.type);
+  const needsMembers = ['monthwise','unpaid','paid','overdue','advance','statement'].includes(_rpt.type);
+  const needsStatus  = ['member','monthwise','unpaid','paid','advance','fullpaid','partial','statement'].includes(_rpt.type);
   const needsOverdue = _rpt.type === 'overdue';
+  const isMonthComp  = _rpt.type === 'monthcomp';
 
   // ── Month picker ──────────────────────────────────────
   const monthPicker = needsMonths ? `
@@ -199,6 +224,9 @@ function _renderReportModal() {
             style="scroll-snap-align:none;${isFut && !isSel ? 'opacity:.45;border-style:dashed;' : ''}">${mo}</button>`;
         }).join('')}
       </div>
+      ${isMonthComp ? `<div style="font-size:11px;color:${_rpt.months.size === 2 ? '#15803d' : '#b45309'};margin-top:6px;font-weight:500">
+        ${_rpt.months.size === 2 ? '✓ 2 months selected — ready to compare' : `⚠ Select exactly 2 months (${_rpt.months.size} selected)`}
+      </div>` : ''}
     </div>` : '';
 
   // ── Status filter ─────────────────────────────────────
@@ -319,6 +347,9 @@ function _reportGuard() {
 
 function _exportReport() {
   if (!_reportGuard()) return;
+  if (_rpt.type === 'monthcomp' && _rpt.months.size !== 2) {
+    showToast('Select exactly 2 months to compare', 'error'); return;
+  }
   const result = _buildReport();
   if (!result) return;
   _openReportPdf(result.title, result.html, false);
@@ -450,15 +481,25 @@ function _openReportPdf(title, bodyHtml, forShare) {
 
 function _buildReport() {
   switch (_rpt.type) {
-    case 'member':    return _rptMember();
-    case 'monthwise': return _rptMonthWise();
-    case 'session':   return _rptSession();
-    case 'unpaid':    return _rptUnpaid();
-    case 'paid':      return _rptPaid();
-    case 'overdue':   return _rptOverdue();
-    case 'donation':  return _rptDonation();
-    case 'expense':   return _rptExpense();
-    case 'summary':   return _rptSummary();
+    case 'member':     return _rptMember();
+    case 'monthwise':  return _rptMonthWise();
+    case 'session':    return _rptSession();
+    case 'unpaid':     return _rptUnpaid();
+    case 'paid':       return _rptPaid();
+    case 'overdue':    return _rptOverdue();
+    case 'advance':    return _rptAdvance();
+    case 'fullpaid':   return _rptFullPaid();
+    case 'partial':    return _rptPartial();
+    case 'collection': return _rptCollectionRate();
+    case 'statement':  return _rptStatement();
+    case 'impact':     return _rptImpact();
+    case 'donation':   return _rptDonation();
+    case 'expense':    return _rptExpense();
+    case 'topdonors':  return _rptTopDonors();
+    case 'balance':    return _rptBalanceSheet();
+    case 'cashflow':   return _rptCashFlow();
+    case 'summary':    return _rptSummary();
+    case 'monthcomp':  return _rptMonthComp();
     default: return null;
   }
 }
@@ -810,4 +851,496 @@ function _rptSummary() {
       </tbody>
     </table>`;
   return { title: 'Summary Report', html };
+}
+
+// ── 10. Advance Payment Report ────────────────────────────
+function _rptAdvance() {
+  const stats = _rptFilteredStats();
+  const allMonths = _rptMonths();
+  const futureMonths = allMonths.filter(mo => !isPastOrCurrent(mo));
+  const label = _rpt.statusFilter === 'active' ? 'Active' : _rpt.statusFilter === 'inactive' ? 'Inactive' : 'All';
+
+  const results = stats.map(m => ({
+    ...m,
+    advMonths: futureMonths.filter(mo => isPaid(m.months[mo])),
+  })).filter(m => m.advMonths.length > 0)
+     .sort((a,b) => b.advMonths.length - a.advMonths.length);
+
+  const totalAdv = results.reduce((s,m) => s + m.advMonths.length * FEE, 0);
+
+  const html = `
+    <h2>Advance Payment Report — ${label}</h2>
+    <p style="font-size:11px;color:#64748b;margin-bottom:12px">Members who paid future months in advance (↑)</p>
+    ${futureMonths.length === 0
+      ? '<p class="grey">No future months in this session.</p>'
+      : results.length === 0
+        ? '<p class="grey">No advance payments recorded.</p>'
+        : `<table>
+            <thead><tr><th>#</th><th>Member</th><th>Advance Months</th><th>Count</th><th>Amount</th></tr></thead>
+            <tbody>
+              ${results.map((m,i) => `
+                <tr>
+                  <td class="grey">${i+1}</td>
+                  <td><strong>${_rptClean(m.name)}</strong>
+                    <br><span class="grey" style="font-size:10px">${m.isInactive?'Inactive':'Active'}</span></td>
+                  <td class="blue">${m.advMonths.join(', ')}</td>
+                  <td class="blue">${m.advMonths.length}</td>
+                  <td class="green">${formatCurrency(m.advMonths.length * FEE)}</td>
+                </tr>`).join('')}
+            </tbody>
+          </table>
+          <p style="font-size:11px;margin-top:4px">
+            Advance paid members: <span class="blue">${results.length}</span> &nbsp;|&nbsp;
+            Total advance collected: <span class="green">${formatCurrency(totalAdv)}</span>
+          </p>`}`;
+  return { title: 'Advance Payment Report', html };
+}
+
+// ── 11. Full Payment Report ───────────────────────────────
+function _rptFullPaid() {
+  const allMonths = _rptMonths();
+  const pastMonths = allMonths.filter(isPastOrCurrent);
+  const stats = _rptFilteredStats();
+  const label = _rpt.statusFilter === 'active' ? 'Active' : _rpt.statusFilter === 'inactive' ? 'Inactive' : 'All';
+
+  const results = stats.filter(m => pastMonths.every(mo => isPaid(m.months[mo])));
+
+  const html = `
+    <h2>Full Payment Report — ${label}</h2>
+    <p style="font-size:11px;color:#64748b;margin-bottom:12px">
+      Members who paid ALL ${pastMonths.length} past months — fully clear, zero pending
+    </p>
+    ${results.length === 0
+      ? '<p class="grey">No fully paid members yet.</p>'
+      : `<table>
+          <thead><tr><th>#</th><th>Member</th><th>Months Paid</th><th>Total</th></tr></thead>
+          <tbody>
+            ${results.map((m,i) => `
+              <tr>
+                <td class="grey">${i+1}</td>
+                <td><strong>${_rptClean(m.name)}</strong>
+                  ${m.paidList.length > pastMonths.length ? '<span class="blue" style="font-size:10px;margin-left:4px">+Advance</span>' : ''}
+                </td>
+                <td class="green">${pastMonths.length} / ${pastMonths.length} ✓</td>
+                <td class="green">${formatCurrency(pastMonths.length * FEE)}</td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+        <p style="font-size:11px;margin-top:4px">
+          Fully paid: <span class="green">${results.length} of ${stats.length} members</span>
+        </p>`}`;
+  return { title: 'Full Payment Report', html };
+}
+
+// ── 12. Partial Payment Report ────────────────────────────
+function _rptPartial() {
+  const allMonths = _rptMonths();
+  const pastMonths = allMonths.filter(isPastOrCurrent);
+  const stats = _rptFilteredStats();
+  const label = _rpt.statusFilter === 'active' ? 'Active' : _rpt.statusFilter === 'inactive' ? 'Inactive' : 'All';
+
+  const results = stats.map(m => ({
+    ...m,
+    paidPast:   pastMonths.filter(mo =>  isPaid(m.months[mo])),
+    unpaidPast: pastMonths.filter(mo => !isPaid(m.months[mo])),
+  })).filter(m => m.paidPast.length > 0 && m.unpaidPast.length > 0)
+     .sort((a,b) => b.unpaidPast.length - a.unpaidPast.length);
+
+  const html = `
+    <h2>Partial Payment Report — ${label}</h2>
+    <p style="font-size:11px;color:#64748b;margin-bottom:12px">
+      Members who paid some months but still have pending dues
+    </p>
+    ${results.length === 0
+      ? '<p class="grey">No partial payers found.</p>'
+      : `<table>
+          <thead><tr><th>#</th><th>Member</th><th>Paid</th><th>Unpaid</th><th>Pending</th></tr></thead>
+          <tbody>
+            ${results.map((m,i) => `
+              <tr>
+                <td class="grey">${i+1}</td>
+                <td><strong>${_rptClean(m.name)}</strong></td>
+                <td class="green">${m.paidPast.length}</td>
+                <td class="orange">${m.unpaidPast.join(', ')}</td>
+                <td class="red">${formatCurrency(m.unpaidPast.length * FEE)}</td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+        <p style="font-size:11px;margin-top:4px">
+          Partial payers: <span class="orange">${results.length} members</span> &nbsp;|&nbsp;
+          Total pending: <span class="red">${formatCurrency(results.reduce((s,m)=>s+m.unpaidPast.length*FEE,0))}</span>
+        </p>`}`;
+  return { title: 'Partial Payment Report', html };
+}
+
+// ── 13. Collection Rate Report ────────────────────────────
+function _rptCollectionRate() {
+  const months = _rptMonths();
+  const stats = _rptAllStats();
+  const active = stats.filter(m => !m.isInactive);
+  const total = active.length;
+
+  const rows = months.map(mo => {
+    const isFut   = !isPastOrCurrent(mo);
+    const paidCnt = active.filter(m => isPaid(m.months[mo])).length;
+    if (isFut && paidCnt === 0) return null;
+    const rate    = total > 0 ? Math.round(paidCnt / total * 100) : 0;
+    const color   = rate >= 80 ? '#16a34a' : rate >= 50 ? '#ca8a04' : '#dc2626';
+    const cls     = rate >= 80 ? 'green' : rate >= 50 ? 'orange' : 'red';
+    return { mo, isFut, paidCnt, unpaidCnt: isFut ? 0 : total - paidCnt, rate, color, cls };
+  }).filter(Boolean);
+
+  const avgRate = rows.filter(r=>!r.isFut).length > 0
+    ? Math.round(rows.filter(r=>!r.isFut).reduce((s,r)=>s+r.rate,0) / rows.filter(r=>!r.isFut).length) : 0;
+
+  const html = `
+    <h2>Collection Rate Report</h2>
+    <p style="font-size:11px;color:#64748b;margin-bottom:12px">
+      Month-by-month payment rate for active members (${total} members) · Average: <strong>${avgRate}%</strong>
+    </p>
+    <table>
+      <thead><tr><th>Month</th><th>Paid</th><th>Unpaid</th><th>Rate</th><th style="min-width:80px">Progress</th></tr></thead>
+      <tbody>
+        ${rows.map(r => `
+          <tr>
+            <td><strong>${r.mo}</strong>${r.isFut?'<span class="blue" style="font-size:10px;margin-left:4px">Advance</span>':''}</td>
+            <td class="green">${r.paidCnt}</td>
+            <td class="${r.unpaidCnt>0?'red':'grey'}">${r.isFut?'—':r.unpaidCnt}</td>
+            <td class="${r.cls}" style="font-weight:700">${r.rate}%</td>
+            <td>
+              <div style="background:#f1f5f9;height:10px;border-radius:5px;overflow:hidden">
+                <div style="background:${r.color};height:10px;width:${r.rate}%;border-radius:5px;transition:width .3s"></div>
+              </div>
+            </td>
+          </tr>`).join('')}
+      </tbody>
+    </table>`;
+  return { title: 'Collection Rate Report', html };
+}
+
+// ── 14. Member Statement ──────────────────────────────────
+function _rptStatement() {
+  const stats = _rptFilteredStats();
+  const allMonths = _rptMonths();
+  const label = _rpt.statusFilter === 'active' ? 'Active' : _rpt.statusFilter === 'inactive' ? 'Inactive' : 'All';
+
+  if (stats.length === 0) return { title:'Member Statement', html:'<p class="grey">No members found with selected filters.</p>' };
+
+  let html = `<h2>Member Statement — ${label}</h2>`;
+
+  stats.forEach(m => {
+    const paidPast = allMonths.filter(mo => isPaid(m.months[mo]) &&  isPastOrCurrent(mo));
+    const unpaid   = allMonths.filter(mo => !isPaid(m.months[mo]) && isPastOrCurrent(mo));
+    const advance  = allMonths.filter(mo => isPaid(m.months[mo]) && !isPastOrCurrent(mo));
+    const member   = STATE.allMembers.find(mb => nameMatch(mb.name, m.name));
+
+    html += `
+      <div style="page-break-inside:avoid;margin-bottom:24px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden">
+        <div style="background:#f0fdf4;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #bbf7d0">
+          <div>
+            <strong style="font-size:14px">${_rptClean(m.name)}</strong>
+            <span style="font-size:11px;color:#64748b;margin-left:8px">${m.isInactive?'Inactive':'Active'}</span>
+            ${member?.mobile ? `<span style="font-size:11px;color:#64748b;margin-left:8px">📞 ${member.mobile}</span>` : ''}
+          </div>
+          <div style="text-align:right;font-size:11px">
+            <div class="green" style="font-size:13px;font-weight:700">${formatCurrency(paidPast.length * FEE)}</div>
+            <div style="color:#64748b">collected</div>
+          </div>
+        </div>
+        <table style="margin:0">
+          <thead><tr><th>Month</th><th>Status</th><th>Amount</th><th>Note</th></tr></thead>
+          <tbody>
+            ${allMonths.map(mo => {
+              const p    = isPaid(m.months[mo]);
+              const past = isPastOrCurrent(mo);
+              if (!p && !past) return '';
+              const type = p && !past ? 'Advance' : p ? 'Paid' : 'Unpaid';
+              const cls  = p ? 'green' : 'red';
+              return `<tr>
+                <td><strong>${mo}</strong></td>
+                <td class="${cls}">${p ? '✓' : '✗'} ${type}</td>
+                <td class="${cls}">${p ? formatCurrency(FEE) : '—'}</td>
+                <td>${!past && p ? '<span class="blue">↑ Advance</span>' : ''}</td>
+              </tr>`;
+            }).filter(Boolean).join('')}
+          </tbody>
+        </table>
+        <div style="padding:8px 14px;background:#f8fafc;font-size:11px;display:flex;gap:16px;border-top:1px solid #e2e8f0">
+          <span>Paid: <span class="green">${paidPast.length}</span></span>
+          <span>Unpaid: <span class="${unpaid.length>0?'red':'grey'}">${unpaid.length}</span></span>
+          ${advance.length > 0 ? `<span>Advance: <span class="blue">${advance.length}</span></span>` : ''}
+          <span>Pending: <span class="${unpaid.length>0?'red':'grey'}">${unpaid.length>0?formatCurrency(unpaid.length*FEE):'—'}</span></span>
+        </div>
+      </div>`;
+  });
+
+  return { title: 'Member Statement', html };
+}
+
+// ── 15. Inactive Member Impact ────────────────────────────
+function _rptImpact() {
+  const stats = _rptAllStats();
+  const active   = stats.filter(m => !m.isInactive);
+  const inactive = stats.filter(m =>  m.isInactive);
+  const pastMonths = _rptMonths().filter(isPastOrCurrent);
+  const pm = pastMonths.length;
+
+  const expectedAll      = stats.length * pm * FEE;
+  const expectedActive   = active.length * pm * FEE;
+  const expectedInactive = inactive.length * pm * FEE;
+  const collectedAll     = stats.reduce((s,m) => s+m.totalPaid, 0);
+  const collectedActive  = active.reduce((s,m) => s+m.totalPaid, 0);
+  const collectedInactive= inactive.reduce((s,m) => s+m.totalPaid, 0);
+  const lostFromInactive = expectedInactive - collectedInactive;
+  const pendingActive    = expectedActive - collectedActive;
+
+  const html = `
+    <h2>Inactive Member Impact Report</h2>
+    <p style="font-size:11px;color:#64748b;margin-bottom:14px">
+      Financial impact of inactive members over ${pm} past months
+    </p>
+    <div class="summary-grid">
+      <div class="summary-card"><div class="lbl">Total Members</div><div class="val">${stats.length}</div></div>
+      <div class="summary-card"><div class="lbl">Active</div><div class="val green">${active.length}</div></div>
+      <div class="summary-card"><div class="lbl">Inactive</div><div class="val grey">${inactive.length}</div></div>
+    </div>
+    <div class="section-title">Collection Analysis (${pm} months)</div>
+    <table>
+      <thead><tr><th>Category</th><th>Expected</th><th>Collected</th><th>Gap</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>Active Members</strong></td>
+          <td>${formatCurrency(expectedActive)}</td>
+          <td class="green">${formatCurrency(collectedActive)}</td>
+          <td class="${pendingActive>0?'orange':'green'}">${formatCurrency(pendingActive)}</td>
+        </tr>
+        <tr style="background:#f8fafc">
+          <td><strong>Inactive Members</strong></td>
+          <td>${formatCurrency(expectedInactive)}</td>
+          <td class="grey">${formatCurrency(collectedInactive)}</td>
+          <td class="red">${formatCurrency(lostFromInactive)}</td>
+        </tr>
+        <tr style="font-weight:700">
+          <td>Total</td>
+          <td>${formatCurrency(expectedAll)}</td>
+          <td class="green">${formatCurrency(collectedAll)}</td>
+          <td class="${expectedAll-collectedAll>0?'red':'green'}">${formatCurrency(expectedAll-collectedAll)}</td>
+        </tr>
+      </tbody>
+    </table>
+    <p style="font-size:11px;margin-top:4px;color:#64748b">
+      Revenue lost due to inactive members: <span class="red" style="font-size:13px;font-weight:700">${formatCurrency(lostFromInactive)}</span>
+      (${expectedInactive>0?Math.round(lostFromInactive/expectedInactive*100):0}% of their expected contribution)
+    </p>
+    ${inactive.length > 0 ? `
+    <div class="section-title">Inactive Members Detail</div>
+    <table>
+      <thead><tr><th>#</th><th>Member</th><th>Paid</th><th>Expected</th><th>Loss</th></tr></thead>
+      <tbody>
+        ${inactive.map((m,i) => `
+          <tr>
+            <td class="grey">${i+1}</td>
+            <td><strong>${_rptClean(m.name)}</strong></td>
+            <td>${formatCurrency(m.totalPaid)}</td>
+            <td>${formatCurrency(pm*FEE)}</td>
+            <td class="red">${formatCurrency(pm*FEE - m.totalPaid)}</td>
+          </tr>`).join('')}
+      </tbody>
+    </table>` : ''}`;
+  return { title: 'Inactive Member Impact', html };
+}
+
+// ── 16. Balance Sheet ─────────────────────────────────────
+function _rptBalanceSheet() {
+  const stats = _rptAllStats();
+  const totalPayments  = stats.reduce((s,m) => s+m.totalPaid, 0);
+  const totalDonations = STATE.allDonations.reduce((s,d) => s+(parseFloat(d.amount)||0), 0);
+  const totalExpenses  = STATE.allExpenses.reduce((s,e)  => s+(parseFloat(e.amount)||0), 0);
+  const opening        = STATE.sessionSummary?.lastYearBalance || 0;
+  const totalIncome    = totalPayments + totalDonations + opening;
+  const balance        = totalIncome - totalExpenses;
+  const session        = STATE.currentSession || {};
+
+  const html = `
+    <h2>Balance Sheet — ${session.label||''}</h2>
+    <div class="section-title">Income</div>
+    <table>
+      <thead><tr><th>Source</th><th>Amount</th></tr></thead>
+      <tbody>
+        <tr><td>Opening Balance (Last Session)</td><td class="${opening>=0?'green':'red'}">${formatCurrency(opening)}</td></tr>
+        <tr><td>Member Payments (${stats.filter(m=>m.totalPaid>0).length} members)</td><td class="green">${formatCurrency(totalPayments)}</td></tr>
+        <tr><td>Donations (${STATE.allDonations.length} entries)</td><td class="green">${formatCurrency(totalDonations)}</td></tr>
+        <tr style="font-weight:700;background:#f0fdf4">
+          <td>Total Income</td><td class="green">${formatCurrency(totalIncome)}</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="section-title">Expenses</div>
+    <table>
+      <thead><tr><th>Description</th><th>Amount</th><th>Date</th></tr></thead>
+      <tbody>
+        ${STATE.allExpenses.length === 0
+          ? '<tr><td colspan="3" style="text-align:center;color:#94a3b8">No expenses</td></tr>'
+          : STATE.allExpenses.map(e => `
+              <tr><td>${e.desc||'—'}</td><td class="red">${formatCurrency(e.amount)}</td><td>${e.date||'—'}</td></tr>`).join('')}
+        <tr style="font-weight:700;background:#fef2f2">
+          <td>Total Expenses</td><td class="red">${formatCurrency(totalExpenses)}</td><td></td>
+        </tr>
+      </tbody>
+    </table>
+    <div style="background:${balance>=0?'#f0fdf4':'#fef2f2'};border:2px solid ${balance>=0?'#16a34a':'#dc2626'};border-radius:10px;padding:14px 16px;margin-top:10px;display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:14px;font-weight:700">Net Balance</span>
+      <span style="font-size:20px;font-weight:700;color:${balance>=0?'#16a34a':'#dc2626'}">${formatCurrency(balance)}</span>
+    </div>`;
+  return { title: 'Balance Sheet', html };
+}
+
+// ── 17. Cash Flow Report ──────────────────────────────────
+function _rptCashFlow() {
+  const months = _rptMonths();
+  const stats  = _rptAllStats();
+  let   balance = STATE.sessionSummary?.lastYearBalance || 0;
+
+  const rows = [];
+
+  // Seed with opening balance
+  if (balance !== 0) {
+    rows.push({ date:'Opening', type:'balance', desc:'Opening Balance (Last Session)', amount: balance, bal: balance, cls:'blue' });
+  }
+
+  // Payment collections per month (session order)
+  months.filter(isPastOrCurrent).forEach(mo => {
+    const paidCnt = stats.filter(m => isPaid(m.months[mo])).length;
+    if (paidCnt === 0) return;
+    const amt = paidCnt * FEE;
+    balance += amt;
+    rows.push({ date: mo, type:'payment', desc:`${mo} payments — ${paidCnt} members`, amount: amt, bal: balance, cls:'green' });
+  });
+
+  // Donations (interleave by date)
+  STATE.allDonations.forEach(d => {
+    const amt = parseFloat(d.amount) || 0;
+    balance += amt;
+    rows.push({ date: d.date||'—', type:'donation', desc: d.donor||(d.note?'Donation: '+d.note:'Donation'), amount: amt, bal: balance, cls:'blue' });
+  });
+
+  // Expenses
+  STATE.allExpenses.forEach(e => {
+    const amt = parseFloat(e.amount) || 0;
+    balance -= amt;
+    rows.push({ date: e.date||'—', type:'expense', desc: e.desc||'Expense', amount: -amt, bal: balance, cls:'red' });
+  });
+
+  const html = `
+    <h2>Cash Flow Report</h2>
+    <p style="font-size:11px;color:#64748b;margin-bottom:12px">All income and expenses in session order</p>
+    <table>
+      <thead><tr><th>Date/Month</th><th>Description</th><th>Type</th><th>Amount</th><th>Balance</th></tr></thead>
+      <tbody>
+        ${rows.map(r => `
+          <tr>
+            <td style="white-space:nowrap">${r.date}</td>
+            <td>${r.desc}</td>
+            <td><span class="badge ${r.type==='payment'?'bg':r.type==='donation'?'bg':r.type==='balance'?'bo':'br'}">${r.type}</span></td>
+            <td class="${r.cls}">${r.amount >= 0 ? '+' : ''}${formatCurrency(Math.abs(r.amount))}</td>
+            <td style="font-weight:600;color:${r.bal>=0?'#15803d':'#b91c1c'}">${formatCurrency(r.bal)}</td>
+          </tr>`).join('')}
+      </tbody>
+    </table>
+    <div style="text-align:right;font-size:13px;font-weight:700;margin-top:6px">
+      Closing Balance: <span style="color:${balance>=0?'#15803d':'#b91c1c'}">${formatCurrency(balance)}</span>
+    </div>`;
+  return { title: 'Cash Flow Report', html };
+}
+
+// ── 18. Top Donors Report ─────────────────────────────────
+function _rptTopDonors() {
+  const donorMap = {};
+  STATE.allDonations.forEach(d => {
+    const name = (d.donor || 'Unknown').trim();
+    if (!donorMap[name]) donorMap[name] = { name, total: 0, count: 0, dates: [] };
+    donorMap[name].total += parseFloat(d.amount) || 0;
+    donorMap[name].count++;
+    if (d.date) donorMap[name].dates.push(d.date);
+  });
+
+  const donors = Object.values(donorMap).sort((a,b) => b.total - a.total);
+  const grandTotal = donors.reduce((s,d) => s+d.total, 0);
+  const medals = ['🥇','🥈','🥉'];
+
+  const html = `
+    <h2>Top Donors Report</h2>
+    <p style="font-size:11px;color:#64748b;margin-bottom:12px">
+      ${donors.length} unique donors · Total: <strong>${formatCurrency(grandTotal)}</strong>
+    </p>
+    ${donors.length === 0
+      ? '<p class="grey">No donations recorded.</p>'
+      : `<table>
+          <thead><tr><th>#</th><th>Donor</th><th>Donations</th><th>Total</th><th>Share</th></tr></thead>
+          <tbody>
+            ${donors.map((d,i) => `
+              <tr style="${i<3?'background:#fffbeb':''}">
+                <td style="font-size:15px">${i<3?medals[i]:i+1}</td>
+                <td><strong>${d.name}</strong>
+                  ${d.dates.length>0?`<br><span class="grey" style="font-size:10px">Last: ${d.dates[d.dates.length-1]}</span>`:''}
+                </td>
+                <td class="grey">${d.count}×</td>
+                <td class="green" style="font-weight:700">${formatCurrency(d.total)}</td>
+                <td class="blue">${grandTotal>0?Math.round(d.total/grandTotal*100):0}%</td>
+              </tr>`).join('')}
+          </tbody>
+        </table>`}`;
+  return { title: 'Top Donors Report', html };
+}
+
+// ── 19. Month Comparison Report ───────────────────────────
+function _rptMonthComp() {
+  const selMonths = [..._rpt.months];
+  const allMonths = _rptMonths();
+  const ordered   = allMonths.filter(m => selMonths.includes(m));
+  if (ordered.length !== 2) return { title:'Month Comparison',
+    html:'<p class="red">Select exactly 2 months to compare.</p>' };
+
+  const [mo1, mo2] = ordered;
+  const stats = _rptAllStats();
+  const active = stats.filter(m => !m.isInactive);
+
+  const paidBoth    = active.filter(m =>  isPaid(m.months[mo1]) &&  isPaid(m.months[mo2]));
+  const paidOnly1   = active.filter(m =>  isPaid(m.months[mo1]) && !isPaid(m.months[mo2]));
+  const paidOnly2   = active.filter(m => !isPaid(m.months[mo1]) &&  isPaid(m.months[mo2]));
+  const paidNeither = active.filter(m => !isPaid(m.months[mo1]) && !isPaid(m.months[mo2]));
+  const mo1Total    = active.filter(m =>  isPaid(m.months[mo1])).length;
+  const mo2Total    = active.filter(m =>  isPaid(m.months[mo2])).length;
+
+  const html = `
+    <h2>Month Comparison — ${mo1} vs ${mo2}</h2>
+    <div class="summary-grid">
+      <div class="summary-card"><div class="lbl">Paid Both</div><div class="val green">${paidBoth.length}</div></div>
+      <div class="summary-card"><div class="lbl">Only ${mo1}</div><div class="val orange">${paidOnly1.length}</div></div>
+      <div class="summary-card"><div class="lbl">Only ${mo2}</div><div class="val orange">${paidOnly2.length}</div></div>
+      <div class="summary-card"><div class="lbl">Paid Neither</div><div class="val red">${paidNeither.length}</div></div>
+      <div class="summary-card"><div class="lbl">${mo1} Collected</div><div class="val green">${formatCurrency(mo1Total*FEE)}</div></div>
+      <div class="summary-card"><div class="lbl">${mo2} Collected</div><div class="val green">${formatCurrency(mo2Total*FEE)}</div></div>
+    </div>
+    ${paidOnly1.length > 0 ? `
+    <div class="section-title">Paid ${mo1} but NOT ${mo2} (${paidOnly1.length})</div>
+    <table><thead><tr><th>#</th><th>Member</th></tr></thead><tbody>
+      ${paidOnly1.map((m,i) => `<tr><td class="grey">${i+1}</td><td><strong>${_rptClean(m.name)}</strong></td></tr>`).join('')}
+    </tbody></table>` : ''}
+    ${paidOnly2.length > 0 ? `
+    <div class="section-title">Paid ${mo2} but NOT ${mo1} (${paidOnly2.length})</div>
+    <table><thead><tr><th>#</th><th>Member</th></tr></thead><tbody>
+      ${paidOnly2.map((m,i) => `<tr><td class="grey">${i+1}</td><td><strong>${_rptClean(m.name)}</strong></td></tr>`).join('')}
+    </tbody></table>` : ''}
+    ${paidNeither.length > 0 ? `
+    <div class="section-title">Paid Neither Month (${paidNeither.length})</div>
+    <table><thead><tr><th>#</th><th>Member</th></tr></thead><tbody>
+      ${paidNeither.map((m,i) => `<tr><td class="grey">${i+1}</td><td><strong>${_rptClean(m.name)}</strong></td></tr>`).join('')}
+    </tbody></table>` : ''}
+    ${paidBoth.length > 0 ? `
+    <div class="section-title">Paid Both Months (${paidBoth.length})</div>
+    <table><thead><tr><th>#</th><th>Member</th></tr></thead><tbody>
+      ${paidBoth.map((m,i) => `<tr><td class="grey">${i+1}</td><td><strong>${_rptClean(m.name)}</strong></td></tr>`).join('')}
+    </tbody></table>` : ''}`;
+  return { title: `Month Comparison: ${mo1} vs ${mo2}`, html };
 }
