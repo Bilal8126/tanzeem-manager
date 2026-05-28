@@ -547,7 +547,7 @@ function _askShareFormat(msg, waLink) {
     <div class="modal" onclick="event.stopPropagation()">
       <div class="modal-handle"></div>
       <div class="modal-header">
-        <div class="modal-title">Share Format Chunein</div>
+        <div class="modal-title">Please Choose Format</div>
         <button class="close-btn" onclick="_closeShareFormat()">×</button>
       </div>
       <div style="display:flex;flex-direction:column;gap:10px;padding-top:4px">

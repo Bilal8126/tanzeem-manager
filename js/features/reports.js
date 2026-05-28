@@ -308,12 +308,21 @@ function _renderReportModal() {
 
       <!-- sticky action buttons — never inside the scroll area -->
       <div style="flex-shrink:0;padding:10px 0 2px;border-top:1px solid #e2e8f0;display:flex;flex-direction:column;gap:8px">
-        <button class="btn btn-primary"
-          style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;
-                 font-size:14px;padding:13px;touch-action:manipulation"
-          onclick="_exportReport()">
-          ${_RSVG.pdf} Export PDF
-        </button>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-primary"
+            style="flex:1;display:flex;align-items:center;justify-content:center;gap:7px;
+                   font-size:13px;padding:12px;touch-action:manipulation"
+            onclick="_exportReport()">
+            ${_RSVG.pdf} Export PDF
+          </button>
+          <button class="btn btn-secondary"
+            style="flex:1;display:flex;align-items:center;justify-content:center;gap:7px;
+                   font-size:13px;padding:12px;touch-action:manipulation"
+            onclick="_viewReport()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            View Report
+          </button>
+        </div>
         <button class="whatsapp-btn"
           style="margin:0;justify-content:center;gap:8px;touch-action:manipulation"
           onclick="_shareReportWA()">
@@ -353,14 +362,24 @@ function _reportGuard() {
   return true;
 }
 
-function _exportReport() {
-  if (!_reportGuard()) return;
+function _rptGuardAndBuild() {
+  if (!_reportGuard()) return null;
   if (_rpt.type === 'monthcomp' && _rpt.months.size !== 2) {
-    showToast('Select exactly 2 months to compare', 'error'); return;
+    showToast('Select exactly 2 months to compare', 'error'); return null;
   }
-  const result = _buildReport();
+  return _buildReport();
+}
+
+function _exportReport() {
+  const result = _rptGuardAndBuild();
   if (!result) return;
-  _openReportPdf(result.title, result.html, false);
+  _openReportPdf(result.title, result.html, 'export');
+}
+
+function _viewReport() {
+  const result = _rptGuardAndBuild();
+  if (!result) return;
+  _openReportPdf(result.title, result.html, 'view');
 }
 
 async function _shareReportWA() {
@@ -368,7 +387,7 @@ async function _shareReportWA() {
   const result = _buildReport();
   if (!result) return;
 
-  const htmlString = _buildPdfHtmlString(result.title, result.html, true);
+  const htmlString = _buildPdfHtmlString(result.title, result.html, 'share');
 
   // Try Web Share API (works on Android Chrome / iOS Safari)
   if (navigator.share) {
@@ -385,7 +404,7 @@ async function _shareReportWA() {
   }
 
   // Fallback: open page with WA share banner (no auto-print)
-  _openReportPdf(result.title, result.html, true);
+  _openReportPdf(result.title, result.html, 'share');
 }
 
 function _genFileName(label) {
@@ -396,13 +415,14 @@ function _genFileName(label) {
   return `TanzeemAbdMustafa_${safe}_${ts}`;
 }
 
-function _buildPdfHtmlString(title, bodyHtml, forShare) {
+// mode: 'export' (auto-print → PDF viewer), 'view' (browser, no print), 'share' (WA banner)
+function _buildPdfHtmlString(title, bodyHtml, mode) {
   const session  = STATE.currentSession ? STATE.currentSession.label : '';
   const dateStr  = new Date().toLocaleDateString('en-IN', { day:'numeric', month:'long', year:'numeric' });
   const logoUrl  = new URL('icons/icon.svg', location.href).href;
   const fileName = _genFileName(title);
 
-  const shareBanner = forShare ? `
+  const shareBanner = mode === 'share' ? `
 <div id="waBanner" style="position:fixed;top:0;left:0;right:0;z-index:9999;
      background:#25d366;color:#fff;padding:11px 16px;font-size:13px;font-weight:500;
      display:flex;align-items:center;gap:10px;box-shadow:0 2px 8px rgba(0,0,0,.2)">
@@ -476,13 +496,24 @@ ${bodyHtml}
   <strong>Tanzeem Abd-e-Mustafa — Bisauli</strong><br>
   <em>⚠ This report is auto-generated — for reference only.</em>
 </div>
-${forShare ? '' : '<script>setTimeout(()=>window.print(),600)<\\/script>'}
+${mode === 'export' ? '<script>setTimeout(()=>window.print(),600)<\\/script>' : ''}
 </body>
 </html>`;
 }
 
-function _openReportPdf(title, bodyHtml, forShare) {
-  const html = _buildPdfHtmlString(title, bodyHtml, forShare);
+function _openReportPdf(title, bodyHtml, mode) {
+  const html = _buildPdfHtmlString(title, bodyHtml, mode);
+
+  if (mode === 'export') {
+    // Open blank tab + write HTML → auto-print triggers native PDF viewer on mobile
+    const win = window.open('', '_blank');
+    if (!win) { showToast('Popup blocked — allow popups in browser', 'error'); return; }
+    win.document.write(html);
+    win.document.close();
+    return;
+  }
+
+  // 'view' or 'share': Blob URL (reliable on mobile, no popup-block risk)
   const blob = new Blob([html], { type: 'text/html' });
   const url  = URL.createObjectURL(blob);
   const win  = window.open(url, '_blank');
