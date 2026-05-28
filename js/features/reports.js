@@ -660,16 +660,26 @@ function _rptSession() {
       <div class="summary-card"><div class="lbl">Payment Collected</div><div class="val green">${formatCurrency(totalCollected)}</div></div>
       <div class="summary-card"><div class="lbl">Donations</div><div class="val blue">${formatCurrency(totalDonations)}</div></div>
       <div class="summary-card"><div class="lbl">Expenses</div><div class="val red">${formatCurrency(totalExpenses)}</div></div>
-      <div class="summary-card" style="${prevBalance>0?'border:1px solid #bbf7d0;background:#f0fdf4':''}">
-        <div class="lbl">Closing Balance${prevBalance>0?' (incl. carry forward)':''}</div>
+      <div class="summary-card" style="border:1px solid #bbf7d0;background:#f0fdf4">
+        <div class="lbl">Closing Balance</div>
         <div class="val ${balance>=0?'green':'red'}">${formatCurrency(balance)}</div>
       </div>
       <div class="summary-card"><div class="lbl">Pending (Active)</div><div class="val orange">${formatCurrency(totalPending)}</div></div>
       <div class="summary-card"><div class="lbl">Months</div><div class="val">${months.length}</div></div>
     </div>
-    ${prevBalance > 0 ? `<div style="font-size:11px;color:#64748b;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:8px 12px;margin-bottom:12px">
-      <strong>Balance formula:</strong> Prev. Year (${formatCurrency(prevBalance)}) + Collected (${formatCurrency(totalCollected)}) + Donations (${formatCurrency(totalDonations)}) − Expenses (${formatCurrency(totalExpenses)}) = <strong>${formatCurrency(balance)}</strong>
-    </div>` : ''}
+    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;margin-bottom:14px">
+      <div style="font-size:10px;font-weight:700;color:#94a3b8;letter-spacing:.6px;margin-bottom:10px">BALANCE CALCULATION</div>
+      <div style="display:flex;align-items:flex-end;flex-wrap:wrap;gap:8px 12px">
+        ${prevBalance > 0 ? `<div style="text-align:center"><div style="font-size:13px;font-weight:700;color:#0284c7">${formatCurrency(prevBalance)}</div><div style="font-size:10px;color:#94a3b8;margin-top:3px">Prev. Year</div></div><span style="font-size:18px;color:#94a3b8;padding-bottom:14px">+</span>` : ''}
+        <div style="text-align:center"><div style="font-size:13px;font-weight:700;color:#15803d">${formatCurrency(totalCollected)}</div><div style="font-size:10px;color:#94a3b8;margin-top:3px">Collected</div></div>
+        <span style="font-size:18px;color:#94a3b8;padding-bottom:14px">+</span>
+        <div style="text-align:center"><div style="font-size:13px;font-weight:700;color:#0284c7">${formatCurrency(totalDonations)}</div><div style="font-size:10px;color:#94a3b8;margin-top:3px">Donations</div></div>
+        <span style="font-size:18px;color:#94a3b8;padding-bottom:14px">−</span>
+        <div style="text-align:center"><div style="font-size:13px;font-weight:700;color:#b91c1c">${formatCurrency(totalExpenses)}</div><div style="font-size:10px;color:#94a3b8;margin-top:3px">Expenses</div></div>
+        <span style="font-size:18px;color:#94a3b8;padding-bottom:14px">=</span>
+        <div style="text-align:center"><div style="font-size:16px;font-weight:800;color:${balance>=0?'#15803d':'#b91c1c'}">${formatCurrency(balance)}</div><div style="font-size:10px;color:#94a3b8;margin-top:3px">Balance</div></div>
+      </div>
+    </div>
     <div class="section-title">Month-wise Collection</div>
     <table>
       <thead><tr><th>Month</th><th>Paid</th><th>Unpaid</th><th>Collected</th><th>Status</th></tr></thead>
@@ -873,15 +883,25 @@ function _rptSummary() {
       <div class="summary-card"><div class="lbl">Donations</div><div class="val blue">${formatCurrency(totalDonations)}</div></div>
       <div class="summary-card"><div class="lbl">Total Income</div><div class="val green">${formatCurrency(totalIncome)}</div></div>
       <div class="summary-card"><div class="lbl">Expenses</div><div class="val red">${formatCurrency(totalExpenses)}</div></div>
-      <div class="summary-card" style="${prevBalance>0?'border:1px solid #bbf7d0;background:#f0fdf4':''}">
-        <div class="lbl">Closing Balance${prevBalance>0?' (incl. carry forward)':''}</div>
+      <div class="summary-card" style="border:1px solid #bbf7d0;background:#f0fdf4">
+        <div class="lbl">Closing Balance</div>
         <div class="val ${balance>=0?'green':'red'}">${formatCurrency(balance)}</div>
       </div>
       <div class="summary-card"><div class="lbl">Pending (Active)</div><div class="val orange">${formatCurrency(totalPending)}</div></div>
     </div>
-    ${prevBalance > 0 ? `<div style="font-size:11px;color:#64748b;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:8px 12px;margin-bottom:12px">
-      <strong>Balance formula:</strong> Prev. Year (${formatCurrency(prevBalance)}) + Income (${formatCurrency(totalIncome)}) − Expenses (${formatCurrency(totalExpenses)}) = <strong>${formatCurrency(balance)}</strong>
-    </div>` : ''}
+    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;margin-bottom:14px">
+      <div style="font-size:10px;font-weight:700;color:#94a3b8;letter-spacing:.6px;margin-bottom:10px">BALANCE CALCULATION</div>
+      <div style="display:flex;align-items:flex-end;flex-wrap:wrap;gap:8px 12px">
+        ${prevBalance > 0 ? `<div style="text-align:center"><div style="font-size:13px;font-weight:700;color:#0284c7">${formatCurrency(prevBalance)}</div><div style="font-size:10px;color:#94a3b8;margin-top:3px">Prev. Year</div></div><span style="font-size:18px;color:#94a3b8;padding-bottom:14px">+</span>` : ''}
+        <div style="text-align:center"><div style="font-size:13px;font-weight:700;color:#15803d">${formatCurrency(totalCollected)}</div><div style="font-size:10px;color:#94a3b8;margin-top:3px">Collected</div></div>
+        <span style="font-size:18px;color:#94a3b8;padding-bottom:14px">+</span>
+        <div style="text-align:center"><div style="font-size:13px;font-weight:700;color:#0284c7">${formatCurrency(totalDonations)}</div><div style="font-size:10px;color:#94a3b8;margin-top:3px">Donations</div></div>
+        <span style="font-size:18px;color:#94a3b8;padding-bottom:14px">−</span>
+        <div style="text-align:center"><div style="font-size:13px;font-weight:700;color:#b91c1c">${formatCurrency(totalExpenses)}</div><div style="font-size:10px;color:#94a3b8;margin-top:3px">Expenses</div></div>
+        <span style="font-size:18px;color:#94a3b8;padding-bottom:14px">=</span>
+        <div style="text-align:center"><div style="font-size:16px;font-weight:800;color:${balance>=0?'#15803d':'#b91c1c'}">${formatCurrency(balance)}</div><div style="font-size:10px;color:#94a3b8;margin-top:3px">Balance</div></div>
+      </div>
+    </div>
     <div class="section-title">Members Overview</div>
     <div class="summary-grid">
       <div class="summary-card"><div class="lbl">Total Members</div><div class="val">${stats.length}</div></div>
