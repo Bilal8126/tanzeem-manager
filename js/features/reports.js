@@ -53,12 +53,13 @@ const _RPT_TYPES = [
 // ── Report state ──────────────────────────────────────────
 
 let _rpt = {
-  type:         null,
-  months:       new Set(),
-  members:      new Set(),   // empty = All members
-  statusFilter: 'active',
-  overdueTh:    2,
-  memberSearch: '',
+  type:            null,
+  months:          new Set(),
+  members:         new Set(),   // empty = All members
+  statusFilter:    'active',
+  overdueTh:       2,
+  memberSearch:    '',
+  prevYearBalance: 0,
 };
 
 // ── Settings section HTML ─────────────────────────────────
@@ -94,12 +95,13 @@ function renderReportsSection() {
 // ── Open / render report modal ────────────────────────────
 
 function openReport(type) {
-  _rpt.type         = type;
-  _rpt.months       = new Set();
-  _rpt.members      = new Set();
-  _rpt.statusFilter = 'active';
-  _rpt.overdueTh    = 2;
-  _rpt.memberSearch = '';
+  _rpt.type            = type;
+  _rpt.months          = new Set();
+  _rpt.members         = new Set();
+  _rpt.statusFilter    = 'active';
+  _rpt.overdueTh       = 2;
+  _rpt.memberSearch    = '';
+  _rpt.prevYearBalance = 0;
   _renderReportModal();
 }
 
@@ -284,6 +286,29 @@ function _renderReportModal() {
       </div>
     </div>` : '';
 
+  // ── Previous Year Balance (Summary only) ──────────────
+  const prevBalancePicker = _rpt.type === 'summary' ? `
+    <div style="margin-bottom:14px">
+      <div style="font-size:12px;font-weight:600;color:#475569;margin-bottom:6px">
+        Previous Year Closing Balance
+        <span style="font-weight:400;color:#94a3b8;margin-left:4px">(carry forward)</span>
+      </div>
+      <div style="position:relative">
+        <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);
+                     font-size:13px;font-weight:600;color:#64748b">₹</span>
+        <input type="number" min="0" step="1"
+          value="${_rpt.prevYearBalance || ''}"
+          placeholder="0"
+          oninput="_rpt.prevYearBalance = parseFloat(this.value)||0"
+          style="width:100%;border:1px solid #e2e8f0;border-radius:8px;
+                 padding:9px 12px 9px 26px;font-size:14px;font-weight:600;
+                 box-sizing:border-box;color:#1e293b;outline:none">
+      </div>
+      <div style="font-size:11px;color:#94a3b8;margin-top:4px">
+        Leave 0 if this is the first session or no carry-forward balance
+      </div>
+    </div>` : '';
+
   overlay.innerHTML = `
     <div class="modal" onclick="event.stopPropagation()"
          style="max-height:88vh;display:flex;flex-direction:column;overflow:hidden">
@@ -303,7 +328,7 @@ function _renderReportModal() {
           ${STATE.allPayments.length === 0 && !['donation','expense','member'].includes(_rpt.type)
             ? '<span style="color:#b91c1c;margin-left:8px">⚠ Data not loaded — sync first</span>' : ''}
         </div>
-        ${monthPicker}${statusPicker}${memberPicker}${overduePicker}
+        ${monthPicker}${statusPicker}${memberPicker}${overduePicker}${prevBalancePicker}
       </div>
 
       <!-- sticky action buttons — never inside the scroll area -->
@@ -846,24 +871,32 @@ function _rptSummary() {
   const overdue  = active.filter(m => m.unpaidList.length >= 2);
   const totalCollected = stats.reduce((s,m) => s+m.totalPaid, 0);
   const totalPending   = active.reduce((s,m) => s+m.totalPending, 0);
-  const totalDonations = STATE.allDonations.reduce((s,d) => s+(parseFloat(d.amount)||0), 0);
-  const totalExpenses  = STATE.allExpenses.reduce((s,e)  => s+(parseFloat(e.amount)||0), 0);
-  const totalIncome    = totalCollected + totalDonations;
-  const balance        = totalIncome - totalExpenses;
-  const session        = STATE.currentSession || {};
-  const curMon         = months.length > 0 ? detectCurrentMonth(months) : '—';
+  const totalDonations  = STATE.allDonations.reduce((s,d) => s+(parseFloat(d.amount)||0), 0);
+  const totalExpenses   = STATE.allExpenses.reduce((s,e)  => s+(parseFloat(e.amount)||0), 0);
+  const prevBalance     = _rpt.prevYearBalance || 0;
+  const totalIncome     = totalCollected + totalDonations;
+  const balance         = prevBalance + totalIncome - totalExpenses;
+  const session         = STATE.currentSession || {};
+  const curMon          = months.length > 0 ? detectCurrentMonth(months) : '—';
 
   const html = `
     <h2>Summary Report — ${session.label || ''}</h2>
     <div class="section-title">Financial Overview</div>
     <div class="summary-grid">
+      ${prevBalance > 0 ? `<div class="summary-card"><div class="lbl">Prev. Year Balance</div><div class="val blue">${formatCurrency(prevBalance)}</div></div>` : ''}
       <div class="summary-card"><div class="lbl">Payment Collected</div><div class="val green">${formatCurrency(totalCollected)}</div></div>
       <div class="summary-card"><div class="lbl">Donations</div><div class="val blue">${formatCurrency(totalDonations)}</div></div>
       <div class="summary-card"><div class="lbl">Total Income</div><div class="val green">${formatCurrency(totalIncome)}</div></div>
       <div class="summary-card"><div class="lbl">Expenses</div><div class="val red">${formatCurrency(totalExpenses)}</div></div>
-      <div class="summary-card"><div class="lbl">Balance</div><div class="val ${balance>=0?'green':'red'}">${formatCurrency(balance)}</div></div>
+      <div class="summary-card" style="${prevBalance>0?'border:1px solid #bbf7d0;background:#f0fdf4':''}">
+        <div class="lbl">Closing Balance${prevBalance>0?' (incl. carry forward)':''}</div>
+        <div class="val ${balance>=0?'green':'red'}">${formatCurrency(balance)}</div>
+      </div>
       <div class="summary-card"><div class="lbl">Pending (Active)</div><div class="val orange">${formatCurrency(totalPending)}</div></div>
     </div>
+    ${prevBalance > 0 ? `<div style="font-size:11px;color:#64748b;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:8px 12px;margin-bottom:12px">
+      <strong>Balance formula:</strong> Prev. Year (${formatCurrency(prevBalance)}) + Income (${formatCurrency(totalIncome)}) − Expenses (${formatCurrency(totalExpenses)}) = <strong>${formatCurrency(balance)}</strong>
+    </div>` : ''}
     <div class="section-title">Members Overview</div>
     <div class="summary-grid">
       <div class="summary-card"><div class="lbl">Total Members</div><div class="val">${stats.length}</div></div>
