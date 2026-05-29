@@ -410,6 +410,7 @@ function renderPayments() {
                   })()}</div>
                 </div>
                 <div class="pay-amount" style="color:${C_GREEN}">+${formatCurrency(FEE)}</div>
+                <button onclick="showPaymentReceiptOptions(${JSON.stringify(m.name.replace(/\(.*?\)/g,'').trim())})" title="Receipt" style="background:none;border:none;cursor:pointer;color:#0369a1;padding:2px 6px;flex-shrink:0;line-height:1"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></button>
                 <button onclick="waMemberPaidPopup('${m.name.replace(/\(.*?\)/g,'').trim()}')" title="Payment Confirm WhatsApp" style="background:none;border:none;cursor:pointer;color:#25d366;padding:2px 6px;flex-shrink:0;line-height:1">${WA_SVG}</button>
               </div>`).join('')}
       </div>` : ''}
@@ -451,7 +452,10 @@ function renderPayments() {
                 <td style="color:${m.totalPending > 0 ? C_RED : C_MUTED};font-weight:600;white-space:nowrap">
                   ${m.totalPending > 0 ? formatCurrency(m.totalPending) : '—'}
                 </td>
-                ${isCurrentSession ? `<td style="padding:2px 4px"><button onclick="waMemberSummary('${m.name.replace(/\(.*?\)/g,'').trim()}')" title="Member Summary WhatsApp" style="background:none;border:none;cursor:pointer;color:#25d366;padding:2px 4px;line-height:1">${WA_SVG}</button></td>` : ''}
+                <td style="padding:2px 4px;white-space:nowrap">
+                  <button onclick="showPaymentReceiptOptions(${JSON.stringify(m.name.replace(/\(.*?\)/g,'').trim())})" title="Receipt" style="background:none;border:none;cursor:pointer;color:#0369a1;padding:2px 4px;line-height:1"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></button>
+                  ${isCurrentSession ? `<button onclick="waMemberSummary('${m.name.replace(/\(.*?\)/g,'').trim()}')" title="Member Summary WhatsApp" style="background:none;border:none;cursor:pointer;color:#25d366;padding:2px 4px;line-height:1">${WA_SVG}</button>` : ''}
+                </td>
               </tr>`).join('')}
           </tbody>
         </table>
@@ -1003,4 +1007,259 @@ function waMemberSummary(name) {
   const idx = STATE.allMembers.findIndex(m => nameMatch(m.name, name));
   if (idx === -1) { showToast('Member nahi mila', 'error'); return; }
   shareWhatsAppMember(idx);
+}
+
+// ── Payment Receipt options modal ─────────────────────────────
+function showPaymentReceiptOptions(name) {
+  let ov = document.getElementById('payReceiptOverlay');
+  if (!ov) {
+    ov = document.createElement('div');
+    ov.id = 'payReceiptOverlay';
+    ov.className = 'modal-overlay';
+    ov.style.zIndex = '500';
+    ov.addEventListener('click', () => ov.classList.remove('open'));
+    document.body.appendChild(ov);
+  }
+  const close = `document.getElementById('payReceiptOverlay').classList.remove('open')`;
+  const n = JSON.stringify(name);
+  ov.innerHTML = `
+    <div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-handle"></div>
+      <div class="modal-header">
+        <div class="modal-title">Payment Receipt</div>
+        <button class="close-btn" onclick="${close}">×</button>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;padding-top:4px">
+        <button class="btn" style="width:100%;display:flex;align-items:center;justify-content:center;gap:10px;font-size:14px;padding:12px;background:#f0f9ff;color:#0369a1;border:1px solid #bae6fd;border-radius:12px"
+          onclick="${close};openPaymentReceipt(${n},'view')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          View Receipt
+        </button>
+        <button class="btn btn-primary" style="width:100%;display:flex;align-items:center;justify-content:center;gap:10px;font-size:14px;padding:12px"
+          onclick="${close};openPaymentReceipt(${n},'export')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export / Save PDF
+        </button>
+        <button class="whatsapp-btn" style="margin:0;justify-content:center;gap:10px"
+          onclick="${close};openPaymentReceipt(${n},'share')">
+          ${WA_SVG} Share via WhatsApp
+        </button>
+      </div>
+    </div>`;
+  ov.classList.add('open');
+}
+
+// ── Payment Receipt (View / Export PDF / WhatsApp Share) ──────
+async function openPaymentReceipt(memberName, mode) {
+  const payRec = STATE.allPayments.find(p =>
+    nameMatch(p.name, memberName) || p.name.replace(/\(.*?\)/g,'').trim() === memberName
+  );
+  const member = STATE.allMembers.find(m =>
+    nameMatch(m.name, memberName) || m.name.replace(/\(.*?\)/g,'').trim() === memberName
+  );
+  if (!payRec) { showToast('Payment record nahi mila', 'error'); return; }
+
+  const months     = Object.keys(payRec.months);
+  const session    = STATE.currentSession?.label || '';
+  const dateStr    = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
+  const logoUrl    = new URL('icons/icon.svg', location.href).href;
+  const cleanName  = memberName.replace(/\(.*?\)/g,'').trim();
+  const initials   = getInitials(cleanName);
+  const receiptNo  = `PAY-${initials}-${session.replace(/[^a-zA-Z0-9]/g,'')}`;
+  const status     = member?.status || 'Active';
+  const mobile     = member?.mobile || '';
+
+  // Classify every month
+  const paidPast = months.filter(mo =>  isPaid(payRec.months[mo]) &&  isPastOrCurrent(mo));
+  const advance  = months.filter(mo =>  isPaid(payRec.months[mo]) && !isPastOrCurrent(mo));
+  const unpaid   = months.filter(mo => !isPaid(payRec.months[mo]) &&  isPastOrCurrent(mo));
+  const allPaid  = paidPast.length + advance.length;
+
+  const totalCollected = allPaid  * FEE;
+  const totalPending   = unpaid.length * FEE;
+  const totalAdvance   = advance.length * FEE;
+
+  // Month-wise rows: show past (paid/unpaid) + future paid (advance); skip future unpaid
+  const monthRows = months.map(mo => {
+    const paid = isPaid(payRec.months[mo]);
+    const past = isPastOrCurrent(mo);
+    if (!paid && !past) return ''; // not yet due — skip
+    const isAdv  = paid && !past;
+    const color  = isAdv ? '#1d4ed8' : paid ? '#15803d' : '#b91c1c';
+    const rowBg  = isAdv ? '#f0f7ff' : !paid ? '#fff9f9' : '';
+    const advBadge = isAdv
+      ? `<span style="display:inline-block;background:#dbeafe;color:#1d4ed8;font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px;margin-left:5px">ADVANCE</span>`
+      : '';
+    const mark = isAdv ? '↑' : paid ? '✓' : '✗';
+    const label = isAdv ? 'Advance' : paid ? 'Paid' : 'Unpaid';
+    return `<tr style="background:${rowBg}">
+      <td style="font-weight:600;color:#1e293b;white-space:nowrap">${mo}</td>
+      <td style="color:${color};font-weight:600">${mark} ${label}${advBadge}</td>
+      <td style="color:${color};font-weight:700;text-align:right">${paid ? 'Rs.' + FEE : '&mdash;'}</td>
+    </tr>`;
+  }).filter(Boolean).join('');
+
+  const waBannerHtml = mode === 'share' ? `
+<div id="waBanner" style="position:fixed;top:0;left:0;right:0;z-index:9999;background:#25d366;color:#fff;
+  padding:11px 16px;font-size:13px;font-weight:500;display:flex;align-items:center;gap:10px;box-shadow:0 2px 8px rgba(0,0,0,.2)">
+  ${WA_SVG}
+  <span style="flex:1">Tap browser <strong>Share ↑</strong> or <strong>⋮ menu</strong> &rarr; WhatsApp to send this receipt</span>
+  <button onclick="window.print()" style="background:rgba(0,0,0,.2);color:#fff;border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap">Save PDF</button>
+  <button onclick="document.getElementById('waBanner').remove()" style="background:none;border:none;color:#fff;font-size:20px;cursor:pointer;line-height:1;padding:0 4px">&times;</button>
+</div>
+<div style="height:52px"></div>` : '';
+
+  const html = `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${receiptNo}</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:Arial,sans-serif;background:#f1f5f9;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:20px}
+  .receipt{background:#fff;width:100%;max-width:440px;border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,.10);overflow:hidden}
+  .hdr{background:linear-gradient(135deg,#1a6b3c,#15803d);padding:22px 20px;text-align:center;color:#fff}
+  .hdr img{width:48px;height:48px;border-radius:10px;margin-bottom:8px}
+  .hdr .org{font-size:15px;font-weight:700}
+  .hdr .org-sub{font-size:10px;opacity:.8;margin-top:2px}
+  .hdr .tag{display:inline-block;background:rgba(255,255,255,.2);border-radius:10px;padding:3px 13px;font-size:11px;font-weight:700;letter-spacing:1.2px;margin-top:10px}
+  .member-box{background:#f0fdf4;border-bottom:1px solid #dcfce7;padding:16px 20px;display:flex;justify-content:space-between;align-items:center}
+  .member-name{font-size:16px;font-weight:700;color:#1e293b}
+  .member-meta{font-size:11px;color:#64748b;margin-top:3px}
+  .status-badge{display:inline-block;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:700}
+  .status-active{background:#dcfce7;color:#15803d}
+  .status-inactive{background:#fee2e2;color:#b91c1c}
+  .summary-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border-bottom:1px solid #e2e8f0}
+  .sg-cell{padding:12px 8px;text-align:center;border-right:1px solid #e2e8f0}
+  .sg-cell:last-child{border-right:none}
+  .sg-val{font-size:18px;font-weight:800;margin-bottom:2px}
+  .sg-lbl{font-size:9px;font-weight:600;color:#94a3b8;letter-spacing:.4px;text-transform:uppercase}
+  .sg-sub{font-size:10px;font-weight:600;margin-top:1px}
+  .month-section{padding:14px 18px}
+  .month-title{font-size:10px;font-weight:700;color:#94a3b8;letter-spacing:.6px;margin-bottom:10px;text-transform:uppercase}
+  table{width:100%;border-collapse:collapse;font-size:12px}
+  td{padding:7px 8px;border-bottom:1px solid #f1f5f9}
+  tr:last-child td{border-bottom:none}
+  .totals{padding:14px 18px;background:#f8fafc;border-top:1px solid #e2e8f0}
+  .total-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0}
+  .total-lbl{font-size:12px;color:#475569;font-weight:600}
+  .total-val{font-size:13px;font-weight:800}
+  .rec-no{font-size:10px;color:#94a3b8;text-align:center;padding:8px 18px;letter-spacing:.3px}
+  .thankyou{background:#fefce8;padding:14px 20px;text-align:center;border-top:1px solid #fef08a}
+  .ty-main{font-size:14px;font-weight:700;color:#854d0e}
+  .ty-sub{font-size:11px;color:#92400e;margin-top:3px}
+  .footer{padding:14px 20px;display:flex;justify-content:space-between;align-items:flex-end;border-top:1px dashed #e2e8f0}
+  .sig-line{width:90px;border-bottom:1.5px solid #cbd5e1;margin-bottom:5px}
+  .sig-lbl{font-size:10px;color:#94a3b8;line-height:1.5}
+  .gen{font-size:9px;color:#cbd5e1;text-align:right;line-height:1.6}
+  .adv-note{background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:8px 12px;margin:0 18px 14px;font-size:11px;color:#1d4ed8}
+  @media print{
+    body{background:#fff;padding:0;display:block}
+    .receipt{box-shadow:none;border-radius:0;max-width:100%}
+    #waBanner{display:none!important}
+    @page{margin:.3cm;size:A5 portrait}
+  }
+</style>
+</head>
+<body>
+${waBannerHtml}
+<div class="receipt">
+  <div class="hdr">
+    <img src="${logoUrl}" onerror="this.style.display='none'">
+    <div class="org">Tanzeem Abd-e-Mustafa &mdash; Bisauli</div>
+    <div class="org-sub">&#x062A;&#x0646;&#x0638;&#x06CC;&#x0645; &#x0639;&#x0628;&#x062F; &#x0645;&#x0635;&#x0637;&#x0641;&#x06CC; &mdash; &#x0628;&#x0633;&#x0648;&#x0644;&#x06CC;</div>
+    <div class="tag">PAYMENT RECEIPT</div>
+  </div>
+
+  <div class="member-box">
+    <div>
+      <div class="member-name">${cleanName}</div>
+      <div class="member-meta">Session: ${session}${mobile ? ' &nbsp;|&nbsp; &#128222; ' + mobile : ''}</div>
+    </div>
+    <span class="status-badge ${status === 'Active' ? 'status-active' : 'status-inactive'}">${status}</span>
+  </div>
+
+  <div class="summary-grid">
+    <div class="sg-cell">
+      <div class="sg-val" style="color:#15803d">${paidPast.length}</div>
+      <div class="sg-lbl">Paid</div>
+      <div class="sg-sub" style="color:#15803d">Rs.${paidPast.length * FEE}</div>
+    </div>
+    <div class="sg-cell">
+      <div class="sg-val" style="color:#1d4ed8">${advance.length}</div>
+      <div class="sg-lbl">Advance</div>
+      <div class="sg-sub" style="color:#1d4ed8">Rs.${totalAdvance}</div>
+    </div>
+    <div class="sg-cell">
+      <div class="sg-val" style="color:${unpaid.length > 0 ? '#b91c1c' : '#94a3b8'}">${unpaid.length}</div>
+      <div class="sg-lbl">Pending</div>
+      <div class="sg-sub" style="color:${unpaid.length > 0 ? '#b91c1c' : '#94a3b8'}">${totalPending > 0 ? 'Rs.' + totalPending : '&mdash;'}</div>
+    </div>
+  </div>
+
+  <div class="month-section">
+    <div class="month-title">Month-wise Details</div>
+    <table>
+      <tbody>${monthRows || '<tr><td colspan="3" style="text-align:center;color:#94a3b8;padding:12px">No data</td></tr>'}</tbody>
+    </table>
+  </div>
+
+  ${advance.length > 0 ? `<div class="adv-note">&#8593; <strong>Advance Payments:</strong> ${advance.join(', ')} &mdash; paid ahead within this session. JazakAllah Khair!</div>` : ''}
+
+  <div class="totals">
+    <div class="total-row">
+      <div class="total-lbl">Total Collected</div>
+      <div class="total-val" style="color:#15803d">Rs.${totalCollected}</div>
+    </div>
+    ${totalPending > 0 ? `<div class="total-row">
+      <div class="total-lbl">Total Pending</div>
+      <div class="total-val" style="color:#b91c1c">Rs.${totalPending}</div>
+    </div>` : ''}
+  </div>
+
+  <div class="rec-no">Receipt No: ${receiptNo} &nbsp;&bull;&nbsp; Generated: ${dateStr}</div>
+
+  <div class="thankyou">
+    <div class="ty-main">JazakAllah Khair! &#x1F91F;</div>
+    <div class="ty-sub">Aapki madad Tanzeem ko mazboot karti hai</div>
+  </div>
+
+  <div class="footer">
+    <div>
+      <div class="sig-line"></div>
+      <div class="sig-lbl">Authorized Signatory</div>
+      <div class="sig-lbl">Tanzeem Abd-e-Mustafa</div>
+    </div>
+    <div class="gen">Tanzeem Manager<br>Auto-Generated Receipt</div>
+  </div>
+</div>
+${mode === 'export' ? '<scr\x69pt>window.addEventListener("load",function(){setTimeout(window.print,900)})</scr\x69pt>' : ''}
+</body>
+</html>`;
+
+  if (mode === 'share') {
+    // Try native file share (system share sheet → user picks WhatsApp)
+    const cleanBlob = new Blob([html], { type: 'text/html' });
+    if (navigator.share) {
+      const file = new File([cleanBlob], `${receiptNo}.html`, { type: 'text/html' });
+      if (navigator.canShare?.({ files: [file] })) {
+        try { await navigator.share({ files: [file], title: `Payment Receipt — ${cleanName}` }); return; }
+        catch(e) { if (e.name === 'AbortError') return; }
+      }
+    }
+    // Fallback: open in browser with WA share banner
+    const bannerHtml = html.replace('<body>', '<body>' + waBannerHtml);
+    const bannerBlob = new Blob([bannerHtml], { type: 'text/html' });
+    const url = URL.createObjectURL(bannerBlob);
+    const win = window.open(url, '_blank');
+    if (!win) { URL.revokeObjectURL(url); showToast('Popup blocked — allow popups in browser settings', 'error'); return; }
+    setTimeout(() => URL.revokeObjectURL(url), 120000);
+  } else {
+    const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+    const url  = URL.createObjectURL(blob);
+    const win  = window.open(url, '_blank');
+    if (!win) { URL.revokeObjectURL(url); showToast('Popup blocked — allow popups in browser settings', 'error'); return; }
+    setTimeout(() => URL.revokeObjectURL(url), 120000);
+  }
 }
