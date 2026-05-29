@@ -1,3 +1,4 @@
+// Deploy via GitHub Actions (not wrangler deploy — that uploads static assets)
 const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent';
 const DRIVE_BASE  = 'https://www.googleapis.com/drive/v3';
 const DRIVE_UPL   = 'https://www.googleapis.com/upload/drive/v3';
