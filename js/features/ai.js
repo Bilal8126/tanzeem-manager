@@ -179,22 +179,85 @@ function _tryLocalAnswer(q) {
   }
 
   // This month paid / unpaid
-  if (/is mahine|this month|current month|aaj ka mahina/.test(ql) && /paid|unpaid|kitne|status/.test(ql)) {
+  if (/is mahine|this month|current month|aaj ka mahina/.test(ql) && /\bpaid\b|unpaid|kitne|status/.test(ql)) {
     const months = STATE.allPayments.length > 0 ? Object.keys(STATE.allPayments[0].months) : [];
     const curr   = months.length > 0 ? detectCurrentMonth(months) : null;
     if (!curr) return null;
     const stats  = buildMemberStats(STATE.allPayments);
     const active = stats.filter(s => !s.isInactive);
-    const paid   = active.filter(s => isPaid(s.months[curr]));
+    const paid   = active.filter(s =>  isPaid(s.months[curr]));
     const unpaid = active.filter(s => !isPaid(s.months[curr]));
+    // Show only paid, only unpaid, or both depending on question
+    const wantUnpaid = /unpaid/.test(ql);
+    const wantPaid   = /\bpaid\b/.test(ql);
+    if (wantUnpaid && !wantPaid) {
+      return `**${curr} — Unpaid Members** ❌\n\nUnpaid: **${unpaid.length}**\n\n${unpaid.map(s => `- ${s.name}`).join('\n') || '- Koi nahi! Sab ne pay kar diya 🎉'}`;
+    }
+    if (wantPaid && !wantUnpaid) {
+      return `**${curr} — Paid Members** ✅\n\nPaid: **${paid.length}**\n\n${paid.map(s => `- ${s.name}`).join('\n') || '- Abhi kisi ne pay nahi kiya'}`;
+    }
     return `**${curr} — Payment Status** 📅\n\n✅ **Paid (${paid.length}):**\n${paid.map(s => `- ${s.name}`).join('\n') || '- Koi nahi'}\n\n❌ **Unpaid (${unpaid.length}):**\n${unpaid.map(s => `- ${s.name}`).join('\n') || '- Koi nahi'}`;
   }
 
-  // Income summary
+  // Total collected THIS month specifically
+  if (/this month|is mahine/.test(ql) && /total|collected|jama/.test(ql)) {
+    const months = STATE.allPayments.length > 0 ? Object.keys(STATE.allPayments[0].months) : [];
+    const curr   = months.length > 0 ? detectCurrentMonth(months) : null;
+    if (!curr) return null;
+    const stats  = buildMemberStats(STATE.allPayments);
+    const paid   = stats.filter(s => !s.isInactive && isPaid(s.months[curr]));
+    const fee    = (typeof FEE !== 'undefined') ? FEE : 150;
+    const amount = paid.length * fee;
+    return `**${curr} — Total Collected** 💵\n\n- Paid members: **${paid.length}**\n- Amount: **Rs.${amount}**\n\n${paid.map(s => `- ${s.name}`).join('\n') || '- Koi nahi'}`;
+  }
+
+  // Inactive members list
+  if (/^inactive members$|inactive members list|inactive log/.test(ql)) {
+    const inactive = STATE.allMembers.filter(m => m.status !== 'Active');
+    if (inactive.length === 0)
+      return `**Inactive Members** 😊\n\nAbhi koi inactive member nahi hai. Sab active hain!`;
+    return `**Inactive Members (${inactive.length})** 📋\n\n${inactive.map((m, i) => `${i + 1}. ${m.name}`).join('\n')}`;
+  }
+
+  // Best month (highest paid count among past months)
+  if (/^best month$|best month kaun|sabse best mahina|sabse zyada paid/.test(ql)) {
+    const months = STATE.allPayments.length > 0 ? Object.keys(STATE.allPayments[0].months) : [];
+    const past   = months.filter(isPastOrCurrent);
+    if (past.length === 0) return `**Best Month** 📊\n\nAbhi tak koi past month nahi hai.`;
+    const stats  = buildMemberStats(STATE.allPayments);
+    const active = stats.filter(s => !s.isInactive).length;
+    const counts = past.map(m => ({ month: m, paid: stats.filter(s => !s.isInactive && isPaid(s.months[m])).length }));
+    counts.sort((a, b) => b.paid - a.paid);
+    const best = counts[0];
+    const rows  = counts.map((c, i) => `${i + 1}. ${c.month}: **${c.paid}/${active}** paid`).join('\n');
+    return `**Best Month** 🏆\n\n**${best.month}** — ${best.paid}/${active} members ne pay kiya\n\n**Sab past months:**\n${rows}`;
+  }
+
+  // Member totals (sorted by amount)
+  if (/^member totals$|member total|har member ka|sabka total/.test(ql)) {
+    const stats  = STATE.allPayments.length > 0 ? buildMemberStats(STATE.allPayments) : [];
+    const active = stats.filter(s => !s.isInactive).sort((a, b) => b.totalPaid - a.totalPaid);
+    const rows   = active.map((s, i) => `${i + 1}. ${s.name}: **Rs.${s.totalPaid}**${s.totalPending > 0 ? ` *(Rs.${s.totalPending} pending)*` : ''}`).join('\n');
+    const total  = active.reduce((sum, s) => sum + s.totalPaid, 0);
+    return `**Member Totals** 💰\n\n${rows || 'No data'}\n\n---\n**Total Collected: Rs.${total}**`;
+  }
+
+  // Session income summary (general)
   if (/total collected|kitna jama|total jama|subscription total|income kitni/.test(ql)) {
     const coll = ss.currentTotal  || 0;
     const don  = ss.totalDonation || 0;
     return `**Income Summary** 📊\n\n- Subscription: **Rs.${coll}**\n- Donations: **Rs.${don}**\n\n**Total Income: Rs.${coll + don}**`;
+  }
+
+  // Tanzeem / app info — fully static, no API needed
+  if (/tanzeem kya|tanzeem ke baare|about tanzeem|tanzeem kab|tanzeem kis|tanzeem history|tanzeem maqsad|tanzeem ka kaam/.test(ql)) {
+    const active   = STATE.allMembers.filter(m => m.status === 'Active').length;
+    const inactive = STATE.allMembers.filter(m => m.status !== 'Active').length;
+    return `**Tanzeem Abd-e-Mustafa — Bisauli** 🕌\n\n- **Shuruwaat:** Year 2023\n- **Total Members:** ${STATE.allMembers.length} (Active: ${active}, Inactive: ${inactive})\n\n**Founding Members:**\n1. Mohsin Ansari\n2. Javed Ansari\n3. Moh. Hasnain Ansari\n4. Bilal Ansari\n5. Mubeen Ansari\n6. Tofeeq Ansari\n7. Altaf Ansari\n8. Shahrukh Ansari\n\n**Maqsad (Kaam):**\n- Gareebo ki madad karna\n- Masjid aur Madrasa ki madad\n- Langar lagana\n- Jaloos mein langar dena\n- Deen ki khidmat karna`;
+  }
+
+  if (/kisne banaya|developer kaun|creator kaun|app kisne|app ka developer|app banaya/.test(ql)) {
+    return `**App Developer** 💻\n\nYeh application **Bilal Ansari** ne banai hai. Unhone Tanzeem Abd-e-Mustafa ke liye yeh poora Tanzeem Manager app design aur develop kiya hai.`;
   }
 
   return null; // needs API
