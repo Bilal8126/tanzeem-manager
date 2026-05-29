@@ -966,7 +966,7 @@ function _renderWaPaidPopup() {
           Export PDF
         </button>
       </div>
-      <button class="whatsapp-btn" style="margin:0;justify-content:center;gap:10px" onclick="sendWaMemberPaid()">
+      <button class="whatsapp-btn" style="margin:0;justify-content:center;gap:10px" onclick="openPaymentReceiptFromPopup('share')">
         ${WA_SVG} WhatsApp Send
       </button>
     </div>`;
@@ -1015,12 +1015,13 @@ function sendWaMemberPaid() {
 
 // ── Transaction Receipt from WA paid popup ────────────────────
 async function openPaymentReceiptFromPopup(mode) {
-  closeWaPaidPopup();
-
-  const allMonths  = STATE.allPayments.length > 0 ? Object.keys(STATE.allPayments[0].months) : [];
-  const selMonths  = [..._waPaidSelected].sort((a, b) => allMonths.indexOf(a) - allMonths.indexOf(b));
+  // Read all values BEFORE closeWaPaidPopup() clears _waAdvanceNote
   const advNote    = _waAdvanceNote.trim();
   const memberName = _waPaidName;
+  const allMonths  = STATE.allPayments.length > 0 ? Object.keys(STATE.allPayments[0].months) : [];
+  const selMonths  = [..._waPaidSelected].sort((a, b) => allMonths.indexOf(a) - allMonths.indexOf(b));
+
+  closeWaPaidPopup();
   const member     = STATE.allMembers.find(m => nameMatch(m.name, memberName) || m.name.replace(/\(.*?\)/g,'').trim() === memberName);
   const session    = STATE.currentSession?.label || '';
   const dateStr    = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
