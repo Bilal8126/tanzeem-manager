@@ -317,7 +317,8 @@ async function openDonationReceipt(i, mode) {
   const session  = STATE.currentSession?.label || '';
   const dateStr  = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
   const logoUrl  = new URL('icons/icon.svg', location.href).href;
-  const receiptNo = `REC-${String(d.sr || (i + 1)).padStart(3, '0')}-${session.replace(/[^a-zA-Z0-9]/g, '')}`;
+  const _ts       = (() => { const n = new Date(); const p = v => String(v).padStart(2,'0'); return `${p(n.getDate())}${p(n.getMonth()+1)}${String(n.getFullYear()).slice(-2)}`; })();
+  const receiptNo = `TanzeemAbdMustafa_Receipt_Donation_${String(d.sr || (i + 1)).padStart(3, '0')}_${session.replace(/[^a-zA-Z0-9]/g, '')}_${_ts}`;
   const amount   = formatCurrency(d.amount);
 
   // WA fallback banner (used when navigator.share not available)

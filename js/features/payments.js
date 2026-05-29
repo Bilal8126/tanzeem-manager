@@ -410,8 +410,7 @@ function renderPayments() {
                   })()}</div>
                 </div>
                 <div class="pay-amount" style="color:${C_GREEN}">+${formatCurrency(FEE)}</div>
-                <button onclick="showPaymentReceiptOptions('${m.name.replace(/\(.*?\)/g,'').trim()}')" title="Receipt" style="background:none;border:none;cursor:pointer;color:#0369a1;padding:2px 6px;flex-shrink:0;line-height:1"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></button>
-                <button onclick="waMemberPaidPopup('${m.name.replace(/\(.*?\)/g,'').trim()}')" title="Payment Confirm WhatsApp" style="background:none;border:none;cursor:pointer;color:#25d366;padding:2px 6px;flex-shrink:0;line-height:1">${WA_SVG}</button>
+                <button onclick="waMemberPaidPopup('${m.name.replace(/\(.*?\)/g,'').trim()}')" title="Receipt / WhatsApp" style="background:none;border:none;cursor:pointer;color:#0369a1;padding:2px 6px;flex-shrink:0;line-height:1"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></button>
               </div>`).join('')}
       </div>` : ''}
     </div>` : ''}
@@ -452,9 +451,8 @@ function renderPayments() {
                 <td style="color:${m.totalPending > 0 ? C_RED : C_MUTED};font-weight:600;white-space:nowrap">
                   ${m.totalPending > 0 ? formatCurrency(m.totalPending) : '—'}
                 </td>
-                <td style="padding:2px 4px;white-space:nowrap">
+                <td style="padding:2px 4px">
                   <button onclick="showPaymentReceiptOptions('${m.name.replace(/\(.*?\)/g,'').trim()}')" title="Receipt" style="background:none;border:none;cursor:pointer;color:#0369a1;padding:2px 4px;line-height:1"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></button>
-                  ${isCurrentSession ? `<button onclick="waMemberSummary('${m.name.replace(/\(.*?\)/g,'').trim()}')" title="Member Summary WhatsApp" style="background:none;border:none;cursor:pointer;color:#25d366;padding:2px 4px;line-height:1">${WA_SVG}</button>` : ''}
                 </td>
               </tr>`).join('')}
           </tbody>
@@ -956,8 +954,20 @@ function _renderWaPaidPopup() {
           oninput="_waAdvanceNote=this.value"
           style="width:100%;border:1px solid #e2e8f0;border-radius:8px;padding:8px 10px;font-size:13px;box-sizing:border-box;color:#1e293b">
       </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+        <button onclick="openPaymentReceiptFromPopup('view')"
+          style="display:flex;align-items:center;justify-content:center;gap:7px;padding:10px;font-size:13px;font-weight:600;background:#f0f9ff;color:#0369a1;border:1px solid #bae6fd;border-radius:10px;cursor:pointer">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          View
+        </button>
+        <button onclick="openPaymentReceiptFromPopup('export')"
+          style="display:flex;align-items:center;justify-content:center;gap:7px;padding:10px;font-size:13px;font-weight:600;background:#1a6b3c;color:#fff;border:none;border-radius:10px;cursor:pointer">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export PDF
+        </button>
+      </div>
       <button class="whatsapp-btn" style="margin:0;justify-content:center;gap:10px" onclick="sendWaMemberPaid()">
-        ${WA_SVG} Send Karein
+        ${WA_SVG} WhatsApp Send
       </button>
     </div>`;
   overlay.classList.add('open');
@@ -1001,6 +1011,147 @@ function sendWaMemberPaid() {
   msg += `━━━━━━━━━━━━━━━━━━━\n`;
   msg += `Jazakallah Khair 🤲`;
   _askShareFormat(msg, _memberWaLink(_waPaidName));
+}
+
+// ── Transaction Receipt from WA paid popup ────────────────────
+async function openPaymentReceiptFromPopup(mode) {
+  closeWaPaidPopup();
+
+  const allMonths  = STATE.allPayments.length > 0 ? Object.keys(STATE.allPayments[0].months) : [];
+  const selMonths  = [..._waPaidSelected].sort((a, b) => allMonths.indexOf(a) - allMonths.indexOf(b));
+  const advNote    = _waAdvanceNote.trim();
+  const memberName = _waPaidName;
+  const member     = STATE.allMembers.find(m => nameMatch(m.name, memberName) || m.name.replace(/\(.*?\)/g,'').trim() === memberName);
+  const session    = STATE.currentSession?.label || '';
+  const dateStr    = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
+  const logoUrl    = new URL('icons/icon.svg', location.href).href;
+  const cleanName  = memberName.replace(/\(.*?\)/g,'').trim();
+  const status     = member?.status || 'Active';
+  const mobile     = member?.mobile || '';
+  const receiptNo  = `PAY-${getInitials(cleanName)}-${session.replace(/[^a-zA-Z0-9]/g,'')}`;
+  const total      = selMonths.length * FEE;
+
+  const monthRows = selMonths.map(mo => {
+    const isAdv    = !isPastOrCurrent(mo);
+    const color    = isAdv ? '#1d4ed8' : '#15803d';
+    const advBadge = isAdv
+      ? `<span style="display:inline-block;background:#dbeafe;color:#1d4ed8;font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px;margin-left:5px">ADVANCE</span>`
+      : '';
+    return `<tr style="${isAdv ? 'background:#f0f7ff' : ''}">
+      <td style="font-weight:600;color:#1e293b">${mo}</td>
+      <td style="color:${color};font-weight:600">&#10003; ${isAdv ? 'Advance' : 'Paid'}${advBadge}</td>
+      <td style="color:${color};font-weight:700;text-align:right">Rs.${FEE}</td>
+    </tr>`;
+  }).join('');
+
+  const waBannerHtml = `
+<div id="waBanner" style="position:fixed;top:0;left:0;right:0;z-index:9999;background:#25d366;color:#fff;
+  padding:11px 16px;font-size:13px;font-weight:500;display:flex;align-items:center;gap:10px;box-shadow:0 2px 8px rgba(0,0,0,.2)">
+  ${WA_SVG}
+  <span style="flex:1">Tap <strong>Share &#8593;</strong> or <strong>&#8942;</strong> &rarr; WhatsApp</span>
+  <button onclick="window.print()" style="background:rgba(0,0,0,.2);color:#fff;border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer">Save PDF</button>
+  <button onclick="document.getElementById('waBanner').remove()" style="background:none;border:none;color:#fff;font-size:20px;cursor:pointer;line-height:1;padding:0 4px">&times;</button>
+</div><div style="height:52px"></div>`;
+
+  const html = `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${receiptNo}</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:Arial,sans-serif;background:#f1f5f9;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:20px}
+  .receipt{background:#fff;width:100%;max-width:420px;border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,.10);overflow:hidden}
+  .hdr{background:linear-gradient(135deg,#1a6b3c,#15803d);padding:22px 20px;text-align:center;color:#fff}
+  .hdr img{width:48px;height:48px;border-radius:10px;margin-bottom:8px}
+  .hdr .org{font-size:15px;font-weight:700}
+  .hdr .org-sub{font-size:10px;opacity:.8;margin-top:2px}
+  .hdr .tag{display:inline-block;background:rgba(255,255,255,.2);border-radius:10px;padding:3px 13px;font-size:11px;font-weight:700;letter-spacing:1.2px;margin-top:10px}
+  .member-box{background:#f0fdf4;border-bottom:1px solid #dcfce7;padding:14px 20px;display:flex;justify-content:space-between;align-items:center}
+  .member-name{font-size:16px;font-weight:700;color:#1e293b}
+  .member-meta{font-size:11px;color:#64748b;margin-top:3px}
+  .amt-box{background:#f8fafc;border-bottom:1px solid #e2e8f0;padding:20px;text-align:center}
+  .amt-lbl{font-size:10px;font-weight:700;color:#64748b;letter-spacing:.8px;text-transform:uppercase}
+  .amt-val{font-size:36px;font-weight:800;color:#15803d;margin-top:6px;letter-spacing:-1px}
+  .month-section{padding:14px 18px}
+  .month-title{font-size:10px;font-weight:700;color:#94a3b8;letter-spacing:.6px;margin-bottom:10px;text-transform:uppercase}
+  table{width:100%;border-collapse:collapse;font-size:12px}
+  td{padding:8px;border-bottom:1px solid #f1f5f9}
+  tr:last-child td{border-bottom:none}
+  .adv-note{background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:8px 14px;margin:0 18px 14px;font-size:11px;color:#1d4ed8;font-weight:500}
+  .rec-no{font-size:10px;color:#94a3b8;text-align:center;padding:6px 18px 14px;letter-spacing:.3px}
+  .thankyou{background:#fefce8;padding:14px 20px;text-align:center;border-top:1px solid #fef08a}
+  .ty-main{font-size:14px;font-weight:700;color:#854d0e}
+  .ty-sub{font-size:11px;color:#92400e;margin-top:3px}
+  .footer{padding:14px 20px;display:flex;justify-content:space-between;align-items:flex-end;border-top:1px dashed #e2e8f0}
+  .sig-line{width:90px;border-bottom:1.5px solid #cbd5e1;margin-bottom:5px}
+  .sig-lbl{font-size:10px;color:#94a3b8;line-height:1.5}
+  .gen{font-size:9px;color:#cbd5e1;text-align:right;line-height:1.6}
+  @media print{body{background:#fff;padding:0;display:block}.receipt{box-shadow:none;border-radius:0;max-width:100%}#waBanner{display:none!important}@page{margin:.3cm;size:A5 portrait}}
+</style>
+</head>
+<body>
+<div class="receipt">
+  <div class="hdr">
+    <img src="${logoUrl}" onerror="this.style.display='none'">
+    <div class="org">Tanzeem Abd-e-Mustafa &mdash; Bisauli</div>
+    <div class="org-sub">&#x062A;&#x0646;&#x0638;&#x06CC;&#x0645; &#x0639;&#x0628;&#x062F; &#x0645;&#x0635;&#x0637;&#x0641;&#x06CC; &mdash; &#x0628;&#x0633;&#x0648;&#x0644;&#x06CC;</div>
+    <div class="tag">PAYMENT RECEIPT</div>
+  </div>
+  <div class="member-box">
+    <div>
+      <div class="member-name">${cleanName}</div>
+      <div class="member-meta">Session: ${session}${mobile ? ' &nbsp;|&nbsp; &#128222; ' + mobile : ''}</div>
+    </div>
+    <span style="display:inline-block;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:700;background:${status === 'Active' ? '#dcfce7' : '#fee2e2'};color:${status === 'Active' ? '#15803d' : '#b91c1c'}">${status}</span>
+  </div>
+  <div class="amt-box">
+    <div class="amt-lbl">Total Amount Received</div>
+    <div class="amt-val">Rs.${total}</div>
+    <div style="font-size:11px;color:#64748b;margin-top:4px">${selMonths.length} month${selMonths.length > 1 ? 's' : ''} &times; Rs.${FEE}</div>
+  </div>
+  <div class="month-section">
+    <div class="month-title">Payment Details</div>
+    <table><tbody>${monthRows}</tbody></table>
+  </div>
+  ${advNote ? `<div class="adv-note">&#128204; <strong>Advance Note:</strong> ${advNote}</div>` : ''}
+  <div class="rec-no">Receipt No: ${receiptNo} &nbsp;&bull;&nbsp; ${dateStr}</div>
+  <div class="thankyou">
+    <div class="ty-main">JazakAllah Khair! &#x1F91F;</div>
+    <div class="ty-sub">Aapki madad Tanzeem ko mazboot karti hai</div>
+  </div>
+  <div class="footer">
+    <div><div class="sig-line"></div><div class="sig-lbl">Authorized Signatory</div><div class="sig-lbl">Tanzeem Abd-e-Mustafa</div></div>
+    <div class="gen">Tanzeem Manager<br>Auto-Generated Receipt</div>
+  </div>
+</div>
+${mode === 'export' ? '<scr\x69pt>window.addEventListener("load",function(){setTimeout(window.print,900)})</scr\x69pt>' : ''}
+</body>
+</html>`;
+
+  if (mode === 'share') {
+    const cleanBlob = new Blob([html], { type: 'text/html' });
+    if (navigator.share) {
+      const file = new File([cleanBlob], `${receiptNo}.html`, { type: 'text/html' });
+      if (navigator.canShare?.({ files: [file] })) {
+        try { await navigator.share({ files: [file], title: `Payment Receipt — ${cleanName}` }); return; }
+        catch(e) { if (e.name === 'AbortError') return; }
+      }
+    }
+    const bannerHtml = html.replace('<body>', '<body>' + waBannerHtml);
+    const blob = new Blob([bannerHtml], { type: 'text/html' });
+    const url  = URL.createObjectURL(blob);
+    const win  = window.open(url, '_blank');
+    if (!win) { URL.revokeObjectURL(url); showToast('Popup blocked', 'error'); return; }
+    setTimeout(() => URL.revokeObjectURL(url), 120000);
+  } else {
+    const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+    const url  = URL.createObjectURL(blob);
+    const win  = window.open(url, '_blank');
+    if (!win) { URL.revokeObjectURL(url); showToast('Popup blocked', 'error'); return; }
+    setTimeout(() => URL.revokeObjectURL(url), 120000);
+  }
 }
 
 function waMemberSummary(name) {
