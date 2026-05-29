@@ -20,6 +20,20 @@ async function sheetsPut(range, values) {
   return d;
 }
 
+// Batch write multiple ranges in one API call — data = [{range, values}, ...]
+async function sheetsBatchPut(data) {
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values:batchUpdate`;
+  const r = await fetch(url, {
+    method: 'POST',
+    headers: { Authorization: 'Bearer ' + STATE.accessToken, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ valueInputOption: 'USER_ENTERED', data })
+  });
+  if (r.status === 401) throw new Error('AUTH_EXPIRED');
+  const d = await r.json();
+  if (d.error) throw new Error(d.error.message);
+  return d;
+}
+
 const _sheetIdCache = {};
 
 async function sheetsGetSheetId(sheetName) {

@@ -27,6 +27,9 @@ function showScreen(name, el) {
   if (gFab) gFab.style.display = name === 'gallery' ? 'flex' : 'none';
   const titles = { dashboard: 'Dashboard', members: 'Members', payments: 'Payments', finance: 'Finance', gallery: 'Gallery', settings: 'Settings', ai: 'AI Chat' };
   document.getElementById('screenTitle').textContent = titles[name] || name;
+  // Show balance bar only on Dashboard
+  const hb = document.getElementById('headerBalance');
+  if (hb) hb.style.display = name === 'dashboard' ? 'flex' : 'none';
   renderCurrentScreen();
 
   // Restore saved scroll position for this screen (0 on first visit)

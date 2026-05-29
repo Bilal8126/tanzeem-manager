@@ -153,6 +153,21 @@ function nameMatch(a, b) {
   return levenshtein(a, b) <= Math.max(1, Math.floor(Math.max(a.length, b.length) / 7));
 }
 
+// ── Auto-sync + wait for access token ────────────────────
+// Instead of blocking with an error, auto-triggers syncData() and waits
+// for the token to arrive (up to 8s). Returns true when ready.
+async function _ensureWriteAccess() {
+  if (STATE.accessToken) return true;
+  showToast('Auto-sync ho raha hai... thoda wait karein 🔄');
+  syncData(); // triggers silent OAuth token refresh (no popup if already logged in)
+  for (let i = 0; i < 16; i++) {
+    await new Promise(r => setTimeout(r, 500));
+    if (STATE.accessToken) return true;
+  }
+  showToast('Sync nahi ho paya — please manually sync karein', 'error');
+  return false;
+}
+
 // ── Column letter helper (0-indexed) ─────────────────────
 function colLetter(n) {
   let s = '';

@@ -772,8 +772,8 @@ function shareWhatsApp(filter) {
 
 // ── Toggle payment cell ───────────────────────────────────
 
-function togglePaymentCell(payIdx, mo) {
-  if (!STATE.accessToken) { showToast('Write ke liye pehle Sync karein 🔄', 'error'); return; }
+async function togglePaymentCell(payIdx, mo) {
+  if (!await _ensureWriteAccess()) return;
   if (STATE.currentSessionIdx !== 0) { showToast('Purane session mein edit nahi ho sakta', 'error'); return; }
   const p = STATE.allPayments[payIdx];
   if (!p) return;
@@ -1448,5 +1448,154 @@ ${mode === 'export' ? '<scr\x69pt>window.addEventListener("load",function(){setT
     const win  = window.open(url, '_blank');
     if (!win) { URL.revokeObjectURL(url); showToast('Popup blocked — allow popups in browser settings', 'error'); return; }
     setTimeout(() => URL.revokeObjectURL(url), 120000);
+  }
+}
+
+// ── Quick Mark Payment (Dashboard shortcut) ───────────────────
+const _qmpSel = new Map(); // memberName → Set of selected months
+
+async function showQuickMarkPayment() {
+  if (!await _ensureWriteAccess()) return;
+  _qmpSel.clear();
+  _renderQmpModal();
+}
+
+function _renderQmpModal() {
+  let ov = document.getElementById('qmpOverlay');
+  if (!ov) {
+    ov = document.createElement('div');
+    ov.id = 'qmpOverlay';
+    ov.className = 'modal-overlay';
+    ov.style.zIndex = '400';
+    ov.addEventListener('click', _closeQmp);
+    document.body.appendChild(ov);
+  }
+
+  const allMonths   = STATE.allPayments.length > 0 ? Object.keys(STATE.allPayments[0].months) : [];
+  const stats       = buildMemberStats(STATE.allPayments);
+  const activeStats = stats.filter(s => !s.isInactive);
+
+  // Build member rows — show only members with at least one unpaid past/current month
+  const memberRows = activeStats.map(s => {
+    const unpaidMonths = allMonths.filter(mo => isPastOrCurrent(mo) && !isPaid(s.months[mo]));
+    if (unpaidMonths.length === 0) return ''; // all paid — skip
+
+    const initials = getInitials(s.name.replace(/\(.*?\)/g, '').trim());
+    const selSet   = _qmpSel.get(s.name) || new Set();
+
+    const pills = unpaidMonths.map(mo => {
+      const sel = selSet.has(mo);
+      return `<span class="qmp-pill${sel ? ' selected' : ''}"
+        onclick="_qmpToggle(this,'${s.name.replace(/'/g,"\\'")}','${mo}')">${mo}</span>`;
+    }).join('');
+
+    return `<div class="qmp-member">
+      <div class="qmp-member-header">
+        <div class="qmp-avatar">${initials}</div>
+        <div class="qmp-name">${s.name.replace(/\(.*?\)/g, '').trim()}</div>
+      </div>
+      <div class="qmp-pills">${pills}</div>
+    </div>`;
+  }).filter(Boolean).join('');
+
+  const totalSel = [..._qmpSel.values()].reduce((n, set) => n + set.size, 0);
+
+  ov.innerHTML = `
+    <div class="modal" onclick="event.stopPropagation()" style="max-height:80vh;display:flex;flex-direction:column">
+      <div class="modal-handle"></div>
+      <div class="modal-header">
+        <div class="modal-title">Mark Payment</div>
+        <button class="close-btn" onclick="_closeQmp()">×</button>
+      </div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:10px">Months ko tap karein select karne ke liye</div>
+      <div style="overflow-y:auto;flex:1">
+        ${memberRows || '<div class="qmp-empty">✅ Sab active members ne is session ke sab past months pay kar diye!</div>'}
+      </div>
+      ${memberRows ? `
+      <div style="padding-top:12px;border-top:1px solid #f1f5f9;margin-top:4px">
+        <button class="btn btn-primary qmp-save-btn" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;font-size:14px;padding:13px;opacity:${totalSel === 0 ? '.5' : '1'};cursor:${totalSel === 0 ? 'not-allowed' : 'pointer'}"
+          onclick="_qmpSave()" ${totalSel === 0 ? 'disabled' : ''}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          <span class="qmp-btn-lbl">Mark Paid${totalSel > 0 ? ` (${totalSel})` : ''}</span>
+        </button>
+      </div>` : ''}
+    </div>`;
+  ov.classList.add('open');
+}
+
+function _qmpToggle(el, memberName, month) {
+  if (!_qmpSel.has(memberName)) _qmpSel.set(memberName, new Set());
+  const set = _qmpSel.get(memberName);
+  if (set.has(month)) { set.delete(month); el.classList.remove('selected'); }
+  else                { set.add(month);    el.classList.add('selected');    }
+  if (set.size === 0) _qmpSel.delete(memberName);
+  // Update button only — no full re-render (prevents scroll jump)
+  const totalSel = [..._qmpSel.values()].reduce((n, s) => n + s.size, 0);
+  const btn = document.querySelector('#qmpOverlay .qmp-save-btn');
+  if (btn) {
+    btn.disabled      = totalSel === 0;
+    btn.style.opacity = totalSel === 0 ? '.5' : '1';
+    btn.style.cursor  = totalSel === 0 ? 'not-allowed' : 'pointer';
+    const lbl = btn.querySelector('.qmp-btn-lbl');
+    if (lbl) lbl.textContent = `Mark Paid${totalSel > 0 ? ` (${totalSel})` : ''}`;
+  }
+}
+
+function _closeQmp() {
+  document.getElementById('qmpOverlay')?.classList.remove('open');
+  _qmpSel.clear();
+}
+
+async function _qmpSave() {
+  if (!await _ensureWriteAccess()) return;
+
+  const session  = STATE.currentSession;
+  const allMonths = STATE.allPayments.length > 0 ? Object.keys(STATE.allPayments[0].months) : [];
+  const batchData = [];
+
+  for (const [memberName, monthSet] of _qmpSel) {
+    const payIdx = STATE.allPayments.findIndex(p =>
+      nameMatch(p.name, memberName) || p.name.replace(/\(.*?\)/g, '').trim() === memberName
+    );
+    if (payIdx === -1) continue;
+    const p = STATE.allPayments[payIdx];
+
+    for (const mo of monthSet) {
+      if (isPaid(p.months[mo])) continue; // already paid — skip
+      const mIdx = allMonths.indexOf(mo);
+      if (mIdx === -1) continue;
+      const col = colLetter(3 + mIdx);
+      batchData.push({ range: `${session.sheet}!${col}${p.row}`, values: [['Paid']] });
+    }
+  }
+
+  if (batchData.length === 0) { _closeQmp(); return; }
+
+  const btn = document.querySelector('#qmpOverlay .btn-primary');
+  if (btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
+
+  try {
+    await sheetsBatchPut(batchData);
+
+    // Update STATE in memory
+    for (const [memberName, monthSet] of _qmpSel) {
+      const payIdx = STATE.allPayments.findIndex(p =>
+        nameMatch(p.name, memberName) || p.name.replace(/\(.*?\)/g, '').trim() === memberName
+      );
+      if (payIdx === -1) continue;
+      for (const mo of monthSet) {
+        STATE.allPayments[payIdx].months[mo] = 'Paid';
+      }
+      const paidCount = Object.values(STATE.allPayments[payIdx].months).filter(v => isPaid(v)).length;
+      STATE.allPayments[payIdx].total = String(paidCount * FEE);
+    }
+
+    saveCache(session.label);
+    _closeQmp();
+    showToast(`✅ ${batchData.length} payment${batchData.length > 1 ? 's' : ''} mark ho gayi!`);
+    renderDashboard();
+  } catch(e) {
+    showToast(e.message === 'AUTH_EXPIRED' ? 'Session expired — sync karein' : 'Error: ' + e.message, 'error');
+    if (btn) { btn.disabled = false; btn.textContent = 'Mark Paid'; }
   }
 }
