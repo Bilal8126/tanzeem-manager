@@ -1004,20 +1004,31 @@ function sendWaMemberPaid() {
 
   closeWaPaidPopup();
 
+  // Separate selected months: past-paid vs future-paid (advance)
+  const pastMonths = months.filter(mo =>  isPastOrCurrent(mo));
+  const advMonths  = months.filter(mo => !isPastOrCurrent(mo));
+
   const clean = n => n.replace(/\(.*?\)/g, '').trim();
   let msg = _waHeader();
   msg += `*${clean(capturedName)}*,\n\n`;
   msg += `✅ *Aapki Payment Haasil Ho Gayi!*\n\n`;
-  if (months.length === 1) {
-    msg += `📅 Mahina: *${months[0]}*\n`;
-    msg += `💰 Rakam: Rs.${FEE}\n\n`;
-  } else {
-    msg += `📅 Mahine: *${months.join(', ')}*\n`;
-    msg += `💰 Kul Rakam: Rs.${months.length * FEE}\n\n`;
+
+  if (pastMonths.length > 0) {
+    msg += `✅ *Jama Kiya (${pastMonths.length} mahine):*\n`;
+    msg += pastMonths.join(', ');
+    msg += `\n💰 Rakam: Rs.${pastMonths.length * FEE}\n\n`;
   }
+
+  if (advMonths.length > 0) {
+    msg += `⬆️ *Pehle Se Jama Kar Diya — Advance (${advMonths.length} mahine):*\n`;
+    msg += advMonths.join(', ');
+    msg += `\n💰 Rakam: Rs.${advMonths.length * FEE}\n\n`;
+  }
+
   if (capturedNote) {
-    msg += `📌 *Advance:* ${capturedNote}\n\n`;
+    msg += `📌 *Advance Note:* ${capturedNote}\n\n`;
   }
+
   msg += `Allah aapki kamai mein barkat farmaaye. 🤲\n`;
   msg += `━━━━━━━━━━━━━━━━━━━\n`;
   msg += `Jazakallah Khair 🤲`;
