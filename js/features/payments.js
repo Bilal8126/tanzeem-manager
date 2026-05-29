@@ -1152,7 +1152,7 @@ async function openPaymentReceiptFromPopup(mode) {
   ${advNote ? `<div class="adv-note">&#128204; <strong>Advance Note:</strong> ${advNote}</div>` : ''}
   <div class="rec-no">Receipt No: ${receiptNo} &nbsp;&bull;&nbsp; ${dateStr}</div>
   <div class="thankyou">
-    <div class="ty-main">JazakAllah Khair! &#x1F91F;</div>
+    <div class="ty-main">JazakAllah Khair!</div>
     <div class="ty-sub">Aapki madad Tanzeem ko mazboot karti hai</div>
   </div>
   <div class="footer">
@@ -1408,7 +1408,7 @@ ${waBannerHtml}
   <div class="rec-no">Receipt No: ${receiptNo} &nbsp;&bull;&nbsp; Generated: ${dateStr}</div>
 
   <div class="thankyou">
-    <div class="ty-main">JazakAllah Khair! &#x1F91F;</div>
+    <div class="ty-main">JazakAllah Khair!</div>
     <div class="ty-sub">Aapki madad Tanzeem ko mazboot karti hai</div>
   </div>
 
