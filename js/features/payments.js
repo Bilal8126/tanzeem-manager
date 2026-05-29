@@ -410,7 +410,7 @@ function renderPayments() {
                   })()}</div>
                 </div>
                 <div class="pay-amount" style="color:${C_GREEN}">+${formatCurrency(FEE)}</div>
-                <button onclick="showPaymentReceiptOptions(${JSON.stringify(m.name.replace(/\(.*?\)/g,'').trim())})" title="Receipt" style="background:none;border:none;cursor:pointer;color:#0369a1;padding:2px 6px;flex-shrink:0;line-height:1"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></button>
+                <button onclick="showPaymentReceiptOptions('${m.name.replace(/\(.*?\)/g,'').trim()}')" title="Receipt" style="background:none;border:none;cursor:pointer;color:#0369a1;padding:2px 6px;flex-shrink:0;line-height:1"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></button>
                 <button onclick="waMemberPaidPopup('${m.name.replace(/\(.*?\)/g,'').trim()}')" title="Payment Confirm WhatsApp" style="background:none;border:none;cursor:pointer;color:#25d366;padding:2px 6px;flex-shrink:0;line-height:1">${WA_SVG}</button>
               </div>`).join('')}
       </div>` : ''}
@@ -453,7 +453,7 @@ function renderPayments() {
                   ${m.totalPending > 0 ? formatCurrency(m.totalPending) : '—'}
                 </td>
                 <td style="padding:2px 4px;white-space:nowrap">
-                  <button onclick="showPaymentReceiptOptions(${JSON.stringify(m.name.replace(/\(.*?\)/g,'').trim())})" title="Receipt" style="background:none;border:none;cursor:pointer;color:#0369a1;padding:2px 4px;line-height:1"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></button>
+                  <button onclick="showPaymentReceiptOptions('${m.name.replace(/\(.*?\)/g,'').trim()}')" title="Receipt" style="background:none;border:none;cursor:pointer;color:#0369a1;padding:2px 4px;line-height:1"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></button>
                   ${isCurrentSession ? `<button onclick="waMemberSummary('${m.name.replace(/\(.*?\)/g,'').trim()}')" title="Member Summary WhatsApp" style="background:none;border:none;cursor:pointer;color:#25d366;padding:2px 4px;line-height:1">${WA_SVG}</button>` : ''}
                 </td>
               </tr>`).join('')}
@@ -1010,7 +1010,10 @@ function waMemberSummary(name) {
 }
 
 // ── Payment Receipt options modal ─────────────────────────────
+let _receiptMember = '';   // avoids quoting issues in onclick attributes
+
 function showPaymentReceiptOptions(name) {
+  _receiptMember = name;
   let ov = document.getElementById('payReceiptOverlay');
   if (!ov) {
     ov = document.createElement('div');
@@ -1021,7 +1024,6 @@ function showPaymentReceiptOptions(name) {
     document.body.appendChild(ov);
   }
   const close = `document.getElementById('payReceiptOverlay').classList.remove('open')`;
-  const n = JSON.stringify(name);
   ov.innerHTML = `
     <div class="modal" onclick="event.stopPropagation()">
       <div class="modal-handle"></div>
@@ -1031,17 +1033,17 @@ function showPaymentReceiptOptions(name) {
       </div>
       <div style="display:flex;flex-direction:column;gap:10px;padding-top:4px">
         <button class="btn" style="width:100%;display:flex;align-items:center;justify-content:center;gap:10px;font-size:14px;padding:12px;background:#f0f9ff;color:#0369a1;border:1px solid #bae6fd;border-radius:12px"
-          onclick="${close};openPaymentReceipt(${n},'view')">
+          onclick="${close};openPaymentReceipt(_receiptMember,'view')">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
           View Receipt
         </button>
         <button class="btn btn-primary" style="width:100%;display:flex;align-items:center;justify-content:center;gap:10px;font-size:14px;padding:12px"
-          onclick="${close};openPaymentReceipt(${n},'export')">
+          onclick="${close};openPaymentReceipt(_receiptMember,'export')">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           Export / Save PDF
         </button>
         <button class="whatsapp-btn" style="margin:0;justify-content:center;gap:10px"
-          onclick="${close};openPaymentReceipt(${n},'share')">
+          onclick="${close};openPaymentReceipt(_receiptMember,'share')">
           ${WA_SVG} Share via WhatsApp
         </button>
       </div>
