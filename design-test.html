@@ -5,1064 +5,619 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Design Test — Tanzeem Manager</title>
 <style>
-/* ── Design Tokens ─────────────────────────────────── */
 :root {
-  --emerald-950: #022c22;
-  --emerald-900: #064e3b;
-  --emerald-800: #065f46;
-  --emerald-700: #047857;
-  --emerald-600: #059669;
-  --emerald-500: #10b981;
-  --emerald-400: #34d399;
-  --emerald-100: #d1fae5;
-  --emerald-50:  #ecfdf5;
+  --e950:#022c22; --e900:#064e3b; --e800:#065f46; --e700:#047857;
+  --e600:#059669; --e500:#10b981; --e400:#34d399; --e100:#d1fae5; --e50:#ecfdf5;
+  --s900:#0f172a; --s800:#1e293b; --s700:#334155; --s600:#475569;
+  --s500:#64748b; --s400:#94a3b8; --s300:#cbd5e1; --s200:#e2e8f0;
+  --s100:#f1f5f9; --s50:#f8fafc;
+  --red:#dc2626; --red100:#fee2e2;
+  --blue:#2563eb; --blue100:#dbeafe;
+  --amber:#f59e0b; --amber100:#fef3c7;
+  --purple:#7c3aed; --purple100:#ede9fe;
 
-  --slate-950: #020617;
-  --slate-900: #0f172a;
-  --slate-800: #1e293b;
-  --slate-700: #334155;
-  --slate-600: #475569;
-  --slate-500: #64748b;
-  --slate-400: #94a3b8;
-  --slate-300: #cbd5e1;
-  --slate-200: #e2e8f0;
-  --slate-100: #f1f5f9;
-  --slate-50:  #f8fafc;
+  --bg:#eef2f7;
+  --surface:#ffffff;
+  --border:rgba(15,23,42,.07);
+  --text:var(--s900);
+  --muted:var(--s500);
 
-  --red-600:    #dc2626;
-  --red-100:    #fee2e2;
-  --blue-600:   #2563eb;
-  --blue-100:   #dbeafe;
-  --amber-500:  #f59e0b;
-  --amber-100:  #fef3c7;
-  --purple-600: #7c3aed;
-  --purple-100: #ede9fe;
-
-  /* Semantic */
-  --bg:      #eef2f7;
-  --surface: #ffffff;
-  --border:  rgba(15,23,42,.07);
-  --text:    var(--slate-900);
-  --text-2:  var(--slate-700);
-  --muted:   var(--slate-500);
-
-  /* Shadows — more layered & realistic */
-  --sh-xs: 0 1px 2px rgba(0,0,0,.05);
-  --sh-sm: 0 1px 3px rgba(0,0,0,.07), 0 2px 8px rgba(0,0,0,.05);
-  --sh-md: 0 4px 12px rgba(0,0,0,.06), 0 2px 4px rgba(0,0,0,.04), 0 0 0 1px rgba(0,0,0,.03);
-  --sh-lg: 0 12px 32px rgba(0,0,0,.10), 0 4px 8px rgba(0,0,0,.06), 0 0 0 1px rgba(0,0,0,.03);
-  --sh-xl: 0 24px 48px rgba(0,0,0,.14), 0 8px 16px rgba(0,0,0,.08);
-  --sh-green: 0 8px 24px rgba(5,150,105,.32), 0 2px 6px rgba(5,150,105,.18);
-  --sh-green-sm: 0 4px 14px rgba(5,150,105,.28);
-
-  --radius:    20px;
-  --radius-sm: 14px;
-  --radius-xs: 10px;
-  --radius-lg: 28px;
+  --sh-sm:0 1px 3px rgba(0,0,0,.07),0 2px 8px rgba(0,0,0,.05);
+  --sh-md:0 4px 12px rgba(0,0,0,.06),0 2px 4px rgba(0,0,0,.04),0 0 0 1px rgba(0,0,0,.03);
+  --sh-green:0 8px 24px rgba(5,150,105,.32),0 2px 6px rgba(5,150,105,.18);
+  --sh-green-sm:0 4px 14px rgba(5,150,105,.28);
+  --r:20px; --rsm:14px; --rxs:10px; --rlg:28px;
 }
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes shimmer{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+@keyframes spin{to{transform:rotate(360deg)}}
 
-* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-
-@keyframes fadeUp   { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
-@keyframes shimmer  { 0% { transform:translateX(-100%); } 100% { transform:translateX(100%); } }
-@keyframes pulse    { 0%,100% { opacity:1; } 50% { opacity:.5; } }
-@keyframes floatUp  { 0%,100% { transform:translateY(0px); } 50% { transform:translateY(-4px); } }
-
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
-  background: var(--bg);
-  /* Subtle noise texture via svg */
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',Roboto,sans-serif;
+  background:var(--bg);
   background-image:
-    radial-gradient(ellipse at 15% 0%,  rgba(16,185,129,.12) 0%, transparent 50%),
-    radial-gradient(ellipse at 85% 5%,  rgba(37,99,235,.07)  0%, transparent 40%),
-    radial-gradient(ellipse at 50% 100%,rgba(5,150,105,.08)  0%, transparent 50%);
-  background-attachment: fixed;
-  color: var(--text);
-  max-width: 390px;
-  margin: 0 auto;
-  min-height: 100vh;
-  padding-bottom: 110px;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+    radial-gradient(ellipse at 15% 0%,rgba(16,185,129,.12) 0%,transparent 50%),
+    radial-gradient(ellipse at 85% 5%,rgba(37,99,235,.07) 0%,transparent 40%),
+    radial-gradient(ellipse at 50% 100%,rgba(5,150,105,.08) 0%,transparent 50%);
+  background-attachment:fixed;
+  color:var(--text);
+  max-width:390px;
+  margin:0 auto;
+  min-height:100vh;
+  -webkit-font-smoothing:antialiased;
 }
 
-/* ── Header ─────────────────────────────────────── */
-.header {
-  background: linear-gradient(150deg,
-    var(--emerald-950) 0%,
-    var(--emerald-900) 40%,
-    #066a4c 75%,
-    #0a7a5a 100%);
-  color: #fff;
-  padding: 14px 18px 18px;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  border-radius: 0 0 32px 32px;
-  box-shadow: 0 6px 32px rgba(2,44,34,.45), 0 2px 8px rgba(0,0,0,.18);
-  overflow: hidden;
+/* ── Header ─────────────────────────────────── */
+.header{
+  background:linear-gradient(150deg,var(--e950) 0%,var(--e900) 40%,#066a4c 75%,#0a7a5a 100%);
+  color:#fff;
+  padding:14px 18px 18px;
+  position:sticky;top:0;z-index:100;
+  border-radius:0 0 32px 32px;
+  box-shadow:0 6px 32px rgba(2,44,34,.45),0 2px 8px rgba(0,0,0,.18);
+  overflow:hidden;
 }
-/* Glowing orb behind header */
-.header::before {
-  content: '';
-  position: absolute;
-  top: -40px; right: -20px;
-  width: 180px; height: 180px;
-  background: radial-gradient(circle, rgba(52,211,153,.18) 0%, transparent 70%);
-  border-radius: 50%;
-  pointer-events: none;
+.header::before{
+  content:'';position:absolute;top:-40px;right:-20px;
+  width:180px;height:180px;
+  background:radial-gradient(circle,rgba(52,211,153,.18) 0%,transparent 70%);
+  border-radius:50%;pointer-events:none;
 }
-/* Top shine line */
-.header::after {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,.25), transparent);
-  pointer-events: none;
+.header::after{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.25),transparent);
+  pointer-events:none;
 }
-.header-row1 {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 16px;
+.hdr-row1{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.hdr-brand{display:flex;align-items:center;gap:10px}
+.hdr-logo{
+  width:40px;height:40px;border-radius:13px;
+  background:rgba(255,255,255,.15);backdrop-filter:blur(8px);
+  border:1px solid rgba(255,255,255,.25);
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 2px 12px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.2);
 }
-.header-brand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+.hdr-title{font-size:17px;font-weight:800;color:#fff;letter-spacing:-.5px}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,.55);font-weight:500;margin-top:1px;letter-spacing:.2px}
+.hdr-right{display:flex;align-items:center;gap:8px}
+.hdr-pill{
+  background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.22);
+  border-radius:20px;padding:5px 12px;font-size:11px;font-weight:700;color:#fff;letter-spacing:.1px;
 }
-.header-logo {
-  width: 40px; height: 40px;
-  border-radius: 13px;
-  background: rgba(255,255,255,.15);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(255,255,255,.25);
-  display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 2px 12px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.2);
+.avatar{
+  width:36px;height:36px;border-radius:50%;
+  background:linear-gradient(135deg,rgba(255,255,255,.22),rgba(255,255,255,.1));
+  border:2px solid rgba(255,255,255,.35);
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:800;color:#fff;cursor:pointer;
+  box-shadow:0 2px 8px rgba(0,0,0,.2);
 }
-.header h1 {
-  font-size: 18px;
-  font-weight: 800;
-  letter-spacing: -0.6px;
-  text-shadow: 0 1px 6px rgba(0,0,0,.2);
+.hdr-balance{
+  background:rgba(255,255,255,.1);backdrop-filter:blur(10px);
+  border:1px solid rgba(255,255,255,.15);border-radius:16px;
+  padding:12px 16px;display:flex;align-items:center;justify-content:space-between;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.12);
 }
-.header-sub {
-  font-size: 10px;
-  color: rgba(255,255,255,.55);
-  font-weight: 500;
-  margin-top: 1px;
-  letter-spacing: .2px;
-}
-.header-right {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.header-pill {
-  background: rgba(255,255,255,.13);
-  border: 1px solid rgba(255,255,255,.22);
-  border-radius: 20px;
-  padding: 5px 12px;
-  font-size: 11px;
-  font-weight: 700;
-  color: #fff;
-  letter-spacing: .1px;
-}
-.avatar {
-  width: 36px; height: 36px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, rgba(255,255,255,.22), rgba(255,255,255,.1));
-  border: 2px solid rgba(255,255,255,.35);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 12px; font-weight: 800;
-  color: #fff;
-  cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0,0,0,.2);
-}
-/* Balance row */
-.header-balance {
-  background: rgba(255,255,255,.1);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255,255,255,.15);
-  border-radius: 16px;
-  padding: 12px 16px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.12);
-}
-.hb-item { text-align: center; }
-.hb-label { font-size: 9px; color: rgba(255,255,255,.55); font-weight: 600; letter-spacing: .5px; text-transform: uppercase; margin-bottom: 3px; }
-.hb-value { font-size: 15px; font-weight: 800; color: #fff; letter-spacing: -0.5px; }
-.hb-value.green { color: var(--emerald-400); }
-.hb-value.red   { color: #fca5a5; }
-.hb-divider { width: 1px; height: 32px; background: rgba(255,255,255,.15); }
+.hb-item{text-align:center}
+.hb-lbl{font-size:9px;color:rgba(255,255,255,.55);font-weight:600;letter-spacing:.5px;text-transform:uppercase;margin-bottom:3px}
+.hb-val{font-size:15px;font-weight:800;color:#fff;letter-spacing:-.5px}
+.hb-val.g{color:var(--e400)}.hb-val.r{color:#fca5a5}
+.hb-div{width:1px;height:32px;background:rgba(255,255,255,.15)}
 
-/* ── Screen ──────────────────────────────────────── */
-.screen { padding: 16px 14px; animation: fadeUp .22s ease-out; }
+/* ── Screen container ───────────────────────── */
+.screens{padding-bottom:112px}
+.screen{display:none;padding:16px 14px;animation:fadeUp .22s ease-out}
+.screen.active{display:block}
 
-/* ── Section label ───────────────────────────────── */
-.section-label {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--muted);
-  letter-spacing: .7px;
-  text-transform: uppercase;
-  margin: 18px 0 8px 2px;
+/* ── Section label ──────────────────────────── */
+.slabel{font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.7px;text-transform:uppercase;margin:16px 0 8px 2px}
+
+/* ── Card ───────────────────────────────────── */
+.card{
+  background:var(--surface);border-radius:var(--r);
+  padding:18px;margin-bottom:10px;
+  box-shadow:var(--sh-md);border:1px solid rgba(255,255,255,.9);
+  position:relative;overflow:hidden;
+}
+.card::before{
+  content:'';position:absolute;top:0;left:20px;right:20px;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.9),transparent);
+}
+.card-title{
+  font-size:13px;font-weight:800;color:var(--e800);
+  margin-bottom:14px;display:flex;align-items:center;gap:8px;letter-spacing:-.2px;
+}
+.card-title::before{
+  content:'';width:3px;height:14px;
+  background:linear-gradient(to bottom,var(--e600),var(--e400));
+  border-radius:2px;flex-shrink:0;
 }
 
-/* ── Cards ───────────────────────────────────────── */
-.card {
-  background: var(--surface);
-  border-radius: var(--radius);
-  padding: 18px;
-  margin-bottom: 12px;
-  box-shadow: var(--sh-md);
-  border: 1px solid rgba(255,255,255,.9);
-  position: relative;
-  overflow: hidden;
-  /* Subtle top-accent line */
+/* ── Metrics ────────────────────────────────── */
+.metrics{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.metric{
+  border-radius:var(--r);padding:17px 15px 13px;
+  position:relative;overflow:hidden;color:#fff;
+  transition:transform .2s cubic-bezier(.34,1.56,.64,1);
 }
-.card::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 20px; right: 20px;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,.9), transparent);
+.metric:active{transform:scale(.96)}
+.metric::after{
+  content:'';position:absolute;top:0;left:-100%;width:60%;height:100%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.12),transparent);
+  animation:shimmer 3.5s ease infinite;pointer-events:none;
 }
-.card-title {
-  font-size: 13px;
-  font-weight: 800;
-  color: var(--emerald-800);
-  margin-bottom: 14px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  letter-spacing: -.2px;
+.metric::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:50%;
+  background:linear-gradient(to bottom,rgba(255,255,255,.18),transparent);
+  border-radius:var(--r) var(--r) 60% 60%;pointer-events:none;z-index:1;
 }
-.card-title::before {
-  content: '';
-  width: 3px;
-  height: 14px;
-  background: linear-gradient(to bottom, var(--emerald-600), var(--emerald-400));
-  border-radius: 2px;
-  flex-shrink: 0;
+.metric.g{background:linear-gradient(145deg,var(--e900) 0%,var(--e700) 60%,var(--e600) 100%);box-shadow:var(--sh-green)}
+.metric.b{background:linear-gradient(145deg,#1e3a8a 0%,#1d4ed8 60%,#3b82f6 100%);box-shadow:0 8px 24px rgba(29,78,216,.32)}
+.metric.o{background:linear-gradient(145deg,#78350f 0%,#b45309 60%,#d97706 100%);box-shadow:0 8px 24px rgba(180,83,9,.32)}
+.metric.p{background:linear-gradient(145deg,#4c1d95 0%,#6d28d9 60%,#7c3aed 100%);box-shadow:0 8px 24px rgba(109,40,217,.32)}
+.metric-icon{position:absolute;right:10px;bottom:8px;opacity:.15;z-index:0}
+.metric-lbl{font-size:10px;font-weight:700;color:rgba(255,255,255,.75);letter-spacing:.4px;text-transform:uppercase;margin-bottom:8px;position:relative;z-index:2}
+.metric-val{font-size:21px;font-weight:900;letter-spacing:-1.2px;color:#fff;position:relative;z-index:2;line-height:1}
+.metric-val.sm{font-size:17px;font-weight:800;letter-spacing:-.6px}
+.metric-sub{font-size:10px;color:rgba(255,255,255,.6);margin-top:5px;font-weight:500;position:relative;z-index:2}
+
+/* ── Progress ───────────────────────────────── */
+.prog-hdr{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}
+.prog-title{font-size:13px;font-weight:700;color:var(--text)}
+.prog-pct{font-size:13px;font-weight:800;color:var(--e700)}
+.prog-track{height:8px;background:var(--s100);border-radius:99px;overflow:hidden;position:relative}
+.prog-fill{
+  height:100%;border-radius:99px;
+  background:linear-gradient(90deg,var(--e800),var(--e600),var(--e400));
+  box-shadow:0 0 10px rgba(5,150,105,.4);position:relative;
+}
+.prog-fill::after{
+  content:'';position:absolute;top:0;right:0;width:12px;height:100%;
+  background:rgba(255,255,255,.4);border-radius:99px;animation:pulse 1.5s ease-in-out infinite;
+}
+.prog-lbl{font-size:11px;color:var(--muted);margin-top:6px;font-weight:500}
+
+/* ── Stats row ──────────────────────────────── */
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
+.stat-box{
+  background:var(--surface);border-radius:var(--rsm);padding:14px 10px;
+  text-align:center;box-shadow:var(--sh-sm);border:1px solid rgba(255,255,255,.9);
+}
+.stat-val{font-size:20px;font-weight:900;letter-spacing:-1px;color:var(--text)}
+.stat-val.g{color:var(--e700)}.stat-val.r{color:var(--red)}.stat-val.b{color:var(--blue)}
+.stat-lbl{font-size:10px;font-weight:600;color:var(--muted);margin-top:3px}
+
+/* ── Pay row ────────────────────────────────── */
+.pay-row{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--s100)}
+.pay-row:last-child{border-bottom:none}
+.pay-av{width:40px;height:40px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0;letter-spacing:-.5px}
+.pay-av.paid{background:linear-gradient(135deg,var(--e800),var(--e600));box-shadow:var(--sh-green-sm)}
+.pay-av.unpaid{background:linear-gradient(135deg,#991b1b,var(--red));box-shadow:0 4px 12px rgba(220,38,38,.25)}
+.pay-info{flex:1;min-width:0}
+.pay-name{font-size:13px;font-weight:700;color:var(--text);letter-spacing:-.15px}
+.pay-sub{font-size:11px;color:var(--muted);margin-top:2px;font-weight:500}
+.pay-amount{font-size:13px;font-weight:800;flex-shrink:0}
+.pay-wa{background:none;border:none;cursor:pointer;color:#25d366;padding:2px 4px;line-height:1}
+
+/* ── Member card ────────────────────────────── */
+.mc{
+  background:var(--surface);border-radius:var(--rsm);padding:13px 14px;
+  margin-bottom:8px;border:1px solid rgba(255,255,255,.9);
+  display:flex;align-items:center;gap:12px;
+  box-shadow:var(--sh-sm);position:relative;overflow:hidden;
+  transition:transform .15s,box-shadow .15s;
+}
+.mc::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(to bottom,var(--e700),var(--e400))}
+.mc:active{transform:scale(.983);box-shadow:var(--sh-md)}
+.mc-av{
+  width:44px;height:44px;border-radius:14px;
+  background:linear-gradient(145deg,var(--e900),var(--e600));
+  color:#fff;display:flex;align-items:center;justify-content:center;
+  font-size:15px;font-weight:800;flex-shrink:0;letter-spacing:-.8px;
+  box-shadow:var(--sh-green-sm);
+}
+.mc-av.in{background:linear-gradient(145deg,var(--s500),var(--s400));box-shadow:0 4px 12px rgba(100,116,139,.2)}
+.mc-info{flex:1;min-width:0}
+.mc-name{font-size:14px;font-weight:700;letter-spacing:-.2px;color:var(--text)}
+.mc-sub{font-size:11px;color:var(--muted);margin-top:2px;font-weight:500}
+.mc-actions{display:flex;gap:6px;flex-shrink:0}
+
+/* ── Badges ─────────────────────────────────── */
+.badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.2px}
+.ba{background:var(--e50);color:var(--e800);border:1px solid var(--e100)}
+.bi{background:var(--red100);color:var(--red);border:1px solid #fecaca}
+
+/* ── Finance item ───────────────────────────── */
+.fi{display:flex;align-items:center;gap:13px;padding:12px 0;border-bottom:1px solid var(--s100)}
+.fi:last-child{border-bottom:none}
+.fi-dot{width:40px;height:40px;border-radius:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.fi-dot.g{background:var(--e50);box-shadow:0 2px 8px rgba(5,150,105,.15)}
+.fi-dot.r{background:#fff5f5;box-shadow:0 2px 8px rgba(220,38,38,.12)}
+.fi-info{flex:1;min-width:0}
+.fi-name{font-size:13px;font-weight:700;color:var(--text);letter-spacing:-.1px}
+.fi-sub{font-size:11px;color:var(--muted);margin-top:2px;font-weight:500}
+.fi-amt{font-size:14px;font-weight:800;letter-spacing:-.4px;flex-shrink:0}
+.fi-amt.g{color:var(--e700)}.fi-amt.r{color:var(--red)}
+
+/* ── Reports ────────────────────────────────── */
+.rpt-btn{
+  display:flex;align-items:center;gap:14px;padding:14px;
+  background:var(--surface);border-radius:var(--rsm);
+  box-shadow:var(--sh-sm);border:1px solid rgba(255,255,255,.9);
+  margin-bottom:8px;cursor:pointer;transition:transform .15s,box-shadow .15s;
+}
+.rpt-btn:active{transform:scale(.983);box-shadow:var(--sh-md)}
+.rpt-icon{
+  width:42px;height:42px;border-radius:13px;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.rpt-icon.g{background:var(--e50);box-shadow:0 2px 8px rgba(5,150,105,.15)}
+.rpt-icon.b{background:var(--blue100);box-shadow:0 2px 8px rgba(37,99,235,.12)}
+.rpt-icon.o{background:var(--amber100);box-shadow:0 2px 8px rgba(245,158,11,.15)}
+.rpt-icon.p{background:var(--purple100);box-shadow:0 2px 8px rgba(124,58,237,.15)}
+.rpt-info{flex:1;min-width:0}
+.rpt-name{font-size:13px;font-weight:700;color:var(--text);letter-spacing:-.1px}
+.rpt-desc{font-size:11px;color:var(--muted);margin-top:2px;font-weight:500}
+.rpt-arr{color:var(--s300)}
+
+/* ── AI chat ────────────────────────────────── */
+.chat-area{display:flex;flex-direction:column;gap:10px;padding:4px 0 16px}
+.msg{display:flex;flex-direction:column}
+.msg.user{align-items:flex-end}
+.msg.ai{align-items:flex-start}
+.msg-bubble{
+  max-width:82%;padding:11px 14px;border-radius:18px;
+  font-size:13px;line-height:1.55;font-weight:500;
+}
+.msg.user .msg-bubble{
+  background:linear-gradient(145deg,var(--e900),var(--e700));color:#fff;
+  border-radius:18px 18px 4px 18px;
+  box-shadow:var(--sh-green-sm);
+}
+.msg.ai .msg-bubble{
+  background:var(--surface);color:var(--text);
+  border-radius:18px 18px 18px 4px;
+  box-shadow:var(--sh-sm);border:1px solid var(--s200);
+}
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px}
+.chip{
+  background:var(--surface);border:1px solid var(--s200);
+  border-radius:20px;padding:7px 14px;font-size:12px;font-weight:600;
+  color:var(--e800);cursor:pointer;box-shadow:var(--sh-sm);
+  transition:all .15s;white-space:nowrap;
+}
+.chip:active{background:var(--e50);border-color:var(--e100);transform:scale(.96)}
+.chat-input-row{
+  display:flex;gap:10px;align-items:center;
+  position:sticky;bottom:80px;
+  background:var(--bg);padding:8px 0;
+}
+.chat-input{
+  flex:1;padding:12px 16px;border:1.5px solid var(--s200);
+  border-radius:24px;font-size:14px;background:var(--surface);
+  color:var(--text);font-weight:500;
+  box-shadow:var(--sh-sm);
+}
+.chat-input:focus{outline:none;border-color:var(--e600);box-shadow:0 0 0 3px rgba(5,150,105,.12)}
+.chat-send{
+  width:44px;height:44px;border-radius:50%;
+  background:linear-gradient(145deg,var(--e900),var(--e600));
+  border:none;cursor:pointer;color:#fff;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:var(--sh-green-sm);flex-shrink:0;
 }
 
-/* ── Metrics ─────────────────────────────────────── */
-.metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
-.metric {
-  border-radius: var(--radius);
-  padding: 18px 16px 14px;
-  position: relative;
-  overflow: hidden;
-  color: #fff;
-  cursor: pointer;
-  transition: transform .2s cubic-bezier(.34,1.56,.64,1), box-shadow .2s;
+/* ── Settings ───────────────────────────────── */
+.setting-row{
+  display:flex;align-items:center;gap:14px;padding:14px 0;
+  border-bottom:1px solid var(--s100);
 }
-.metric:active { transform: scale(.96); }
-/* Shimmer effect */
-.metric::after {
-  content: '';
-  position: absolute;
-  top: 0; left: -100%; width: 60%; height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,.12), transparent);
-  animation: shimmer 3.5s ease infinite;
-  pointer-events: none;
+.setting-row:last-child{border-bottom:none}
+.setting-icon{
+  width:38px;height:38px;border-radius:12px;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
 }
-/* Top glass shine */
-.metric::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0; height: 50%;
-  background: linear-gradient(to bottom, rgba(255,255,255,.18), transparent);
-  border-radius: var(--radius) var(--radius) 60% 60%;
-  pointer-events: none;
-  z-index: 1;
-}
-.metric.green  {
-  background: linear-gradient(145deg, var(--emerald-900) 0%, var(--emerald-700) 60%, var(--emerald-600) 100%);
-  box-shadow: var(--sh-green);
-}
-.metric.blue   {
-  background: linear-gradient(145deg, #1e3a8a 0%, #1d4ed8 60%, #3b82f6 100%);
-  box-shadow: 0 8px 24px rgba(29,78,216,.32), 0 2px 6px rgba(29,78,216,.18);
-}
-.metric.orange {
-  background: linear-gradient(145deg, #78350f 0%, #b45309 60%, #d97706 100%);
-  box-shadow: 0 8px 24px rgba(180,83,9,.32);
-}
-.metric.purple {
-  background: linear-gradient(145deg, #4c1d95 0%, #6d28d9 60%, #7c3aed 100%);
-  box-shadow: 0 8px 24px rgba(109,40,217,.32);
-}
-.metric-icon {
-  position: absolute;
-  right: 12px; bottom: 10px;
-  opacity: .15;
-  z-index: 0;
-}
-.metric-label {
-  font-size: 10px;
-  font-weight: 700;
-  color: rgba(255,255,255,.75);
-  letter-spacing: .4px;
-  text-transform: uppercase;
-  margin-bottom: 8px;
-  position: relative;
-  z-index: 2;
-}
-.metric-value {
-  font-size: 22px;
-  font-weight: 900;
-  letter-spacing: -1.2px;
-  color: #fff;
-  position: relative;
-  z-index: 2;
-  line-height: 1;
-}
-.metric-value.sm { font-size: 17px; font-weight: 800; letter-spacing: -.6px; }
-.metric-sub {
-  font-size: 10px;
-  color: rgba(255,255,255,.6);
-  margin-top: 5px;
-  font-weight: 500;
-  position: relative;
-  z-index: 2;
-}
+.setting-info{flex:1;min-width:0}
+.setting-name{font-size:14px;font-weight:600;color:var(--text)}
+.setting-sub{font-size:11px;color:var(--muted);margin-top:1px}
 
-/* ── Progress bar ────────────────────────────────── */
-.progress-card { padding: 16px 18px; }
-.progress-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  margin-bottom: 10px;
-}
-.progress-title { font-size: 13px; font-weight: 700; color: var(--text); }
-.progress-pct { font-size: 13px; font-weight: 800; color: var(--emerald-700); }
-.progress-track {
-  height: 8px;
-  background: var(--slate-100);
-  border-radius: 99px;
-  overflow: hidden;
-  position: relative;
-}
-.progress-fill {
-  height: 100%;
-  border-radius: 99px;
-  background: linear-gradient(90deg, var(--emerald-700), var(--emerald-500), var(--emerald-400));
-  box-shadow: 0 0 10px rgba(5,150,105,.4);
-  position: relative;
-  transition: width .6s cubic-bezier(.4,0,.2,1);
-}
-.progress-fill::after {
-  content: '';
-  position: absolute;
-  top: 0; right: 0;
-  width: 12px; height: 100%;
-  background: rgba(255,255,255,.4);
-  border-radius: 99px;
-  animation: pulse 1.5s ease-in-out infinite;
-}
-.progress-label { font-size: 11px; color: var(--muted); margin-top: 6px; font-weight: 500; }
+/* ── Btn ────────────────────────────────────── */
+.btn{padding:13px 22px;border-radius:var(--rxs);border:none;cursor:pointer;font-size:14px;font-weight:700;letter-spacing:-.1px;transition:transform .15s,box-shadow .15s;position:relative;overflow:hidden}
+.btn:active{transform:scale(.95)}
+.btn-primary{background:linear-gradient(145deg,var(--e900) 0%,var(--e700) 60%,var(--e600) 100%);color:#fff;box-shadow:var(--sh-green);width:100%;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-primary::before{content:'';position:absolute;top:0;left:0;right:0;height:50%;background:linear-gradient(to bottom,rgba(255,255,255,.12),transparent);pointer-events:none}
 
-/* ── Member Cards ────────────────────────────────── */
-.member-card {
-  background: var(--surface);
-  border-radius: var(--radius-sm);
-  padding: 13px 14px;
-  margin-bottom: 8px;
-  border: 1px solid rgba(255,255,255,.9);
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  box-shadow: var(--sh-sm);
-  position: relative;
-  overflow: hidden;
-  transition: transform .15s, box-shadow .15s;
+/* ── FAB ────────────────────────────────────── */
+.fab{
+  position:fixed;bottom:90px;right:18px;
+  width:52px;height:52px;border-radius:18px;
+  background:linear-gradient(145deg,var(--e900),var(--e700),var(--e600));
+  color:#fff;border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:var(--sh-green);z-index:99;
+  transition:transform .2s,box-shadow .2s;
 }
-.member-card::before {
-  content: '';
-  position: absolute;
-  left: 0; top: 0; bottom: 0;
-  width: 3px;
-  background: linear-gradient(to bottom, var(--emerald-700), var(--emerald-400));
-}
-.member-card:active { transform: scale(.983); box-shadow: var(--sh-md); }
-.member-avatar {
-  width: 44px; height: 44px;
-  border-radius: 14px;
-  background: linear-gradient(145deg, var(--emerald-900), var(--emerald-600));
-  color: #fff;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 15px; font-weight: 800;
-  flex-shrink: 0;
-  letter-spacing: -.8px;
-  box-shadow: var(--sh-green-sm);
-}
-.member-avatar.inactive {
-  background: linear-gradient(145deg, var(--slate-500), var(--slate-400));
-  box-shadow: 0 4px 12px rgba(100,116,139,.2);
-}
-.member-info { flex: 1; min-width: 0; }
-.member-name { font-size: 14px; font-weight: 700; letter-spacing: -.2px; color: var(--text); }
-.member-sub  { font-size: 11px; color: var(--muted); margin-top: 2px; font-weight: 500; }
-.member-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.fab::before{content:'';position:absolute;inset:0;border-radius:inherit;background:linear-gradient(to bottom,rgba(255,255,255,.18),transparent);pointer-events:none}
+.fab:active{transform:scale(.9)}
 
-/* ── Badges ──────────────────────────────────────── */
-.badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 3px 9px;
-  border-radius: 20px;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: .2px;
+/* ── Bottom Nav ─────────────────────────────── */
+.bottom-nav{
+  position:fixed;bottom:14px;left:50%;transform:translateX(-50%);
+  width:calc(100% - 24px);max-width:366px;
+  background:rgba(255,255,255,.92);
+  backdrop-filter:blur(32px) saturate(1.8);
+  -webkit-backdrop-filter:blur(32px) saturate(1.8);
+  border:1px solid rgba(255,255,255,.98);border-radius:28px;
+  display:flex;z-index:100;padding:5px;
+  box-shadow:0 8px 32px rgba(0,0,0,.10),0 2px 8px rgba(0,0,0,.06),0 0 0 1px rgba(0,0,0,.04),inset 0 1px 0 rgba(255,255,255,.9);
 }
-.badge-active   { background: var(--emerald-50); color: var(--emerald-800); border: 1px solid var(--emerald-100); }
-.badge-inactive { background: var(--red-100); color: var(--red-600); border: 1px solid #fecaca; }
-.badge-paid     { background: var(--emerald-50); color: var(--emerald-800); border: 1px solid var(--emerald-100); }
-.badge-unpaid   { background: var(--red-100); color: var(--red-600); border: 1px solid #fecaca; }
-.badge-advance  { background: var(--blue-100); color: var(--blue-600); border: 1px solid #bfdbfe; }
-
-/* ── Finance Items ───────────────────────────────── */
-.finance-item {
-  display: flex;
-  align-items: center;
-  gap: 13px;
-  padding: 12px 0;
-  border-bottom: 1px solid var(--slate-100);
+.nav-item{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:8px 2px 6px;cursor:pointer;color:var(--s400);
+  font-size:9px;font-weight:700;gap:3px;border:none;background:none;border-radius:22px;
+  transition:color .22s,background .22s,transform .22s cubic-bezier(.34,1.56,.64,1);
+  letter-spacing:.1px;white-space:nowrap;
 }
-.finance-item:last-child { border-bottom: none; }
-.finance-dot {
-  width: 40px; height: 40px;
-  border-radius: 13px;
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
-}
-.finance-dot.green {
-  background: var(--emerald-50);
-  box-shadow: 0 2px 8px rgba(5,150,105,.15);
-}
-.finance-dot.red {
-  background: #fff5f5;
-  box-shadow: 0 2px 8px rgba(220,38,38,.12);
-}
-.finance-info { flex: 1; min-width: 0; }
-.finance-name { font-size: 13px; font-weight: 700; color: var(--text); letter-spacing: -.1px; }
-.finance-sub  { font-size: 11px; color: var(--muted); margin-top: 2px; font-weight: 500; }
-.finance-amount { font-size: 14px; font-weight: 800; letter-spacing: -.4px; flex-shrink: 0; }
-.finance-amount.green { color: var(--emerald-700); }
-.finance-amount.red   { color: var(--red-600); }
-
-/* ── Buttons ─────────────────────────────────────── */
-.btn {
-  padding: 13px 22px;
-  border-radius: var(--radius-xs);
-  border: none;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 700;
-  letter-spacing: -.1px;
-  transition: transform .15s cubic-bezier(.34,1.56,.64,1), box-shadow .15s;
-  position: relative;
-  overflow: hidden;
-}
-.btn:active { transform: scale(.95); }
-.btn-primary {
-  background: linear-gradient(145deg, var(--emerald-900) 0%, var(--emerald-700) 60%, var(--emerald-600) 100%);
-  color: #fff;
-  box-shadow: var(--sh-green);
-  width: 100%;
-  display: flex; align-items: center; justify-content: center; gap: 8px;
-}
-.btn-primary::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 50%;
-  background: linear-gradient(to bottom, rgba(255,255,255,.12), transparent);
-  pointer-events: none;
-}
-.btn-secondary {
-  background: var(--emerald-50);
-  color: var(--emerald-800);
-  border: 1px solid var(--emerald-100);
-  font-weight: 700;
-}
-.btn-danger {
-  background: var(--red-100);
-  color: var(--red-600);
-  border: 1px solid #fecaca;
-  font-weight: 700;
-}
-.btn-row { display: flex; gap: 10px; }
-.btn-row .btn { flex: 1; }
-
-/* ── Quick actions row ───────────────────────────── */
-.quick-actions {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-  margin-bottom: 12px;
-}
-.qa-item {
-  background: var(--surface);
-  border-radius: var(--radius-sm);
-  padding: 14px 8px 12px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  box-shadow: var(--sh-sm);
-  border: 1px solid rgba(255,255,255,.9);
-  cursor: pointer;
-  transition: transform .15s, box-shadow .15s;
-}
-.qa-item:active { transform: scale(.93); }
-.qa-icon {
-  width: 38px; height: 38px;
-  border-radius: 12px;
-  display: flex; align-items: center; justify-content: center;
-}
-.qa-icon.green  { background: var(--emerald-50); box-shadow: 0 2px 8px rgba(5,150,105,.15); }
-.qa-icon.blue   { background: #eff6ff; box-shadow: 0 2px 8px rgba(37,99,235,.12); }
-.qa-icon.orange { background: var(--amber-100); box-shadow: 0 2px 8px rgba(245,158,11,.15); }
-.qa-icon.purple { background: var(--purple-100); box-shadow: 0 2px 8px rgba(124,58,237,.15); }
-.qa-label { font-size: 10px; font-weight: 700; color: var(--slate-600); text-align: center; letter-spacing: -.1px; }
-
-/* ── Pay row ─────────────────────────────────────── */
-.pay-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 0;
-  border-bottom: 1px solid var(--slate-100);
-}
-.pay-row:last-child { border-bottom: none; }
-.pay-avatar {
-  width: 40px; height: 40px;
-  border-radius: 13px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 14px; font-weight: 800;
-  color: #fff;
-  flex-shrink: 0;
-  letter-spacing: -.5px;
-}
-.pay-avatar--paid   { background: linear-gradient(135deg, var(--emerald-800), var(--emerald-600)); box-shadow: var(--sh-green-sm); }
-.pay-avatar--unpaid { background: linear-gradient(135deg, #991b1b, var(--red-600)); box-shadow: 0 4px 12px rgba(220,38,38,.25); }
-.pay-info { flex: 1; min-width: 0; }
-.pay-name { font-size: 13px; font-weight: 700; color: var(--text); letter-spacing: -.15px; }
-.pay-sub  { font-size: 11px; color: var(--muted); margin-top: 2px; font-weight: 500; }
-.pay-amount { font-size: 13px; font-weight: 800; flex-shrink: 0; }
-
-/* ── Bottom Nav ──────────────────────────────────── */
-.bottom-nav {
-  position: fixed;
-  bottom: 16px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: calc(100% - 24px);
-  max-width: 366px;
-  background: rgba(255,255,255,.92);
-  backdrop-filter: blur(32px) saturate(1.8);
-  -webkit-backdrop-filter: blur(32px) saturate(1.8);
-  border: 1px solid rgba(255,255,255,.98);
-  border-radius: 28px;
-  display: flex;
-  z-index: 100;
-  padding: 5px;
-  box-shadow:
-    0 8px 32px rgba(0,0,0,.10),
-    0 2px 8px rgba(0,0,0,.06),
-    0 0 0 1px rgba(0,0,0,.04),
-    inset 0 1px 0 rgba(255,255,255,.9);
-}
-.nav-item {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 8px 4px 6px;
-  cursor: pointer;
-  color: var(--slate-400);
-  font-size: 9px;
-  font-weight: 700;
-  gap: 3px;
-  border: none;
-  background: none;
-  border-radius: 22px;
-  transition: color .22s, background .22s, transform .22s cubic-bezier(.34,1.56,.64,1);
-  letter-spacing: .1px;
-  white-space: nowrap;
-}
-.nav-item svg { width: 20px; height: 20px; transition: transform .22s cubic-bezier(.34,1.56,.64,1); }
-.nav-item:active { transform: scale(.88); }
-.nav-item.active {
-  background: linear-gradient(145deg, var(--emerald-900) 0%, var(--emerald-700) 100%);
-  color: #fff;
-  box-shadow: var(--sh-green);
-}
-.nav-item.active svg { transform: scale(1.1); }
-
-/* ── FAB ─────────────────────────────────────────── */
-.fab {
-  position: fixed;
-  bottom: 96px; right: 18px;
-  width: 54px; height: 54px;
-  border-radius: 19px;
-  background: linear-gradient(145deg, var(--emerald-900), var(--emerald-700), var(--emerald-600));
-  color: #fff;
-  border: none;
-  cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  box-shadow: var(--sh-green);
-  z-index: 99;
-  transition: transform .2s, box-shadow .2s;
-}
-.fab::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: linear-gradient(to bottom, rgba(255,255,255,.18), transparent);
-  pointer-events: none;
-}
-.fab:active { transform: scale(.9); box-shadow: var(--sh-green-sm); }
-
-/* ── Toast ───────────────────────────────────────── */
-.toast-demo {
-  background: var(--slate-900);
-  color: #fff;
-  padding: 12px 18px;
-  border-radius: var(--radius-sm);
-  font-size: 13px;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  box-shadow: var(--sh-lg);
-  border: 1px solid rgba(255,255,255,.08);
-  margin-bottom: 8px;
-}
-.toast-demo.success { background: linear-gradient(135deg, var(--emerald-900), var(--emerald-700)); }
-.toast-demo.error   { background: linear-gradient(135deg, #7f1d1d, var(--red-600)); }
-
-/* ── Input ───────────────────────────────────────── */
-.form-group { margin-bottom: 14px; }
-label {
-  font-size: 10px;
-  font-weight: 700;
-  color: var(--muted);
-  margin-bottom: 6px;
-  display: block;
-  text-transform: uppercase;
-  letter-spacing: .7px;
-}
-input, select {
-  width: 100%;
-  padding: 13px 15px;
-  border: 1.5px solid var(--slate-200);
-  border-radius: var(--radius-xs);
-  font-size: 14px;
-  background: var(--slate-50);
-  color: var(--text);
-  font-weight: 500;
-  transition: border-color .2s, box-shadow .2s, background .2s;
-  -webkit-font-smoothing: antialiased;
-}
-input:focus, select:focus {
-  outline: none;
-  border-color: var(--emerald-600);
-  box-shadow: 0 0 0 3.5px rgba(5,150,105,.12);
-  background: #fff;
-}
-
-/* ── WA Button ───────────────────────────────────── */
-.wa-btn {
-  width: 100%;
-  padding: 14px;
-  border-radius: var(--radius-xs);
-  background: linear-gradient(145deg, #128C7E, #25D366);
-  color: #fff;
-  border: none;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 700;
-  display: flex; align-items: center; justify-content: center; gap: 10px;
-  box-shadow: 0 6px 20px rgba(18,140,126,.32), 0 2px 6px rgba(18,140,126,.18);
-  transition: transform .15s, box-shadow .15s;
-}
-.wa-btn:active { transform: scale(.97); }
-
-/* ── Stats row ───────────────────────────────────── */
-.stats-row {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-  margin-bottom: 12px;
-}
-.stat-box {
-  background: var(--surface);
-  border-radius: var(--radius-sm);
-  padding: 14px 10px;
-  text-align: center;
-  box-shadow: var(--sh-sm);
-  border: 1px solid rgba(255,255,255,.9);
-}
-.stat-val { font-size: 20px; font-weight: 900; letter-spacing: -1px; color: var(--text); }
-.stat-val.green  { color: var(--emerald-700); }
-.stat-val.red    { color: var(--red-600); }
-.stat-val.blue   { color: var(--blue-600); }
-.stat-lbl { font-size: 10px; font-weight: 600; color: var(--muted); margin-top: 3px; letter-spacing: .2px; }
-
-/* ── Divider ─────────────────────────────────────── */
-hr { border: none; border-top: 1px solid var(--slate-100); margin: 6px 0; }
-
-/* ── Comparison label ────────────────────────────── */
-.compare-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 10px;
-  font-weight: 700;
-  padding: 3px 8px;
-  border-radius: 20px;
-  margin-top: 4px;
-}
-.compare-chip.up   { background: var(--emerald-50); color: var(--emerald-700); }
-.compare-chip.down { background: var(--red-100); color: var(--red-600); }
+.nav-item svg{width:20px;height:20px;transition:transform .22s cubic-bezier(.34,1.56,.64,1)}
+.nav-item:active{transform:scale(.88)}
+.nav-item.active{background:linear-gradient(145deg,var(--e900) 0%,var(--e700) 100%);color:#fff;box-shadow:var(--sh-green)}
+.nav-item.active svg{transform:scale(1.1)}
 </style>
 </head>
 <body>
 
-<!-- ── HEADER ──────────────────────────────────────── -->
+<!-- ── HEADER (shared) ──────────────────────────── -->
 <div class="header">
-  <div class="header-row1">
-    <div class="header-brand">
-      <div class="header-logo">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+  <div class="hdr-row1">
+    <div class="hdr-brand">
+      <div class="hdr-logo">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
           <path d="M12 2L2 7l10 5 10-5-10-5z" stroke="rgba(255,255,255,.9)" stroke-width="2" stroke-linejoin="round"/>
-          <path d="M2 17l10 5 10-5" stroke="rgba(255,255,255,.7)" stroke-width="2" stroke-linejoin="round"/>
-          <path d="M2 12l10 5 10-5" stroke="rgba(255,255,255,.5)" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M2 17l10 5 10-5" stroke="rgba(255,255,255,.65)" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M2 12l10 5 10-5" stroke="rgba(255,255,255,.4)" stroke-width="2" stroke-linejoin="round"/>
         </svg>
       </div>
       <div>
-        <div class="header h1" style="font-size:17px;font-weight:800;color:#fff;letter-spacing:-.5px">Tanzeem Manager</div>
-        <div class="header-sub">Abd-e-Mustafa · Bisauli</div>
+        <div class="hdr-title">Tanzeem Manager</div>
+        <div class="hdr-sub">Abd-e-Mustafa · Bisauli</div>
       </div>
     </div>
-    <div class="header-right">
-      <div class="header-pill">2024-25</div>
+    <div class="hdr-right">
+      <div class="hdr-pill">2024-25</div>
       <div class="avatar">BA</div>
     </div>
   </div>
-  <div class="header-balance">
-    <div class="hb-item">
-      <div class="hb-label">Balance</div>
-      <div class="hb-value green">Rs.30,425</div>
-    </div>
-    <div class="hb-divider"></div>
-    <div class="hb-item">
-      <div class="hb-label">Collected</div>
-      <div class="hb-value">Rs.22,050</div>
-    </div>
-    <div class="hb-divider"></div>
-    <div class="hb-item">
-      <div class="hb-label">Expenses</div>
-      <div class="hb-value red">Rs.0</div>
-    </div>
+  <!-- Balance bar — only on dashboard -->
+  <div class="hdr-balance" id="hdrBalance">
+    <div class="hb-item"><div class="hb-lbl">Balance</div><div class="hb-val g">Rs.30,425</div></div>
+    <div class="hb-div"></div>
+    <div class="hb-item"><div class="hb-lbl">Collected</div><div class="hb-val">Rs.22,050</div></div>
+    <div class="hb-div"></div>
+    <div class="hb-item"><div class="hb-lbl">Expenses</div><div class="hb-val r">Rs.0</div></div>
   </div>
 </div>
 
-<!-- ── SCREEN ───────────────────────────────────────── -->
-<div class="screen">
+<!-- ── SCREENS ───────────────────────────────────── -->
+<div class="screens">
 
-  <!-- Metrics -->
-  <p class="section-label">Overview</p>
-  <div class="metrics">
-    <div class="metric green">
-      <div class="metric-label">Total Collected</div>
-      <div class="metric-value sm">Rs.22,050</div>
-      <div class="metric-sub">↑ +Rs.1,200 this month</div>
-      <div class="metric-icon">
-        <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+  <!-- DASHBOARD ──────────────────────────────── -->
+  <div class="screen active" id="s-dashboard">
+    <div class="metrics">
+      <div class="metric g">
+        <div class="metric-lbl">Total Collected</div>
+        <div class="metric-val sm">Rs.22,050</div>
+        <div class="metric-sub">+Rs.3,375 donations</div>
+        <div class="metric-icon"><svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+      </div>
+      <div class="metric b">
+        <div class="metric-lbl">Members</div>
+        <div class="metric-val">14</div>
+        <div class="metric-sub">Active: 12 · Inactive: 2</div>
+        <div class="metric-icon"><svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+      </div>
+      <div class="metric o">
+        <div class="metric-lbl">This Month</div>
+        <div class="metric-val sm">Rs.1,800</div>
+        <div class="metric-sub">12 of 14 paid</div>
+        <div class="metric-icon"><svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+      </div>
+      <div class="metric p">
+        <div class="metric-lbl">Donations</div>
+        <div class="metric-val sm">Rs.3,375</div>
+        <div class="metric-sub">8 entries</div>
+        <div class="metric-icon"><svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg></div>
       </div>
     </div>
-    <div class="metric blue">
-      <div class="metric-label">Total Members</div>
-      <div class="metric-value">14</div>
-      <div class="metric-sub">Active: 12 · Inactive: 2</div>
-      <div class="metric-icon">
-        <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-      </div>
-    </div>
-    <div class="metric orange">
-      <div class="metric-label">This Month</div>
-      <div class="metric-value sm">Rs.1,800</div>
-      <div class="metric-sub">12 of 14 paid</div>
-      <div class="metric-icon">
-        <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-      </div>
-    </div>
-    <div class="metric purple">
-      <div class="metric-label">Donations</div>
-      <div class="metric-value sm">Rs.3,375</div>
-      <div class="metric-sub">8 entries</div>
-      <div class="metric-icon">
-        <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>
-      </div>
-    </div>
-  </div>
 
-  <!-- Progress -->
-  <div class="card progress-card">
-    <div class="progress-header">
-      <div class="progress-title">May 2025 Collection</div>
-      <div class="progress-pct">86%</div>
+    <div class="card" style="padding:16px 18px">
+      <div class="prog-hdr">
+        <div class="prog-title">May 2025 Collection</div>
+        <div class="prog-pct">86%</div>
+      </div>
+      <div class="prog-track"><div class="prog-fill" style="width:86%"></div></div>
+      <div class="prog-lbl">12 of 14 active members paid · Rs.300 pending</div>
     </div>
-    <div class="progress-track">
-      <div class="progress-fill" style="width:86%"></div>
-    </div>
-    <div class="progress-label">12 of 14 active members paid · Rs.300 pending</div>
-  </div>
 
-  <!-- Stats row -->
-  <div class="stats-row">
-    <div class="stat-box">
-      <div class="stat-val green">12</div>
-      <div class="stat-lbl">Paid</div>
+    <div class="stats-row">
+      <div class="stat-box"><div class="stat-val g">12</div><div class="stat-lbl">Paid</div></div>
+      <div class="stat-box"><div class="stat-val r">2</div><div class="stat-lbl">Unpaid</div></div>
+      <div class="stat-box"><div class="stat-val b">3</div><div class="stat-lbl">Advance</div></div>
     </div>
-    <div class="stat-box">
-      <div class="stat-val red">2</div>
-      <div class="stat-lbl">Unpaid</div>
-    </div>
-    <div class="stat-box">
-      <div class="stat-val blue">3</div>
-      <div class="stat-lbl">Advance</div>
-    </div>
-  </div>
 
-  <!-- Quick Actions -->
-  <p class="section-label">Quick Actions</p>
-  <div class="quick-actions">
-    <div class="qa-item">
-      <div class="qa-icon green">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+    <p class="slabel">Recent Activity</p>
+    <div class="card" style="padding:14px 16px">
+      <div class="fi">
+        <div class="fi-dot g"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><path d="M12 22V7"/></svg></div>
+        <div class="fi-info"><div class="fi-name">Mohsin Ansari — Donation</div><div class="fi-sub">15 May 2025</div></div>
+        <div class="fi-amt g">+Rs.2,000</div>
       </div>
-      <div class="qa-label">Add Member</div>
-    </div>
-    <div class="qa-item">
-      <div class="qa-icon blue">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      <div class="fi">
+        <div class="fi-dot g"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+        <div class="fi-info"><div class="fi-name">Bilal Ansari — Payment</div><div class="fi-sub">14 May 2025</div></div>
+        <div class="fi-amt g">+Rs.150</div>
       </div>
-      <div class="qa-label">Payments</div>
-    </div>
-    <div class="qa-item">
-      <div class="qa-icon orange">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      <div class="fi">
+        <div class="fi-dot r"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div>
+        <div class="fi-info"><div class="fi-name">Masjid renovation</div><div class="fi-sub">8 May 2025 · Expense</div></div>
+        <div class="fi-amt r">−Rs.5,000</div>
       </div>
-      <div class="qa-label">Reports</div>
-    </div>
-    <div class="qa-item">
-      <div class="qa-icon purple">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-      </div>
-      <div class="qa-label">AI Chat</div>
     </div>
   </div>
 
-  <!-- Paid list -->
-  <p class="section-label">Paid — May 2025</p>
-  <div class="card" style="padding:14px 16px">
-    <div class="pay-row">
-      <div class="pay-avatar pay-avatar--paid">BA</div>
-      <div class="pay-info">
-        <div class="pay-name">Bilal Ansari</div>
-        <div class="pay-sub">Paid 8/8 past months + 1 advance</div>
-      </div>
-      <div class="pay-amount" style="color:var(--emerald-700)">+Rs.150</div>
-    </div>
-    <div class="pay-row">
-      <div class="pay-avatar pay-avatar--paid">MA</div>
-      <div class="pay-info">
-        <div class="pay-name">Mohsin Ansari</div>
-        <div class="pay-sub">Paid 7 of 8 past months</div>
-      </div>
-      <div class="pay-amount" style="color:var(--emerald-700)">+Rs.150</div>
-    </div>
-    <div class="pay-row">
-      <div class="pay-avatar pay-avatar--paid">JA</div>
-      <div class="pay-info">
-        <div class="pay-name">Javed Ansari</div>
-        <div class="pay-sub">Paid 8/8 past months</div>
-      </div>
-      <div class="pay-amount" style="color:var(--emerald-700)">+Rs.150</div>
-    </div>
-  </div>
-
-  <!-- Unpaid list -->
-  <p class="section-label">Unpaid — May 2025</p>
-  <div class="card" style="padding:14px 16px">
-    <div class="pay-row">
-      <div class="pay-avatar pay-avatar--unpaid">OA</div>
-      <div class="pay-info">
-        <div class="pay-name">Obaid Ansari</div>
-        <div class="pay-sub">Paid 5 of 8 past months</div>
-      </div>
-      <div class="pay-amount" style="color:var(--red-600)">−Rs.150</div>
-    </div>
-    <div class="pay-row">
-      <div class="pay-avatar pay-avatar--unpaid">TA</div>
-      <div class="pay-info">
-        <div class="pay-name">Tofeeq Ansari</div>
-        <div class="pay-sub">Paid 6 of 8 past months</div>
-      </div>
-      <div class="pay-amount" style="color:var(--red-600)">−Rs.150</div>
-    </div>
-  </div>
-
-  <!-- Finance items -->
-  <p class="section-label">Recent Donations</p>
-  <div class="card">
-    <div class="finance-item">
-      <div class="finance-dot green">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><path d="M12 22V7"/></svg>
-      </div>
-      <div class="finance-info">
-        <div class="finance-name">Mohsin Ansari</div>
-        <div class="finance-sub">15 May 2025 · Langar ke liye</div>
-      </div>
-      <div class="finance-amount green">+Rs.2,000</div>
-    </div>
-    <div class="finance-item">
-      <div class="finance-dot green">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><path d="M12 22V7"/></svg>
-      </div>
-      <div class="finance-info">
-        <div class="finance-name">Bilal Ansari</div>
-        <div class="finance-sub">10 May 2025</div>
-      </div>
-      <div class="finance-amount green">+Rs.1,000</div>
-    </div>
-    <div class="finance-item">
-      <div class="finance-dot red">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-      </div>
-      <div class="finance-info">
-        <div class="finance-name">Masjid renovation</div>
-        <div class="finance-sub">8 May 2025 · Expense</div>
-      </div>
-      <div class="finance-amount red">−Rs.5,000</div>
-    </div>
-  </div>
-
-  <!-- Member cards -->
-  <p class="section-label">Members</p>
-  <div class="member-card">
-    <div class="member-avatar">BA</div>
-    <div class="member-info">
-      <div class="member-name">Bilal Ansari <span class="badge badge-active">Active</span></div>
-      <div class="member-sub">Regular · 📞 9876543210</div>
-    </div>
-  </div>
-  <div class="member-card">
-    <div class="member-avatar">MA</div>
-    <div class="member-info">
-      <div class="member-name">Mohsin Ansari <span class="badge badge-active">Active</span></div>
-      <div class="member-sub">Regular · 📞 9876543211</div>
-    </div>
-  </div>
-  <div class="member-card">
-    <div class="member-avatar inactive">OA</div>
-    <div class="member-info">
-      <div class="member-name">Obaid Ansari <span class="badge badge-inactive">Inactive</span></div>
-      <div class="member-sub">Regular</div>
-    </div>
-  </div>
-
-  <!-- Toasts -->
-  <p class="section-label">Notifications</p>
-  <div class="toast-demo success">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-    Payment saved! Rs.150 collected.
-  </div>
-  <div class="toast-demo error">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
-    Error syncing. Please try again.
-  </div>
-
-  <!-- Buttons -->
-  <p class="section-label">Buttons</p>
-  <div class="card">
-    <button class="btn btn-primary" style="margin-bottom:10px">
+  <!-- MEMBERS ─────────────────────────────────── -->
+  <div class="screen" id="s-members">
+    <p class="slabel">Active Members (12)</p>
+    <div class="mc"><div class="mc-av">BA</div><div class="mc-info"><div class="mc-name">Bilal Ansari <span class="badge ba">Active</span></div><div class="mc-sub">Regular · 📞 9876543210</div></div></div>
+    <div class="mc"><div class="mc-av">MA</div><div class="mc-info"><div class="mc-name">Mohsin Ansari <span class="badge ba">Active</span></div><div class="mc-sub">Regular · 📞 9876543211</div></div></div>
+    <div class="mc"><div class="mc-av">JA</div><div class="mc-info"><div class="mc-name">Javed Ansari <span class="badge ba">Active</span></div><div class="mc-sub">Regular · 📞 9876543212</div></div></div>
+    <div class="mc"><div class="mc-av">HA</div><div class="mc-info"><div class="mc-name">Hasnain Ansari <span class="badge ba">Active</span></div><div class="mc-sub">Regular</div></div></div>
+    <p class="slabel">Inactive Members (2)</p>
+    <div class="mc"><div class="mc-av in">OA</div><div class="mc-info"><div class="mc-name">Obaid Ansari <span class="badge bi">Inactive</span></div><div class="mc-sub">Regular</div></div></div>
+    <div class="mc"><div class="mc-av in">SA</div><div class="mc-info"><div class="mc-name">Shahrukh Ansari <span class="badge bi">Inactive</span></div><div class="mc-sub">Regular</div></div></div>
+    <button class="fab" style="position:static;margin:16px auto 0;display:flex;width:fit-content;padding:0 20px;border-radius:14px;height:48px;gap:8px;font-size:14px;font-weight:700">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-      Save Payment
-    </button>
-    <div class="btn-row" style="margin-bottom:10px">
-      <button class="btn btn-secondary">Cancel</button>
-      <button class="btn btn-danger">Delete</button>
-    </div>
-    <button class="wa-btn">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-      Share via WhatsApp
+      Add Member
     </button>
   </div>
 
-  <!-- Form -->
-  <p class="section-label">Form</p>
-  <div class="card">
-    <div class="form-group">
-      <label>Member Name</label>
-      <input type="text" placeholder="e.g. Bilal Ansari" value="Bilal Ansari">
+  <!-- PAYMENTS ────────────────────────────────── -->
+  <div class="screen" id="s-payments">
+    <div class="card" style="padding:14px 16px">
+      <div class="card-title">Paid — May 2025</div>
+      <div class="pay-row">
+        <div class="pay-av paid">BA</div>
+        <div class="pay-info"><div class="pay-name">Bilal Ansari</div><div class="pay-sub">Paid 8/8 past months + 1 advance</div></div>
+        <div class="pay-amount" style="color:var(--e700)">+Rs.150</div>
+        <button class="pay-wa"><svg width="18" height="18" viewBox="0 0 24 24" fill="#25d366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg></button>
+      </div>
+      <div class="pay-row">
+        <div class="pay-av paid">MA</div>
+        <div class="pay-info"><div class="pay-name">Mohsin Ansari</div><div class="pay-sub">Paid 7 of 8 past months</div></div>
+        <div class="pay-amount" style="color:var(--e700)">+Rs.150</div>
+        <button class="pay-wa"><svg width="18" height="18" viewBox="0 0 24 24" fill="#25d366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg></button>
+      </div>
     </div>
-    <div class="form-group">
-      <label>Mobile Number</label>
-      <input type="tel" placeholder="9876543210">
-    </div>
-    <div class="form-group" style="margin-bottom:0">
-      <label>Status</label>
-      <select>
-        <option>Active</option>
-        <option>Inactive</option>
-      </select>
+    <div class="card" style="padding:14px 16px">
+      <div class="card-title">Unpaid — May 2025</div>
+      <div class="pay-row">
+        <div class="pay-av unpaid">OA</div>
+        <div class="pay-info"><div class="pay-name">Obaid Ansari</div><div class="pay-sub">Paid 5 of 8 past months</div></div>
+        <div class="pay-amount" style="color:var(--red)">−Rs.150</div>
+      </div>
+      <div class="pay-row">
+        <div class="pay-av unpaid">TA</div>
+        <div class="pay-info"><div class="pay-name">Tofeeq Ansari</div><div class="pay-sub">Paid 6 of 8 past months</div></div>
+        <div class="pay-amount" style="color:var(--red)">−Rs.150</div>
+      </div>
     </div>
   </div>
 
-  <div style="height:20px"></div>
+  <!-- FINANCE ─────────────────────────────────── -->
+  <div class="screen" id="s-finance">
+    <div class="metrics" style="grid-template-columns:1fr 1fr">
+      <div class="metric g" style="grid-column:1/2">
+        <div class="metric-lbl">Total Donations</div>
+        <div class="metric-val sm">Rs.3,375</div>
+        <div class="metric-sub">8 entries</div>
+      </div>
+      <div class="metric b" style="grid-column:2/3">
+        <div class="metric-lbl">Count</div>
+        <div class="metric-val">8</div>
+      </div>
+    </div>
+    <div class="card" style="padding:14px 16px">
+      <div class="fi">
+        <div class="fi-dot g"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><path d="M12 22V7"/></svg></div>
+        <div class="fi-info"><div class="fi-name">Mohsin Ansari</div><div class="fi-sub">15 May 2025 · Langar ke liye</div></div>
+        <div class="fi-amt g">+Rs.2,000</div>
+      </div>
+      <div class="fi">
+        <div class="fi-dot g"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><path d="M12 22V7"/></svg></div>
+        <div class="fi-info"><div class="fi-name">Bilal Ansari</div><div class="fi-sub">10 May 2025</div></div>
+        <div class="fi-amt g">+Rs.1,000</div>
+      </div>
+      <div class="fi">
+        <div class="fi-dot g"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><path d="M12 22V7"/></svg></div>
+        <div class="fi-info"><div class="fi-name">Javed Ansari</div><div class="fi-sub">2 May 2025 · Madrasa madad</div></div>
+        <div class="fi-amt g">+Rs.375</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- REPORTS ─────────────────────────────────── -->
+  <div class="screen" id="s-reports">
+    <p class="slabel">Payment Reports</p>
+    <div class="rpt-btn"><div class="rpt-icon g"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div><div class="rpt-info"><div class="rpt-name">Member Statement</div><div class="rpt-desc">Full payment history per member</div></div><svg class="rpt-arr" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></div>
+    <div class="rpt-btn"><div class="rpt-icon b"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div><div class="rpt-info"><div class="rpt-name">Month-wise Report</div><div class="rpt-desc">Collection per month breakdown</div></div><svg class="rpt-arr" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></div>
+    <div class="rpt-btn"><div class="rpt-icon o"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div><div class="rpt-info"><div class="rpt-name">Balance Sheet</div><div class="rpt-desc">Assets, income and expenses</div></div><svg class="rpt-arr" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></div>
+    <p class="slabel">Finance Reports</p>
+    <div class="rpt-btn"><div class="rpt-icon p"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/></svg></div><div class="rpt-info"><div class="rpt-name">Donation Report</div><div class="rpt-desc">All donations this session</div></div><svg class="rpt-arr" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></div>
+    <div class="rpt-btn"><div class="rpt-icon g"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><div class="rpt-info"><div class="rpt-name">Summary Report</div><div class="rpt-desc">Full session summary</div></div><svg class="rpt-arr" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></div>
+  </div>
+
+  <!-- AI CHAT ─────────────────────────────────── -->
+  <div class="screen" id="s-ai">
+    <div class="chips">
+      <div class="chip">Paid this month</div>
+      <div class="chip">Unpaid this month</div>
+      <div class="chip">Total balance</div>
+      <div class="chip">Best month</div>
+      <div class="chip">Member totals</div>
+    </div>
+    <div class="chat-area">
+      <div class="msg ai"><div class="msg-bubble">Assalamu Alaikum! Main aapka Tanzeem assistant hoon. Members, payments, ya finance ke baare mein kuch bhi poochein.</div></div>
+      <div class="msg user"><div class="msg-bubble">Is mahine kitne members ne pay kiya?</div></div>
+      <div class="msg ai"><div class="msg-bubble"><strong>May 2025 — Payment Status 📅</strong><br><br>✅ <strong>Paid (12):</strong><br>Bilal, Mohsin, Javed, Hasnain...<br><br>❌ <strong>Unpaid (2):</strong><br>Obaid Ansari, Tofeeq Ansari</div></div>
+    </div>
+    <div class="chat-input-row">
+      <input class="chat-input" type="text" placeholder="Kuch bhi poochein...">
+      <button class="chat-send"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>
+    </div>
+  </div>
+
 </div>
 
-<!-- ── BOTTOM NAV ────────────────────────────────────── -->
+<!-- ── BOTTOM NAV ────────────────────────────────── -->
 <nav class="bottom-nav">
-  <button class="nav-item active">
+  <button class="nav-item active" onclick="switchTab('dashboard',this)">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
     Dashboard
   </button>
-  <button class="nav-item">
+  <button class="nav-item" onclick="switchTab('members',this)">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
     Members
   </button>
-  <button class="nav-item">
+  <button class="nav-item" onclick="switchTab('payments',this)">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
     Payments
   </button>
-  <button class="nav-item">
+  <button class="nav-item" onclick="switchTab('finance',this)">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
     Finance
   </button>
-  <button class="nav-item">
+  <button class="nav-item" onclick="switchTab('reports',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+    Reports
+  </button>
+  <button class="nav-item" onclick="switchTab('ai',this)">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
     AI
   </button>
 </nav>
 
-<!-- ── FAB ────────────────────────────────────────────── -->
-<button class="fab">
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-</button>
-
+<script>
+function switchTab(id, btn) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('s-' + id).classList.add('active');
+  btn.classList.add('active');
+  // Show balance bar only on dashboard
+  document.getElementById('hdrBalance').style.display = id === 'dashboard' ? 'flex' : 'none';
+  window.scrollTo(0,0);
+}
+// Hide balance bar on non-dashboard initially — it's shown by default (dashboard active)
+</script>
 </body>
 </html>
