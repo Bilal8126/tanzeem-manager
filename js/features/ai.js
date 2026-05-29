@@ -107,7 +107,6 @@ RULE: When user says "is mahine" or "this month" — always mean "${currentMonth
 RULE: "Paid" = paid. Blank / empty / null / "Un Paid" = UNPAID. Never say someone is paid if their cell is blank.
 
 === OVERVIEW ===
-Total members: ${STATE.allMembers.length} (Active: ${activeMembers.length}, Inactive: ${inactiveMembers.length})
 Inactive members: ${inactiveMembers.map(m => m.name).join(', ') || 'none'}
 ${prevBalance > 0 ? `Previous year balance: Rs.${prevBalance}` : ''}
 Total subscription collected: Rs.${totalCollected}
@@ -166,7 +165,7 @@ async function sendChat() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: buildDataContext() }] },
-        contents: _chatHistory,
+        contents: _chatHistory.slice(-8),
         generationConfig: { temperature: 0.7, maxOutputTokens: 1024 }
       })
     });
