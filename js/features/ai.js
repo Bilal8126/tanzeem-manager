@@ -4,8 +4,12 @@ function buildDataContext() {
   const activeMembers  = STATE.allMembers.filter(m => m.status === 'Active');
   const inactiveMembers = STATE.allMembers.filter(m => m.status !== 'Active');
 
-  const totalDonations = STATE.allDonations.reduce((s, d) => s + (parseFloat(d.amount) || 0), 0);
-  const totalExpenses  = STATE.allExpenses.reduce((s, e)  => s + (parseFloat(e.amount) || 0), 0);
+  const ss             = STATE.sessionSummary || {};
+  const totalCollected = ss.currentTotal    || 0;
+  const totalDonations = ss.totalDonation   || 0;
+  const totalExpenses  = ss.totalExpense     || 0;
+  const prevBalance    = ss.lastYearBalance  || 0;
+  const balance        = ss.balance          || (prevBalance + totalCollected + totalDonations - totalExpenses);
 
   const months       = STATE.allPayments.length > 0 ? Object.keys(STATE.allPayments[0].months) : [];
   const currentMonth = months.length > 0 ? detectCurrentMonth(months) : 'N/A';
@@ -15,9 +19,6 @@ function buildDataContext() {
   const stats         = STATE.allPayments.length > 0 ? buildMemberStats(STATE.allPayments) : [];
   const activeStats   = stats.filter(s => !s.isInactive);
   const inactiveStats = stats.filter(s =>  s.isInactive);
-
-  const totalCollected = stats.reduce((s, m) => s + m.totalPaid, 0);
-  const balance        = totalCollected + totalDonations - totalExpenses;
 
   // Monthly breakdown — paid count / unpaid count per month
   const monthSummary = months.map(m => {
@@ -44,12 +45,12 @@ function buildDataContext() {
 
   // Donation list
   const donationList = STATE.allDonations.map(d =>
-    `  ${d.donorName || d.name || 'Unknown'}: Rs.${d.amount} (${d.date || ''})`
+    `  ${d.donor || 'Unknown'}: Rs.${d.amount}${d.note ? ' (' + d.note + ')' : ''} (${d.date || ''})`
   ).join('\n') || '  None';
 
   // Expense list
   const expenseList = STATE.allExpenses.map(e =>
-    `  ${e.description || e.title || 'Expense'}: Rs.${e.amount} (${e.date || ''})`
+    `  ${e.desc || 'Expense'}: Rs.${e.amount} (${e.date || ''})`
   ).join('\n') || '  None';
 
   const now          = new Date();
@@ -82,10 +83,12 @@ RULE: "Paid" = paid. Blank / empty / null / "Un Paid" = UNPAID. Never say someon
 === OVERVIEW ===
 Total members: ${STATE.allMembers.length} (Active: ${activeMembers.length}, Inactive: ${inactiveMembers.length})
 Inactive members: ${inactiveMembers.map(m => m.name).join(', ') || 'none'}
+${prevBalance > 0 ? `Previous year balance: Rs.${prevBalance}` : ''}
 Total subscription collected: Rs.${totalCollected}
 Total donations: Rs.${totalDonations}
 Total expenses: Rs.${totalExpenses}
-Balance: Rs.${balance}
+Closing balance: Rs.${balance}
+Balance formula: ${prevBalance > 0 ? `Rs.${prevBalance} (prev year) + ` : ''}Rs.${totalCollected} (collected) + Rs.${totalDonations} (donations) - Rs.${totalExpenses} (expenses) = Rs.${balance}
 
 === TOP MEMBERS (paid every past month so far) ===
 ${topMembers.length > 0 ? topMembers.join(', ') : 'Koi nahi jisne sab past months pay kiye ho'}
