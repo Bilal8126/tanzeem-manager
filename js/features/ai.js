@@ -155,10 +155,55 @@ function clearChat() {
     </div>`;
 }
 
+// Lightweight markdown → HTML (for AI responses only)
+function _mdToHtml(text) {
+  const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const inline = s => s
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*([^*\n]+?)\*/g, '<em>$1</em>')
+    .replace(/`([^`]+?)`/g, '<code style="background:#f1f5f9;padding:1px 4px;border-radius:3px;font-size:11px">$1</code>');
+
+  const lines = text.split('\n');
+  const out = [];
+  let inUl = false, inOl = false;
+
+  const closeList = () => {
+    if (inUl) { out.push('</ul>'); inUl = false; }
+    if (inOl) { out.push('</ol>'); inOl = false; }
+  };
+
+  for (const raw of lines) {
+    const line = raw.trimEnd();
+    if (/^[-*•]\s+/.test(line)) {
+      if (!inUl) { closeList(); out.push('<ul style="margin:4px 0 4px 14px;padding:0">'); inUl = true; }
+      out.push(`<li>${inline(esc(line.replace(/^[-*•]\s+/, '')))}</li>`);
+    } else if (/^\d+[.)]\s+/.test(line)) {
+      if (!inOl) { closeList(); out.push('<ol style="margin:4px 0 4px 14px;padding:0">'); inOl = true; }
+      out.push(`<li>${inline(esc(line.replace(/^\d+[.)]\s+/, '')))}</li>`);
+    } else if (/^#{1,3}\s/.test(line)) {
+      closeList();
+      out.push(`<div style="font-weight:700;margin:6px 0 2px">${inline(esc(line.replace(/^#+\s+/, '')))}</div>`);
+    } else if (line === '') {
+      closeList();
+      out.push('<div style="height:6px"></div>');
+    } else {
+      closeList();
+      out.push(`<div>${inline(esc(line))}</div>`);
+    }
+  }
+  closeList();
+  return out.join('');
+}
+
 function appendMessage(role, text) {
   const div = document.createElement('div');
   div.className = 'msg ' + role;
-  div.innerHTML = `<div class="msg-bubble">${text}</div>`;
+  const bubble = document.createElement('div');
+  bubble.className = 'msg-bubble';
+  // User messages: plain text (safe). AI messages: rendered markdown.
+  if (role === 'user') bubble.textContent = text;
+  else bubble.innerHTML = _mdToHtml(text);
+  div.appendChild(bubble);
   const c = document.getElementById('chatMessages');
   c.appendChild(div);
   c.scrollTop = c.scrollHeight;
@@ -167,5 +212,5 @@ function appendMessage(role, text) {
 function updateLastAiMessage(text) {
   const msgs = document.querySelectorAll('#chatMessages .msg.ai');
   const last = msgs[msgs.length - 1];
-  if (last) last.querySelector('.msg-bubble').textContent = text;
+  if (last) last.querySelector('.msg-bubble').innerHTML = _mdToHtml(text);
 }
