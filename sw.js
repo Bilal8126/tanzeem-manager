@@ -1,4 +1,4 @@
-const CACHE = 'tanzeem-v121'; // bump this version on every deploy → triggers auto-reload for all users
+const CACHE = 'tanzeem-v122'; // bump this version on every deploy → triggers auto-reload for all users
 const ASSETS = [
   './',
   './index.html',
@@ -22,7 +22,7 @@ const ASSETS = [
 ];
 
 // Skip waiting so updated SW activates immediately
-self.addEventListener('install', e => {
+self.addEventListener('install', e =>  {
   e.waitUntil(
     caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting())
   );
