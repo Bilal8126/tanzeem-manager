@@ -538,10 +538,10 @@ function _genFileName(label) {
   return `TanzeemAbdMustafa_${safe}_${ts}`;
 }
 
-let _pendingShare = { msg: '', waLink: '' };
+let _pendingShare = { msg: '', waLink: '', pdfFn: null };
 
-function _askShareFormat(msg, waLink) {
-  _pendingShare = { msg, waLink };
+function _askShareFormat(msg, waLink, pdfFn = null) {
+  _pendingShare = { msg, waLink, pdfFn };
   let overlay = document.getElementById('shareFormatOverlay');
   if (!overlay) {
     overlay = document.createElement('div');
@@ -562,7 +562,7 @@ function _askShareFormat(msg, waLink) {
         <button class="whatsapp-btn" style="margin:0;justify-content:center;gap:10px" onclick="_closeShareFormat();_sendAsText()">
           ${WA_SVG} Text Message (WhatsApp)
         </button>
-        <button class="btn btn-primary" style="width:100%;display:flex;align-items:center;justify-content:center;gap:10px;font-size:14px;padding:12px" onclick="_closeShareFormat();_sendAsPdf()">
+        <button class="btn btn-primary" style="width:100%;display:flex;align-items:center;justify-content:center;gap:10px;font-size:14px;padding:12px" onclick="_closeShareFormat();(_pendingShare.pdfFn||_sendAsPdf)()">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
           PDF Receipt
         </button>
@@ -895,6 +895,9 @@ let _waPaidName     = '';
 let _waPaidMonths   = [];
 let _waPaidSelected = new Set();
 let _waAdvanceNote  = '';
+let _preCapMonths   = null;   // pre-captured before closeWaPaidPopup clears state
+let _preCapAdvNote  = null;
+let _preCapMember   = null;
 
 function waMemberPaidPopup(name) {
   const allStats = buildMemberStats(STATE.allPayments);
@@ -966,7 +969,7 @@ function _renderWaPaidPopup() {
           Export PDF
         </button>
       </div>
-      <button class="whatsapp-btn" style="margin:0;justify-content:center;gap:10px" onclick="openPaymentReceiptFromPopup('share')">
+      <button class="whatsapp-btn" style="margin:0;justify-content:center;gap:10px" onclick="sendWaMemberPaid()">
         ${WA_SVG} WhatsApp Send
       </button>
     </div>`;
@@ -988,14 +991,22 @@ function closeWaPaidPopup() {
 }
 
 function sendWaMemberPaid() {
+  // Capture BEFORE closeWaPaidPopup clears _waAdvanceNote
+  const allMonths_   = STATE.allPayments.length > 0 ? Object.keys(STATE.allPayments[0].months) : [];
+  const months       = [..._waPaidSelected].sort((a, b) => allMonths_.indexOf(a) - allMonths_.indexOf(b));
+  const capturedNote = _waAdvanceNote.trim();
+  const capturedName = _waPaidName;
+
+  // Store for openPaymentReceiptFromPopup when called via PDF option
+  _preCapMonths  = months;
+  _preCapAdvNote = capturedNote;
+  _preCapMember  = capturedName;
+
   closeWaPaidPopup();
-  const months = [..._waPaidSelected].sort((a, b) => {
-    const months_ = STATE.allPayments.length > 0 ? Object.keys(STATE.allPayments[0].months) : [];
-    return months_.indexOf(a) - months_.indexOf(b);
-  });
+
   const clean = n => n.replace(/\(.*?\)/g, '').trim();
   let msg = _waHeader();
-  msg += `*${clean(_waPaidName)}*,\n\n`;
+  msg += `*${clean(capturedName)}*,\n\n`;
   msg += `✅ *Aapki Payment Haasil Ho Gayi!*\n\n`;
   if (months.length === 1) {
     msg += `📅 Mahina: *${months[0]}*\n`;
@@ -1004,24 +1015,35 @@ function sendWaMemberPaid() {
     msg += `📅 Mahine: *${months.join(', ')}*\n`;
     msg += `💰 Kul Rakam: Rs.${months.length * FEE}\n\n`;
   }
-  if (_waAdvanceNote.trim()) {
-    msg += `📌 *Advance:* ${_waAdvanceNote.trim()}\n\n`;
+  if (capturedNote) {
+    msg += `📌 *Advance:* ${capturedNote}\n\n`;
   }
   msg += `Allah aapki kamai mein barkat farmaaye. 🤲\n`;
   msg += `━━━━━━━━━━━━━━━━━━━\n`;
   msg += `Jazakallah Khair 🤲`;
-  _askShareFormat(msg, _memberWaLink(_waPaidName));
+  _askShareFormat(msg, _memberWaLink(capturedName), () => openPaymentReceiptFromPopup('share'));
 }
 
 // ── Transaction Receipt from WA paid popup ────────────────────
 async function openPaymentReceiptFromPopup(mode) {
-  // Read all values BEFORE closeWaPaidPopup() clears _waAdvanceNote
-  const advNote    = _waAdvanceNote.trim();
-  const memberName = _waPaidName;
-  const allMonths  = STATE.allPayments.length > 0 ? Object.keys(STATE.allPayments[0].months) : [];
-  const selMonths  = [..._waPaidSelected].sort((a, b) => allMonths.indexOf(a) - allMonths.indexOf(b));
+  let advNote, memberName, selMonths;
 
-  closeWaPaidPopup();
+  if (_preCapMonths !== null) {
+    // Called after popup already closed (via _askShareFormat PDF button)
+    advNote    = _preCapAdvNote;
+    memberName = _preCapMember;
+    selMonths  = _preCapMonths;
+    _preCapMonths  = null;
+    _preCapAdvNote = null;
+    _preCapMember  = null;
+  } else {
+    // Called directly from View/Export buttons inside the popup
+    advNote    = _waAdvanceNote.trim();
+    memberName = _waPaidName;
+    const allMonths = STATE.allPayments.length > 0 ? Object.keys(STATE.allPayments[0].months) : [];
+    selMonths  = [..._waPaidSelected].sort((a, b) => allMonths.indexOf(a) - allMonths.indexOf(b));
+    closeWaPaidPopup();
+  }
   const member     = STATE.allMembers.find(m => nameMatch(m.name, memberName) || m.name.replace(/\(.*?\)/g,'').trim() === memberName);
   const session    = STATE.currentSession?.label || '';
   const dateStr    = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
