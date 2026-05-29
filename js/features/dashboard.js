@@ -17,11 +17,9 @@ function renderDashboard() {
   // Show + populate header balance bar
   const hb = document.getElementById('headerBalance');
   if (hb) hb.style.display = 'flex';
-  const hbBalance   = document.getElementById('hbBalance');
   const hbCollected = document.getElementById('hbCollected');
   const hbDonation  = document.getElementById('hbDonation');
   const hbExpenses  = document.getElementById('hbExpenses');
-  if (hbBalance)   hbBalance.textContent   = formatCurrency(s.balance);
   if (hbCollected) hbCollected.textContent = formatCurrency(s.currentTotal);
   if (hbDonation)  hbDonation.textContent  = formatCurrency(s.totalDonation);
   if (hbExpenses)  hbExpenses.textContent  = formatCurrency(s.totalExpense);
