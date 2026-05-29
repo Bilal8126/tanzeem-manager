@@ -115,9 +115,11 @@ function _animateDots() {
   const dots = ['.', '..', '...'];
   let i = 0;
   _dotsTimer = setInterval(() => {
-    const el = document.getElementById('aiDots');
-    if (!el) { clearInterval(_dotsTimer); return; }
-    el.textContent = dots[i++ % 3];
+    const msgs = document.querySelectorAll('#chatMessages .msg.ai');
+    const last = msgs[msgs.length - 1];
+    if (!last) { clearInterval(_dotsTimer); return; }
+    const bubble = last.querySelector('.msg-bubble');
+    if (bubble) bubble.innerHTML = `<span style="color:#94a3b8;font-style:italic">Soch raha hoon${dots[i++ % 3]}</span>`;
   }, 500);
 }
 
@@ -129,7 +131,7 @@ async function sendChat() {
   input.value = '';
   appendMessage('user', q);
   _chatHistory.push({ role: 'user', parts: [{ text: q }] });
-  appendMessage('ai', '<span style="color:#94a3b8">Soch raha hoon<span id="aiDots">...</span></span>');
+  appendMessage('ai', 'Soch raha hoon...');
   _animateDots();
 
   try {
