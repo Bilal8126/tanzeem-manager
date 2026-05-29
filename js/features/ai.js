@@ -109,6 +109,18 @@ ${expenseList}
 Answer any question about members, payments, balance, or tanzeem. If asked in Hindi/Urdu/Hinglish, reply in Hinglish.`;
 }
 
+let _dotsTimer = null;
+function _animateDots() {
+  clearInterval(_dotsTimer);
+  const dots = ['.', '..', '...'];
+  let i = 0;
+  _dotsTimer = setInterval(() => {
+    const el = document.getElementById('aiDots');
+    if (!el) { clearInterval(_dotsTimer); return; }
+    el.textContent = dots[i++ % 3];
+  }, 500);
+}
+
 async function sendChat() {
   const input = document.getElementById('chatInput');
   const q = input.value.trim();
@@ -117,7 +129,8 @@ async function sendChat() {
   input.value = '';
   appendMessage('user', q);
   _chatHistory.push({ role: 'user', parts: [{ text: q }] });
-  appendMessage('ai', '...');
+  appendMessage('ai', '<span style="color:#94a3b8">Soch raha hoon<span id="aiDots">...</span></span>');
+  _animateDots();
 
   try {
     const res = await fetch(CONFIG.WORKER_URL + '/api/ai', {
@@ -130,14 +143,21 @@ async function sendChat() {
       })
     });
 
-    if (!res.ok) throw new Error('Worker error ' + res.status);
+    if (res.status === 503) throw new Error('503');
+    if (!res.ok) throw new Error('ERR_' + res.status);
 
     const data = await res.json();
+    if (data.error) throw new Error('API_' + (data.error.code || 500));
+
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Koi response nahi mila.';
     updateLastAiMessage(text);
     _chatHistory.push({ role: 'model', parts: [{ text }] });
   } catch (e) {
-    updateLastAiMessage('Error: ' + e.message);
+    const msg = e.message === '503' || e.message.includes('503')
+      ? '⚠️ Server thoda busy hai. Please kuch seconds baad dobara try karein. 🙏'
+      : '⚠️ Kuch gadbad ho gayi. Please dobara try karein.';
+    updateLastAiMessage(msg);
+    _chatHistory.pop(); // remove failed user message from history
   }
 }
 
@@ -210,6 +230,7 @@ function appendMessage(role, text) {
 }
 
 function updateLastAiMessage(text) {
+  clearInterval(_dotsTimer);
   const msgs = document.querySelectorAll('#chatMessages .msg.ai');
   const last = msgs[msgs.length - 1];
   if (last) last.querySelector('.msg-bubble').innerHTML = _mdToHtml(text);
