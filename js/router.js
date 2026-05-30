@@ -15,9 +15,11 @@ function _histBack() {
 }
 
 // Call once after first render — sets the base state
+// Push TWO entries: base + buffer so back on dashboard fires popstate instead of closing app
 function _historyInit() {
   if (_historyReady) return;
-  history.replaceState({ screen: 'dashboard' }, '');
+  history.replaceState({ screen: 'dashboard', base: true }, '');
+  history.pushState({ screen: 'dashboard' }, ''); // buffer entry
   _historyReady = true;
 }
 
@@ -41,6 +43,7 @@ const _MODALS = [
 ];
 
 window.addEventListener('popstate', e => {
+  if (_wantExit) { history.back(); return; } // drain history until app closes
   if (_manualClose) { _manualClose = false; return; }
 
   // 1. Close topmost open modal
@@ -66,17 +69,18 @@ window.addEventListener('popstate', e => {
 });
 
 let _exitConfirmActive = false;
+let _wantExit = false;
 
 function _showExitConfirm() {
   if (_exitConfirmActive) { _doExit(); return; } // second back = exit immediately
   _exitConfirmActive = true;
-  history.pushState({ screen: 'dashboard' }, ''); // restore entry so next back triggers popstate again
+  history.pushState({ screen: 'dashboard' }, ''); // buffer so next back fires popstate
 
   let bar = document.getElementById('_exitBar');
   if (!bar) {
     bar = document.createElement('div');
     bar.id = '_exitBar';
-    bar.style.cssText = 'position:fixed;bottom:72px;left:12px;right:12px;z-index:9999;background:#0f4a29;color:#fff;padding:14px 16px;border-radius:16px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 4px 24px rgba(0,0,0,0.25);animation:slideUp .2s ease';
+    bar.style.cssText = 'position:fixed;bottom:72px;left:12px;right:12px;z-index:9999;background:#0f4a29;color:#fff;padding:14px 16px;border-radius:16px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 4px 24px rgba(0,0,0,0.25)';
     document.body.appendChild(bar);
   }
   bar.innerHTML = `
@@ -86,8 +90,6 @@ function _showExitConfirm() {
       <button onclick="_doExit()" style="background:#fff;border:none;color:#0f4a29;padding:7px 14px;border-radius:10px;font-weight:700;cursor:pointer;font-size:13px">Bahar</button>
     </div>`;
   bar.style.display = 'flex';
-
-  // Auto-dismiss after 3 seconds
   setTimeout(() => { if (_exitConfirmActive) _cancelExit(); }, 3000);
 }
 
@@ -99,9 +101,10 @@ function _cancelExit() {
 
 function _doExit() {
   _exitConfirmActive = false;
+  _wantExit = true;
   const bar = document.getElementById('_exitBar');
   if (bar) bar.style.display = 'none';
-  history.back(); // exit the app
+  history.back(); // popstate will fire → _wantExit flag → history.back() again → app closes
 }
 
 // Show AI nav only for the active session; redirect to dashboard if on AI screen
