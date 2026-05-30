@@ -1,15 +1,18 @@
 const _scrollPos = {};
 
 // ── Android back-button navigation ────────────────────────
-let _historyReady = false;
-let _manualClose  = false; // set true when modal closes via its own button
+let _historyReady  = false;
+let _manualClose   = false; // set true when modal closes via its own button
+let _fromPopstate  = false; // set true while popstate handler is closing a modal
 
 function _histPush(extra) {
   if (_historyReady) history.pushState(extra || {}, '');
 }
 
 // Called by modal close-buttons to keep history balanced
+// Skipped when called from popstate (hardware back already popped the entry)
 function _histBack() {
+  if (_fromPopstate) return;
   _manualClose = true;
   history.back();
 }
@@ -51,7 +54,7 @@ window.addEventListener('popstate', e => {
     const el = document.getElementById(m.id);
     if (!el) continue;
     const isOpen = m.useDisplay ? el.style.display === 'flex' : el.classList.contains('open');
-    if (isOpen) { m.fn(); return; }
+    if (isOpen) { _fromPopstate = true; m.fn(); _fromPopstate = false; return; }
   }
 
   // 2. No modal open — navigate back to previous screen stored in state
