@@ -14,14 +14,16 @@ function _histBack() {
   history.back();
 }
 
-// Call once after first render — sets the base state
-// Push TWO entries: base + buffer so back on dashboard fires popstate instead of closing app
+// Sets the base history state — called immediately at DOM ready so back
+// button always fires popstate even before data loads
 function _historyInit() {
   if (_historyReady) return;
   history.replaceState({ screen: 'dashboard', base: true }, '');
   history.pushState({ screen: 'dashboard' }, ''); // buffer entry
   _historyReady = true;
 }
+
+document.addEventListener('DOMContentLoaded', _historyInit);
 
 // Known modal overlays — checked top-to-bottom (highest priority first)
 // useDisplay:true for modals that use style.display instead of .open class
