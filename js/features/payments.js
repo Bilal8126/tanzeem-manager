@@ -641,10 +641,12 @@ function _askShareFormat(msg, waLink, pdfFn = null) {
         </button>
       </div>
     </div>`;
+  _histPush({ modal: 'shareFormat' });
   overlay.classList.add('open');
 }
 
 function _closeShareFormat() {
+  _histBack();
   document.getElementById('shareFormatOverlay')?.classList.remove('open');
 }
 
@@ -916,10 +918,12 @@ function showWhatsAppPopup() {
         </button>
       </div>
     </div>`;
+  _histPush({ modal: 'waPopup' });
   overlay.classList.add('open');
 }
 
 function closeWhatsAppPopup() {
+  _histBack();
   document.getElementById('waPopupOverlay')?.classList.remove('open');
 }
 
@@ -1049,6 +1053,7 @@ function _renderWaPaidPopup() {
         ${WA_SVG} WhatsApp Send
       </button>
     </div>`;
+  _histPush({ modal: 'waPaidPopup' });
   overlay.classList.add('open');
 }
 
@@ -1062,6 +1067,7 @@ function toggleWaPaidMonth(mo) {
 }
 
 function closeWaPaidPopup() {
+  _histBack();
   document.getElementById('waPaidPopupOverlay')?.classList.remove('open');
   _waAdvanceNote = '';
 }
@@ -1309,6 +1315,7 @@ function showPaymentReceiptOptions(name) {
         </button>
       </div>
     </div>`;
+  _histPush({ modal: 'payReceipt' });
   ov.classList.add('open');
 }
 
@@ -1596,6 +1603,7 @@ function _renderQmpModal() {
         </button>
       </div>` : ''}
     </div>`;
+  _histPush({ modal: 'qmp' });
   ov.classList.add('open');
 }
 
@@ -1618,6 +1626,7 @@ function _qmpToggle(el, memberName, month) {
 }
 
 function _closeQmp() {
+  _histBack();
   document.getElementById('qmpOverlay')?.classList.remove('open');
   _qmpSel.clear();
 }

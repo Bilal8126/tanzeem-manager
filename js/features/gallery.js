@@ -201,10 +201,12 @@ function cancelGalleryMultiSelect() { _gMulti = false; _gSelected.clear(); rende
 
 function openGalleryUpload() {
   if (!_gallerySgnedIn()) { showToast('Upload ke liye pehle Sign in karein', 'error'); return; }
+  _histPush({ modal: 'galleryUpload' });
   document.getElementById('galleryUploadOverlay').classList.add('open');
 }
 
 function closeGalleryUpload() {
+  _histBack();
   document.getElementById('galleryUploadOverlay').classList.remove('open');
   document.getElementById('galleryFileInput').value = '';
   document.getElementById('galleryCameraInput').value = '';
@@ -222,6 +224,7 @@ function _galleryFileChanged(input) {
   closeGalleryUpload();
 
   document.getElementById('galleryOccasionContent').innerHTML = _occasionPickerHTML(files);
+  _histPush({ modal: 'galleryOccasion' });
   document.getElementById('galleryOccasionOverlay').classList.add('open');
 
   const reader = new FileReader();
@@ -266,6 +269,7 @@ function _occasionPickerHTML(files) {
 }
 
 function closeOccasionPicker() {
+  _histBack();
   document.getElementById('galleryOccasionOverlay').classList.remove('open');
   _pendingUploadFiles = [];
 }
@@ -414,10 +418,11 @@ function openPhotoDetail(id) {
         Delete
       </button>
     </div>`;
+  _histPush({ modal: 'lightbox' });
   document.getElementById('galleryLightboxOverlay').classList.add('open');
 }
 
-function closeLightbox() { document.getElementById('galleryLightboxOverlay')?.classList.remove('open'); }
+function closeLightbox() { _histBack(); document.getElementById('galleryLightboxOverlay')?.classList.remove('open'); }
 
 // ── Download ──────────────────────────────────────────────────
 

@@ -162,10 +162,12 @@ function openFinanceForm(type, idx) {
     </button>
   `;
 
+  _histPush({ modal: 'financeForm' });
   document.getElementById('financeFormOverlay').classList.add('open');
 }
 
 function closeFinanceForm() {
+  _histBack();
   document.getElementById('financeFormOverlay').classList.remove('open');
 }
 
@@ -279,10 +281,10 @@ function showDonationReceiptOptions(i) {
     ov.id = 'donReceiptOverlay';
     ov.className = 'modal-overlay';
     ov.style.zIndex = '500';
-    ov.addEventListener('click', () => ov.classList.remove('open'));
+    ov.addEventListener('click', () => { _histBack(); ov.classList.remove('open'); });
     document.body.appendChild(ov);
   }
-  const close = `document.getElementById('donReceiptOverlay').classList.remove('open')`;
+  const close = `_histBack();document.getElementById('donReceiptOverlay').classList.remove('open')`;
   ov.innerHTML = `
     <div class="modal" onclick="event.stopPropagation()">
       <div class="modal-handle"></div>
@@ -307,6 +309,7 @@ function showDonationReceiptOptions(i) {
         </button>
       </div>
     </div>`;
+  _histPush({ modal: 'donReceipt' });
   ov.classList.add('open');
 }
 

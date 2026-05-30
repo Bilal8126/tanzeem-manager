@@ -213,6 +213,7 @@ function _computeSessionInfo(startMonth, startYear) {
 // ── Set Active (password modal) ───────────────────────────────
 function _promptSetActive(idx) {
   const s = CONFIG.SESSIONS[idx];
+  _histPush({ modal: 'newSession' });
   document.getElementById('newSessionOverlay').style.display = 'flex';
   document.getElementById('newSessionContent').innerHTML = `
     <div class="modal-header">
@@ -287,6 +288,7 @@ function showCreateSessionModal() {
   const suggestedYear = parseInt(latestLabel.split('-')[0]) + 1;
   _createState = { month: 3, year: suggestedYear }; // default: April
 
+  _histPush({ modal: 'newSession' });
   document.getElementById('newSessionOverlay').style.display = 'flex';
   document.getElementById('newSessionContent').innerHTML = `
     <div class="modal-header">
@@ -438,6 +440,7 @@ function _updateCreatePreview() {
 }
 
 function closeNewSessionModal() {
+  _histBack();
   document.getElementById('newSessionOverlay').style.display = 'none';
 }
 

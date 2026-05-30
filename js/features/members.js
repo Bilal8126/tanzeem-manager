@@ -203,10 +203,12 @@ function openMemberProfile(idx) {
     </button>` : ''}
   `;
 
+  _histPush({ modal: 'memberProfile' });
   document.getElementById('memberProfileOverlay').classList.add('open');
 }
 
 function closeMemberProfile() {
+  _histBack();
   document.getElementById('memberProfileOverlay').classList.remove('open');
 }
 
@@ -283,8 +285,7 @@ function shareWhatsAppMember(idx) {
 
 // ── Toggle payment from member profile ───────────────────
 
-function togglePaymentFromProfile(payIdx, mo, memberIdx) {
-  if (!STATE.accessToken) { showToast('Write ke liye pehle Sync karein 🔄', 'error'); return; }
+async function togglePaymentFromProfile(payIdx, mo, memberIdx) {
   const p = STATE.allPayments[payIdx];
   if (!p) return;
   const memberRec = STATE.allMembers.find(m => nameMatch(m.name, p.name));
@@ -294,6 +295,7 @@ function togglePaymentFromProfile(payIdx, mo, memberIdx) {
   if (memberRec && (memberRec.type || 'Regular') !== 'Regular') {
     showToast('Donor member ki payment mark nahi ho sakti', 'error'); return;
   }
+  if (!await _ensureWriteAccess()) return;
   const months = Object.keys(p.months);
   const mIdx   = months.indexOf(mo);
   if (mIdx === -1) return;

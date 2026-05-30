@@ -330,10 +330,12 @@ function _renderReportModal() {
         </button>
       </div>
     </div>`;
+  _histPush({ modal: 'report' });
   overlay.classList.add('open');
 }
 
 function _closeReport() {
+  _histBack();
   document.getElementById('reportOverlay')?.classList.remove('open');
 }
 

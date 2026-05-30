@@ -1,5 +1,69 @@
 const _scrollPos = {};
 
+// ── Android back-button navigation ────────────────────────
+let _historyReady = false;
+let _manualClose  = false; // set true when modal closes via its own button
+
+function _histPush(extra) {
+  if (_historyReady) history.pushState(extra || {}, '');
+}
+
+// Called by modal close-buttons to keep history balanced
+function _histBack() {
+  _manualClose = true;
+  history.back();
+}
+
+// Call once after first render — sets the base state
+function _historyInit() {
+  if (_historyReady) return;
+  history.replaceState({ screen: 'dashboard' }, '');
+  _historyReady = true;
+}
+
+// Known modal overlays — checked top-to-bottom (highest priority first)
+// useDisplay:true for modals that use style.display instead of .open class
+const _MODALS = [
+  { id: 'confirmOverlay',          fn: () => document.getElementById('confirmOverlay')?.classList.remove('open') },
+  { id: 'galleryLightboxOverlay',  fn: () => typeof closeLightbox        !== 'undefined' && closeLightbox() },
+  { id: 'qmpOverlay',              fn: () => typeof _closeQmp            !== 'undefined' && _closeQmp() },
+  { id: 'waPaidPopupOverlay',      fn: () => document.getElementById('waPaidPopupOverlay')?.classList.remove('open') },
+  { id: 'waPopupOverlay',          fn: () => typeof closeWhatsAppPopup   !== 'undefined' && closeWhatsAppPopup() },
+  { id: 'shareFormatOverlay',      fn: () => document.getElementById('shareFormatOverlay')?.classList.remove('open') },
+  { id: 'payReceiptOverlay',       fn: () => document.getElementById('payReceiptOverlay')?.classList.remove('open') },
+  { id: 'donReceiptOverlay',       fn: () => document.getElementById('donReceiptOverlay')?.classList.remove('open') },
+  { id: 'reportOverlay',           fn: () => document.getElementById('reportOverlay')?.classList.remove('open') },
+  { id: 'galleryUploadOverlay',    fn: () => typeof closeGalleryUpload   !== 'undefined' && closeGalleryUpload() },
+  { id: 'galleryOccasionOverlay',  fn: () => typeof closeOccasionPicker  !== 'undefined' && closeOccasionPicker() },
+  { id: 'financeFormOverlay',      fn: () => typeof closeFinanceForm      !== 'undefined' && closeFinanceForm() },
+  { id: 'memberProfileOverlay',    fn: () => typeof closeMemberProfile    !== 'undefined' && closeMemberProfile() },
+  { id: 'newSessionOverlay',       fn: () => typeof closeNewSessionModal  !== 'undefined' && closeNewSessionModal(), useDisplay: true },
+];
+
+window.addEventListener('popstate', e => {
+  if (_manualClose) { _manualClose = false; return; }
+
+  // 1. Close topmost open modal
+  for (const m of _MODALS) {
+    const el = document.getElementById(m.id);
+    if (!el) continue;
+    const isOpen = m.useDisplay ? el.style.display === 'flex' : el.classList.contains('open');
+    if (isOpen) { m.fn(); return; }
+  }
+
+  // 2. No modal open — navigate back to previous screen stored in state
+  const prev = e.state?.screen;
+  if (prev && prev !== STATE.currentScreen) {
+    const navEls = document.querySelectorAll('.nav-item');
+    const screens = ['dashboard', 'members', 'payments', 'finance', 'gallery', 'settings', 'ai'];
+    const navEl   = navEls[screens.indexOf(prev)] || navEls[0];
+    showScreen(prev, navEl, true); // _skipHistory = true
+    return;
+  }
+
+  // 3. Already on dashboard (or unknown) — let the browser exit the app
+});
+
 // Show AI nav only for the active session; redirect to dashboard if on AI screen
 function syncAiNav() {
   const isActive = !!(CONFIG.SESSIONS[STATE.currentSessionIdx]?.active);
@@ -11,7 +75,9 @@ function syncAiNav() {
   }
 }
 
-function showScreen(name, el) {
+function showScreen(name, el, _skipHistory) {
+  // Push history entry storing the screen we're leaving (so back restores it)
+  if (!_skipHistory) _histPush({ screen: STATE.currentScreen });
   // Save scroll position for the screen we're leaving
   _scrollPos[STATE.currentScreen] = window.scrollY;
 
@@ -39,6 +105,7 @@ function showScreen(name, el) {
 }
 
 function renderCurrentScreen() {
+  _historyInit(); // no-op after first call
   if (STATE.currentScreen === 'dashboard') renderDashboard();
   else if (STATE.currentScreen === 'members') renderMembers();
   else if (STATE.currentScreen === 'payments') renderPayments();
