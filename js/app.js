@@ -207,10 +207,12 @@ function showConfirm(title, body, onYes) {
       <button class="btn btn-primary" style="flex:1" id="confirmYesBtn">Haan, Confirm</button>
     </div>`;
   document.getElementById('confirmYesBtn').onclick = () => { closeConfirm(); onYes(); };
+  _histPush({ modal: 'confirm' });
   overlay.classList.add('open');
 }
 
 function closeConfirm() {
+  _histBack();
   document.getElementById('confirmOverlay')?.classList.remove('open');
 }
 
