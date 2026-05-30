@@ -11,6 +11,7 @@ let _showInactive     = false;
 let _showSummary      = false;
 let _showGrid         = false;
 let _showPaid         = false;
+let _showMonthWise    = false;
 let _overdueThreshold = 2;   // default — user can change
 
 // ── Helpers ──────────────────────────────────────────────
@@ -108,7 +109,8 @@ function toggleOverdue()  { _showOverdue  = !_showOverdue;  renderPayments(); }
 function toggleUnpaid()   { _showUnpaid   = !_showUnpaid;   renderPayments(); }
 function toggleInactive() { _showInactive = !_showInactive; renderPayments(); }
 function toggleSummary()  { _showSummary  = !_showSummary;  renderPayments(); }
-function toggleGrid()     { _showGrid     = !_showGrid;     renderPayments(); }
+function toggleGrid()      { _showGrid      = !_showGrid;      renderPayments(); }
+function toggleMonthWise() { _showMonthWise = !_showMonthWise; renderPayments(); }
 function togglePaid()     { _showPaid     = !_showPaid;     renderPayments(); }
 function setOverdueThreshold(n) {
   _overdueThreshold = n;
@@ -513,6 +515,77 @@ function renderPayments() {
         </table>
       </div>` : ''}
     </div>
+
+    <!-- Month-wise Total Collection -->
+    <div class="card" style="padding:12px">
+      <div class="toggle-header" onclick="toggleMonthWise()"
+        style="cursor:pointer;display:flex;align-items:center;gap:8px">
+        <span style="font-size:13px;font-weight:700;flex:1;display:flex;align-items:center;gap:6px">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="${C_GREEN}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          Month-wise Total Collection
+        </span>
+        <span class="section-count" style="background:#f0fdf4;color:${C_GREEN}">${months.filter(isPastOrCurrent).length}</span>
+        ${chevron(_showMonthWise)}
+      </div>
+      ${_showMonthWise ? `<div class="summary-scroll" style="margin-top:10px">
+        <table style="width:100%;border-collapse:collapse;font-size:12px">
+          <thead>
+            <tr style="border-bottom:2px solid #e2e8f0">
+              <th style="text-align:left;padding:6px 4px;color:${C_MUTED};font-weight:600">Month</th>
+              <th style="text-align:center;padding:6px 4px;color:${C_MUTED};font-weight:600">Paid</th>
+              <th style="text-align:right;padding:6px 4px;color:${C_MUTED};font-weight:600">Total Collected</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${(() => {
+              const C_ADV = '#0369a1';
+              let grandTotal = 0;
+              let advanceTotal = 0;
+              let rows = months.map(mo => {
+                const isPast     = isPastOrCurrent(mo);
+                const paidMembers = stats.filter(m => isPaid(m.months[mo]));
+                const total = paidMembers.reduce((s, m) => s + (parseInt(STATE.allPayments.find(p => nameMatch(p.name, m.name))?.amount) || FEE), 0);
+                if (isPast) grandTotal += total;
+                else        advanceTotal += total;
+                const isSel   = mo === sel;
+                const isAdv   = !isPast && paidMembers.length > 0;
+                const rowBg   = isSel ? 'background:#f0fdf4;' : isAdv ? 'background:#eff6ff;' : '';
+                const countCell = isPast
+                  ? `<span style="color:${paidMembers.length > 0 ? C_GREEN : C_MUTED};font-weight:600">${paidMembers.length}</span>`
+                  : isAdv
+                    ? `<span style="color:${C_ADV};font-weight:600">↑${paidMembers.length}</span>`
+                    : `<span style="color:${C_MUTED}">—</span>`;
+                const amtCell = isPast
+                  ? `<span style="color:${total > 0 ? C_GREEN : C_MUTED};font-weight:700">${formatCurrency(total)}</span>`
+                  : isAdv
+                    ? `<span style="color:${C_ADV};font-weight:700">${formatCurrency(total)}</span>`
+                  : `<span style="color:${C_MUTED}">—</span>`;
+                return `<tr style="border-bottom:1px solid #f1f5f9;${rowBg}">
+                  <td style="padding:7px 4px;font-weight:${isSel ? '700' : '500'};color:${isSel ? C_GREEN : 'inherit'}">
+                    ${mo}
+                    ${isSel  ? `<span style="font-size:9px;margin-left:4px;background:#dcfce7;color:${C_GREEN};padding:1px 5px;border-radius:8px;font-weight:600">sel</span>` : ''}
+                    ${isAdv  ? `<span style="font-size:9px;margin-left:4px;background:#dbeafe;color:${C_ADV};padding:1px 5px;border-radius:8px;font-weight:600">adv</span>` : ''}
+                  </td>
+                  <td style="text-align:center;padding:7px 4px">${countCell}</td>
+                  <td style="text-align:right;padding:7px 4px">${amtCell}</td>
+                </tr>`;
+              });
+              const totalPaidCount = stats.reduce((s,m) => s + m.paidList.length, 0);
+              const combinedTotal  = grandTotal + advanceTotal;
+              rows.push(`<tr style="border-top:2px solid #e2e8f0;background:#f8fafc">
+                <td style="padding:8px 4px;font-weight:700">
+                  Collected
+                  ${advanceTotal > 0 ? `<span style="font-size:9px;font-weight:400;color:${C_MUTED};display:block">incl. ${formatCurrency(advanceTotal)} advance</span>` : ''}
+                </td>
+                <td style="text-align:center;padding:8px 4px;font-weight:700;color:${C_GREEN}">${totalPaidCount}</td>
+                <td style="text-align:right;padding:8px 4px;font-weight:800;color:${C_GREEN};font-size:13px">${formatCurrency(combinedTotal)}</td>
+              </tr>`);
+              return rows.join('');
+            })()}
+          </tbody>
+        </table>
+      </div>` : ''}
+    </div>
   `;
 
   // Restore page scroll (prevents jump-to-top on toggle) and center selected month pill horizontally
@@ -779,7 +852,10 @@ async function togglePaymentCell(payIdx, mo) {
   if (!p) return;
   const memberRec = STATE.allMembers.find(m => nameMatch(m.name, p.name));
   if (memberRec && memberRec.status !== 'Active') {
-    showToast('In Active member ko pehle Active karein', 'error'); return;
+    showToast('Inactive member ko pehle Active karein', 'error'); return;
+  }
+  if (memberRec && (memberRec.type || 'Regular') !== 'Regular') {
+    showToast('Donor member ki payment mark nahi ho sakti', 'error'); return;
   }
   const months = Object.keys(p.months);
   const mIdx   = months.indexOf(mo);

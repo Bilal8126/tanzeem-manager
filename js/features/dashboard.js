@@ -7,8 +7,12 @@ function renderDashboard() {
   const inactive        = STATE.allMembers.length - active;
   const s             = STATE.sessionSummary;
   const months        = STATE.allPayments.length > 0 ? Object.keys(STATE.allPayments[0].months) : [];
+  const regularPayments = STATE.allPayments.filter(p => {
+    const mb = STATE.allMembers.find(mb => nameMatch(mb.name, p.name));
+    return !mb || (mb.type || 'Regular') === 'Regular';
+  });
   const monthlyTotals = months.map(m =>
-    STATE.allPayments.reduce((sum, p) =>
+    regularPayments.reduce((sum, p) =>
       sum + (p.months[m] === 'Paid' ? (parseInt(p.amount) || 150) : 0), 0)
   );
 
@@ -17,12 +21,23 @@ function renderDashboard() {
   // Show + populate header balance bar
   const hb = document.getElementById('headerBalance');
   if (hb) hb.style.display = 'flex';
-  const hbCollected = document.getElementById('hbCollected');
-  const hbDonation  = document.getElementById('hbDonation');
-  const hbExpenses  = document.getElementById('hbExpenses');
+  const hbCollected     = document.getElementById('hbCollected');
+  const hbDonation      = document.getElementById('hbDonation');
+  const hbExpenses      = document.getElementById('hbExpenses');
+  const hbCurMonth      = document.getElementById('hbCurMonth');
+  const hbCurMonthLabel = document.getElementById('hbCurMonthLabel');
   if (hbCollected) hbCollected.textContent = formatCurrency(s.currentTotal);
   if (hbDonation)  hbDonation.textContent  = formatCurrency(s.totalDonation);
   if (hbExpenses)  hbExpenses.textContent  = formatCurrency(s.totalExpense);
+  if (hbCurMonth) {
+    const curMo      = months.length > 0 ? detectCurrentMonth(months) : null;
+    const curMoTotal = curMo
+      ? regularPayments.reduce((sum, p) =>
+          sum + (p.months[curMo] === 'Paid' ? (parseInt(p.amount) || 150) : 0), 0)
+      : 0;
+    if (hbCurMonthLabel && curMo) hbCurMonthLabel.textContent = curMo;
+    hbCurMonth.textContent = curMo ? formatCurrency(curMoTotal) : '—';
+  }
 
   // Progress bar — this month's collection
   const currentMonth  = months.length > 0 ? detectCurrentMonth(months) : null;

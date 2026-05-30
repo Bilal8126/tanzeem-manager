@@ -60,12 +60,15 @@ function openMemberProfile(idx) {
 
   const payIdx     = STATE.allPayments.findIndex(p => nameMatch(p.name, member.name));
   const payRec     = payIdx !== -1 ? STATE.allPayments[payIdx] : null;
-  const canEdit    = payIdx !== -1 && !!STATE.accessToken;
+  const hasToken   = !!STATE.accessToken;
+  const isActive   = member.status === 'Active';
+  const isRegular  = (member.type || 'Regular') === 'Regular';
+  const canEdit    = payIdx !== -1 && hasToken && isActive && isRegular;
+  const needsSync  = payIdx !== -1 && !hasToken && isActive && isRegular;
   // Fall back to month list from any payment record if this member has no row
   const monthKeys = payRec
     ? Object.keys(payRec.months)
     : (STATE.allPayments.length > 0 ? Object.keys(STATE.allPayments[0].months) : []);
-  const isActive  = member.status === 'Active';
   const initials  = n => n.trim().split(' ').slice(0,2).map(w => w[0]).join('').toUpperCase();
 
   let paidCount = 0, unpaidCount = 0, totalPaid = 0, totalDue = 0;
@@ -99,13 +102,20 @@ function openMemberProfile(idx) {
 
       const rowClick = canEdit
         ? `onclick="togglePaymentFromProfile(${payIdx},'${mo}',${idx})" style="cursor:pointer" title="Tap to toggle"`
-        : '';
+        : needsSync
+          ? `onclick="syncData().then(()=>openMemberProfile(${idx}))" style="cursor:pointer" title="Sync required"`
+          : '';
+      const rowIcon = canEdit
+        ? `<span style="color:#cbd5e1;flex-shrink:0;display:flex;align-items:center"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></span>`
+        : needsSync
+          ? `<span style="color:#f59e0b;flex-shrink:0;display:flex;align-items:center" title="Sync required"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></span>`
+          : '';
       monthRows += `
         <div class="txn-row${!past ? ' txn-row--future' : ''}" ${rowClick}>
           <span class="txn-month">${mo}</span>
           ${chip}
           ${amt}
-          ${canEdit ? `<span style="color:#cbd5e1;flex-shrink:0;display:flex;align-items:center"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></span>` : ''}
+          ${rowIcon}
         </div>`;
     });
   }
@@ -134,6 +144,36 @@ function openMemberProfile(idx) {
         <button class="close-btn" onclick="closeMemberProfile()">×</button>
       </div>
     </div>
+
+    ${!isRegular ? `
+    <div onclick="openEditMember(${idx})" style="cursor:pointer;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:10px 12px;margin-bottom:10px;display:flex;align-items:center;gap:10px">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1d4ed8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12px;font-weight:700;color:#1e40af">Yeh Donor member hai</div>
+        <div style="font-size:11px;color:#3b82f6;margin-top:1px">Payment mark karne ke liye type Regular karein → Tap to edit</div>
+      </div>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1d4ed8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+    </div>` : ''}
+
+    ${isRegular && !isActive ? `
+    <div onclick="openEditMember(${idx})" style="cursor:pointer;background:#fff1f2;border:1px solid #fecdd3;border-radius:10px;padding:10px 12px;margin-bottom:10px;display:flex;align-items:center;gap:10px">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#be123c" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12px;font-weight:700;color:#9f1239">Yeh Inactive member hai</div>
+        <div style="font-size:11px;color:#e11d48;margin-top:1px">Payment mark karne ke liye pehle Active karein → Tap to edit</div>
+      </div>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#be123c" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+    </div>` : ''}
+
+    ${needsSync ? `
+    <div onclick="syncData().then(()=>openMemberProfile(${idx}))" style="cursor:pointer;background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:10px 12px;margin-bottom:10px;display:flex;align-items:center;gap:10px">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12px;font-weight:700;color:#92400e">Payment edit ke liye Sync karein</div>
+        <div style="font-size:11px;color:#b45309;margin-top:1px">Tap to sync now</div>
+      </div>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+    </div>` : ''}
 
     ${monthKeys.length > 0 ? `
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px">
@@ -247,6 +287,13 @@ function togglePaymentFromProfile(payIdx, mo, memberIdx) {
   if (!STATE.accessToken) { showToast('Write ke liye pehle Sync karein 🔄', 'error'); return; }
   const p = STATE.allPayments[payIdx];
   if (!p) return;
+  const memberRec = STATE.allMembers.find(m => nameMatch(m.name, p.name));
+  if (memberRec && memberRec.status !== 'Active') {
+    showToast('Inactive member ko pehle Active karein', 'error'); return;
+  }
+  if (memberRec && (memberRec.type || 'Regular') !== 'Regular') {
+    showToast('Donor member ki payment mark nahi ho sakti', 'error'); return;
+  }
   const months = Object.keys(p.months);
   const mIdx   = months.indexOf(mo);
   if (mIdx === -1) return;

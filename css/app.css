@@ -863,7 +863,7 @@ input:focus, select:focus, textarea:focus {
   border-bottom: 1px solid #f8fafc;
 }
 .finance-item:last-child { border-bottom: none; }
-.finance-left { display: flex; align-items: center; gap: 12px; }
+.finance-left { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; }
 .finance-dot {
   width: 9px; height: 9px;
   border-radius: 50%;
@@ -871,7 +871,7 @@ input:focus, select:focus, textarea:focus {
 }
 .finance-dot.green { background: var(--green); box-shadow: 0 0 0 3px rgba(22,163,74,.15); }
 .finance-dot.red   { background: var(--red);   box-shadow: 0 0 0 3px rgba(239,68,68,.12); }
-.finance-name  { font-size: 13px; font-weight: 600; letter-spacing: -0.1px; }
+.finance-name  { font-size: 13px; font-weight: 600; letter-spacing: -0.1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .finance-sub   { font-size: 11px; color: var(--muted); margin-top: 2px; }
 .finance-amount { font-size: 14px; font-weight: 800; white-space: nowrap; letter-spacing: -0.3px; }
 .finance-amount.green { color: var(--green-dark); }
