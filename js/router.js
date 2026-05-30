@@ -80,14 +80,20 @@ function _showExitConfirm() {
   if (!bar) {
     bar = document.createElement('div');
     bar.id = '_exitBar';
-    bar.style.cssText = 'position:fixed;bottom:72px;left:12px;right:12px;z-index:9999;background:#0f4a29;color:#fff;padding:14px 16px;border-radius:16px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 4px 24px rgba(0,0,0,0.25)';
+    bar.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.55);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px)';
     document.body.appendChild(bar);
   }
   bar.innerHTML = `
-    <span style="font-size:13px;font-weight:600">Do you want to exit?</span>
-    <div style="display:flex;gap:8px">
-      <button onclick="_cancelExit()" style="background:rgba(255,255,255,0.18);border:none;color:#fff;padding:7px 14px;border-radius:10px;font-weight:600;cursor:pointer;font-size:13px">Cancel</button>
-      <button onclick="_doExit()" style="background:#fff;border:none;color:#0f4a29;padding:7px 14px;border-radius:10px;font-weight:700;cursor:pointer;font-size:13px">Exit</button>
+    <div style="background:#fff;border-radius:20px;padding:32px 28px;width:80%;max-width:320px;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,0.25)">
+      <div style="width:56px;height:56px;background:#f0fdf4;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#0f4a29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      </div>
+      <div style="font-size:18px;font-weight:800;color:#0f172a;margin-bottom:8px">Exit App?</div>
+      <div style="font-size:14px;color:#64748b;margin-bottom:24px">Do you want to exit the application?</div>
+      <div style="display:flex;gap:12px">
+        <button onclick="_cancelExit()" style="flex:1;background:#f1f5f9;border:none;color:#334155;padding:13px;border-radius:12px;font-weight:600;cursor:pointer;font-size:15px">Cancel</button>
+        <button onclick="_doExit()" style="flex:1;background:#0f4a29;border:none;color:#fff;padding:13px;border-radius:12px;font-weight:700;cursor:pointer;font-size:15px">Exit</button>
+      </div>
     </div>`;
   bar.style.display = 'flex';
   setTimeout(() => { if (_exitConfirmActive) _cancelExit(); }, 3000);
