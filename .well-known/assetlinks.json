@@ -1,0 +1,8 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "io.github.bilal8126.twa",
+    "sha256_cert_fingerprints": ["EE:F3:BD:C8:83:98:03:7E:F5:21:24:25:48:DC:A9:D9:9C:2C:7B:AD:0A:81:C2:42:1E:4E:73:00:03:4A:0A:2C"]
+  }
+}]
