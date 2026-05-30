@@ -45,7 +45,6 @@ const _MODALS = [
 ];
 
 window.addEventListener('popstate', e => {
-  if (_wantExit) { history.back(); return; } // drain history until app closes
   if (_manualClose) { _manualClose = false; return; }
 
   // 1. Close topmost open modal
@@ -71,7 +70,6 @@ window.addEventListener('popstate', e => {
 });
 
 let _exitConfirmActive = false;
-let _wantExit = false;
 
 function _showExitConfirm() {
   if (_exitConfirmActive) { _doExit(); return; } // second back = exit immediately
@@ -109,10 +107,10 @@ function _cancelExit() {
 
 function _doExit() {
   _exitConfirmActive = false;
-  _wantExit = true;
   const bar = document.getElementById('_exitBar');
   if (bar) bar.style.display = 'none';
-  history.back(); // popstate will fire → _wantExit flag → history.back() again → app closes
+  // Jump past ALL history entries in one go → TWA finishes the Android activity
+  history.go(-history.length - 1);
 }
 
 // Show AI nav only for the active session; redirect to dashboard if on AI screen
