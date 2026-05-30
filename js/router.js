@@ -84,10 +84,10 @@ function _showExitConfirm() {
     document.body.appendChild(bar);
   }
   bar.innerHTML = `
-    <span style="font-size:13px;font-weight:600">App se bahar jaana chahte hain?</span>
+    <span style="font-size:13px;font-weight:600">Do you want to exit?</span>
     <div style="display:flex;gap:8px">
-      <button onclick="_cancelExit()" style="background:rgba(255,255,255,0.18);border:none;color:#fff;padding:7px 14px;border-radius:10px;font-weight:600;cursor:pointer;font-size:13px">Nahi</button>
-      <button onclick="_doExit()" style="background:#fff;border:none;color:#0f4a29;padding:7px 14px;border-radius:10px;font-weight:700;cursor:pointer;font-size:13px">Bahar</button>
+      <button onclick="_cancelExit()" style="background:rgba(255,255,255,0.18);border:none;color:#fff;padding:7px 14px;border-radius:10px;font-weight:600;cursor:pointer;font-size:13px">Cancel</button>
+      <button onclick="_doExit()" style="background:#fff;border:none;color:#0f4a29;padding:7px 14px;border-radius:10px;font-weight:700;cursor:pointer;font-size:13px">Exit</button>
     </div>`;
   bar.style.display = 'flex';
   setTimeout(() => { if (_exitConfirmActive) _cancelExit(); }, 3000);
