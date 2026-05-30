@@ -485,6 +485,7 @@ async function openAddMember() {
   _newMemberStatus = 'Active';
   _newMemberAadhar = 'No';
   _newMemberType   = 'Regular';
+  _histPush({ modal: 'memberProfile' });
   document.getElementById('memberProfileOverlay').classList.add('open');
 }
 
