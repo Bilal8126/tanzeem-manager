@@ -18,8 +18,7 @@ function _histBack() {
 // button always fires popstate even before data loads
 function _historyInit() {
   if (_historyReady) return;
-  history.replaceState({ screen: 'dashboard', base: true }, '');
-  history.pushState({ screen: 'dashboard' }, ''); // buffer entry
+  history.replaceState({ screen: 'dashboard' }, '');
   _historyReady = true;
 }
 
@@ -45,7 +44,6 @@ const _MODALS = [
 ];
 
 window.addEventListener('popstate', e => {
-  if (_wantExit) { history.back(); return; }
   if (_manualClose) { _manualClose = false; return; }
 
   // 1. Close topmost open modal
@@ -62,62 +60,12 @@ window.addEventListener('popstate', e => {
     const navEls = document.querySelectorAll('.nav-item');
     const screens = ['dashboard', 'members', 'payments', 'finance', 'gallery', 'settings', 'ai'];
     const navEl   = navEls[screens.indexOf(prev)] || navEls[0];
-    showScreen(prev, navEl, true); // _skipHistory = true
+    showScreen(prev, navEl, true);
     return;
   }
 
-  // 3. Already on dashboard — show exit confirmation bar
-  _showExitConfirm();
+  // 3. On dashboard — exit app directly (no confirmation)
 });
-
-let _exitConfirmActive = false;
-let _wantExit = false;
-
-function _showExitConfirm() {
-  if (_exitConfirmActive) { _doExit(); return; } // second back = exit immediately
-  _exitConfirmActive = true;
-  history.pushState({ screen: 'dashboard' }, ''); // buffer so next back fires popstate
-
-  let bar = document.getElementById('_exitBar');
-  if (!bar) {
-    bar = document.createElement('div');
-    bar.id = '_exitBar';
-    bar.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.55);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px)';
-    document.body.appendChild(bar);
-  }
-  bar.innerHTML = `
-    <div style="background:#fff;border-radius:20px;padding:32px 28px;width:80%;max-width:320px;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,0.25)">
-      <div style="width:56px;height:56px;background:#f0fdf4;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#0f4a29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-      </div>
-      <div style="font-size:18px;font-weight:800;color:#0f172a;margin-bottom:8px">Exit App?</div>
-      <div style="font-size:14px;color:#64748b;margin-bottom:24px">Do you want to exit the application?</div>
-      <div style="display:flex;gap:12px">
-        <button onclick="_cancelExit()" style="flex:1;background:#f1f5f9;border:none;color:#334155;padding:13px;border-radius:12px;font-weight:600;cursor:pointer;font-size:15px">Cancel</button>
-        <button onclick="_doExit()" style="flex:1;background:#0f4a29;border:none;color:#fff;padding:13px;border-radius:12px;font-weight:700;cursor:pointer;font-size:15px">Exit</button>
-      </div>
-    </div>`;
-  bar.style.display = 'flex';
-  setTimeout(() => { if (_exitConfirmActive) _cancelExit(); }, 3000);
-}
-
-function _cancelExit() {
-  _exitConfirmActive = false;
-  const bar = document.getElementById('_exitBar');
-  if (bar) bar.style.display = 'none';
-}
-
-function _doExit() {
-  _exitConfirmActive = false;
-  _wantExit = true;
-  const bar = document.getElementById('_exitBar');
-  if (bar) bar.style.display = 'none';
-  // Push extra entries so chained history.back() calls fully exhaust history → TWA closes
-  history.pushState({exit:true}, '');
-  history.pushState({exit:true}, '');
-  history.pushState({exit:true}, '');
-  history.back();
-}
 
 // Show AI nav only for the active session; redirect to dashboard if on AI screen
 function syncAiNav() {
