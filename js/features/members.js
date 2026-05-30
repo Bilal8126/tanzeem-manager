@@ -376,10 +376,10 @@ function setEditType(t) {
   document.getElementById('emTypeDonor').className   = 'btn ' + (t === 'Donor'   ? 'btn-primary' : 'btn-secondary');
 }
 
-function saveEditMember(idx) {
+async function saveEditMember(idx) {
   const m = STATE.allMembers[idx];
   if (!m) return;
-  if (!STATE.accessToken) { showToast('Write ke liye pehle Sync karein 🔄', 'error'); return; }
+  if (!await _ensureWriteAccess()) return;
   const newName   = (document.getElementById('em_name').value   || '').trim();
   const newMobile = (document.getElementById('em_mobile').value || '').trim();
   const newStatus = _editMemberStatus || m.status;
@@ -410,10 +410,10 @@ function saveEditMember(idx) {
   });
 }
 
-function deleteMember(idx) {
+async function deleteMember(idx) {
   const m = STATE.allMembers[idx];
   if (!m) return;
-  if (!STATE.accessToken) { showToast('Write ke liye pehle Sync karein 🔄', 'error'); return; }
+  if (!await _ensureWriteAccess()) return;
   showConfirm(
     'Member delete karein?',
     `<b>${m.name}</b> ko hamesha ke liye remove kar diya jayega.<br><span style="color:var(--red);font-size:12px">Yeh action wapas nahi ho sakta!</span>`,
@@ -436,8 +436,8 @@ function deleteMember(idx) {
 
 // ── Add New Member ────────────────────────────────────────
 
-function openAddMember() {
-  if (!STATE.accessToken) { showToast('Write ke liye pehle Sync karein 🔄', 'error'); return; }
+async function openAddMember() {
+  if (!STATE.accessToken) await syncData();
   document.getElementById('memberProfileContent').innerHTML = `
     <div class="modal-header">
       <div class="modal-title">Naya Member Add Karein</div>

@@ -171,8 +171,8 @@ function closeFinanceForm() {
   document.getElementById('financeFormOverlay').classList.remove('open');
 }
 
-function saveFinanceForm() {
-  if (!STATE.accessToken) { showToast('Write ke liye pehle Sync karein 🔄', 'error'); return; }
+async function saveFinanceForm() {
+  if (!await _ensureWriteAccess()) return;
   if (STATE.currentSessionIdx !== 0) { showToast('Purane session mein edit nahi ho sakta', 'error'); return; }
 
   const isDonation = _ffType === 'donation';
@@ -239,8 +239,8 @@ function saveFinanceForm() {
 
 // ── Delete Finance Item ───────────────────────────────────
 
-function deleteFinanceItem(type, idx) {
-  if (!STATE.accessToken) { showToast('Write ke liye pehle Sync karein 🔄', 'error'); return; }
+async function deleteFinanceItem(type, idx) {
+  if (!await _ensureWriteAccess()) return;
   if (STATE.currentSessionIdx !== 0) { showToast('Purane session mein edit nahi ho sakta', 'error'); return; }
   const isDonation = type === 'donation';
   const item    = isDonation ? STATE.allDonations[idx] : STATE.allExpenses[idx];
