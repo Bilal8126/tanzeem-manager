@@ -1,5 +1,14 @@
-let _tokenClient = null;
-const _AUTH_FLAG = 'tanzeem_signed_in';
+let _tokenClient  = null;
+let _refreshTimer = null;
+const _AUTH_FLAG  = 'tanzeem_signed_in';
+
+// ── GIS silent token refresh (no popup if Google session active) ──
+function _scheduleRefresh() {
+  clearTimeout(_refreshTimer);
+  _refreshTimer = setTimeout(() => {
+    if (_tokenClient) _tokenClient.requestAccessToken({ prompt: '' });
+  }, 55 * 60 * 1000); // 55 min — before 1-hour expiry
+}
 
 function loadGoogleScript() {
   return new Promise(resolve => {
@@ -72,10 +81,11 @@ async function signIn() {
       callback: async (resp) => {
         if (resp.error) { showToast('Sign in failed: ' + resp.error, 'error'); return; }
         STATE.accessToken = resp.access_token;
+        _scheduleRefresh(); // auto-refresh 55 min from now
         localStorage.setItem(_AUTH_FLAG, '1');
         document.getElementById('setupScreen').style.display = 'none';
         document.getElementById('mainApp').style.display = 'block';
-        _fetchUserInfo(resp.access_token); // non-blocking — updates avatar in background
+        _fetchUserInfo(resp.access_token);
         if (typeof loadSessionsConfig === 'function') await loadSessionsConfig();
         await loadAllData();
       }
@@ -92,6 +102,7 @@ async function syncData() {
     const onToken = async (resp) => {
       if (resp.error) { showToast('Sync failed: ' + resp.error, 'error'); return; }
       STATE.accessToken = resp.access_token;
+      _scheduleRefresh(); // auto-refresh 55 min from now
       if (typeof reloadSessionsConfig === 'function') await reloadSessionsConfig();
       await loadAllData(true);
     };
