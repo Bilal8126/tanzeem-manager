@@ -72,6 +72,29 @@ async function _fetchUserInfo(token) {
   } catch(e) { /* keep default person icon */ }
 }
 
+async function _checkAuthUser(token) {
+  try {
+    const [tokenInfo, sheetRes] = await Promise.all([
+      fetch(`https://oauth2.googleapis.com/tokeninfo?access_token=${token}`).then(r => r.json()),
+      fetch(`https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/Auth%20Users!A:A`, {
+        headers: { Authorization: 'Bearer ' + token }
+      }).then(r => r.json())
+    ]);
+
+    const email       = (tokenInfo.email || '').toLowerCase().trim();
+    const name        = email.split('@')[0] || '';
+    const allowedRows = sheetRes.values || [];
+    const allowed     = allowedRows.flat().map(e => (e || '').toLowerCase().trim());
+
+    const ADMIN_EMAILS = ['erhacker81@gmail.com', 'hello.iambilalansari@gmail.com'];
+    if (!email) return { ok: false, email: '' };
+    if (ADMIN_EMAILS.includes(email) || allowed.includes(email)) return { ok: true, email, name };
+    return { ok: false, email };
+  } catch(e) {
+    return { ok: true, email: '' }; // if sheet unreachable, fail open
+  }
+}
+
 async function signIn() {
   try {
     await loadGoogleScript();
@@ -80,12 +103,23 @@ async function signIn() {
       scope: CONFIG.SCOPES,
       callback: async (resp) => {
         if (resp.error) { showToast('Sign in failed: ' + resp.error, 'error'); return; }
+
+        // Check if user is authorized
+        const auth = await _checkAuthUser(resp.access_token);
+        if (!auth.ok) {
+          showToast(`Access denied — ${auth.email || 'this account'} is not authorized`, 'error');
+          return;
+        }
+
         STATE.accessToken = resp.access_token;
-        _scheduleRefresh(); // auto-refresh 55 min from now
+        _scheduleRefresh();
         localStorage.setItem(_AUTH_FLAG, '1');
+        if (auth.name) {
+          localStorage.setItem('tanzeem_user_display', auth.name);
+          _setAvatar(auth.name);
+        }
         document.getElementById('setupScreen').style.display = 'none';
         document.getElementById('mainApp').style.display = 'block';
-        _fetchUserInfo(resp.access_token);
         if (typeof loadSessionsConfig === 'function') await loadSessionsConfig();
         await loadAllData();
       }
