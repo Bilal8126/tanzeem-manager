@@ -1,6 +1,7 @@
 let _tokenClient  = null;
 let _refreshTimer = null;
 const _AUTH_FLAG  = 'tanzeem_signed_in';
+const _SCOPES     = 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile';
 
 // ── GIS silent token refresh (no popup if Google session active) ──
 function _scheduleRefresh() {
@@ -142,7 +143,7 @@ async function signIn() {
     await loadGoogleScript();
     _tokenClient = google.accounts.oauth2.initTokenClient({
       client_id: CONFIG.CLIENT_ID,
-      scope: CONFIG.SCOPES,
+      scope: _SCOPES,
       callback: async (resp) => {
         if (resp.error) { showToast('Sign in failed: ' + resp.error, 'error'); return; }
 
@@ -195,7 +196,7 @@ async function syncData() {
     if (!_tokenClient) {
       _tokenClient = google.accounts.oauth2.initTokenClient({
         client_id: CONFIG.CLIENT_ID,
-        scope: CONFIG.SCOPES,
+        scope: _SCOPES,
         callback: onToken
       });
     } else {
