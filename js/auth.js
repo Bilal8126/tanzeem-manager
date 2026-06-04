@@ -33,9 +33,10 @@ function checkAutoSignIn() {
   // Ensure flag is set for future loads
   localStorage.setItem(_AUTH_FLAG, '1');
 
-  // Restore saved user display name
+  // Restore saved user display name and logged-in email
   const savedName = localStorage.getItem('tanzeem_user_display');
   if (savedName) _setAvatar(savedName);
+  STATE.loggedInEmail = localStorage.getItem('tanzeem_logged_email') || '';
 
   // Restore sessions from localStorage cache (no token needed)
   if (typeof loadSessionsFromCache === 'function') loadSessionsFromCache();
@@ -112,6 +113,8 @@ async function signIn() {
         }
 
         STATE.accessToken = resp.access_token;
+        STATE.loggedInEmail = auth.email;
+        localStorage.setItem('tanzeem_logged_email', auth.email);
         _scheduleRefresh();
         localStorage.setItem(_AUTH_FLAG, '1');
         if (auth.name) {
@@ -135,8 +138,20 @@ async function syncData() {
     await loadGoogleScript();
     const onToken = async (resp) => {
       if (resp.error) { showToast('Sync failed: ' + resp.error, 'error'); return; }
+
+      // Verify same account as original login
+      const savedEmail = STATE.loggedInEmail || localStorage.getItem('tanzeem_logged_email');
+      if (savedEmail) {
+        const info = await fetch(`https://oauth2.googleapis.com/tokeninfo?access_token=${resp.access_token}`).then(r => r.json()).catch(() => ({}));
+        const newEmail = (info.email || '').toLowerCase().trim();
+        if (newEmail && newEmail !== savedEmail) {
+          showToast(`Wrong account — please sign in as ${savedEmail}`, 'error');
+          return;
+        }
+      }
+
       STATE.accessToken = resp.access_token;
-      _scheduleRefresh(); // auto-refresh 55 min from now
+      _scheduleRefresh();
       if (typeof reloadSessionsConfig === 'function') await reloadSessionsConfig();
       await loadAllData(true);
     };
