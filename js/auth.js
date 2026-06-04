@@ -33,9 +33,10 @@ function checkAutoSignIn() {
   // Ensure flag is set for future loads
   localStorage.setItem(_AUTH_FLAG, '1');
 
-  // Restore saved user display name and logged-in email
-  const savedName = localStorage.getItem('tanzeem_user_display');
-  if (savedName) _setAvatar(savedName);
+  // Restore saved profile (name, photo, email)
+  const savedName  = localStorage.getItem('tanzeem_user_display') || '';
+  const savedPhoto = localStorage.getItem('tanzeem_user_photo') || '';
+  if (savedName || savedPhoto) _setAvatar(savedName, savedPhoto);
   STATE.loggedInEmail = localStorage.getItem('tanzeem_logged_email') || '';
 
   // Restore sessions from localStorage cache (no token needed)
@@ -46,31 +47,71 @@ function checkAutoSignIn() {
   loadAllData(false); // serve from localStorage cache; no token required
 }
 
-// Update avatar with first-name initials (max 2 chars, never URL-like)
-function _setAvatar(name) {
+function _setAvatar(name, photoUrl) {
   const el = document.getElementById('userAvatar');
-  if (!el || !name) return;
-  // Take only first word, strip special chars, max 2 letters → initials
-  const word = name.trim().split(/[\s@._/]+/)[0].replace(/[^a-zA-Z؀-ۿ]/g, '');
-  const initials = word.slice(0, 2).toUpperCase();
-  if (initials) {
-    el.textContent = initials;
-    el.title = name.split(/[\s@._/]+/)[0] + ' — Sign Out';
+  if (!el) return;
+  if (photoUrl) {
+    el.innerHTML = `<img src="${photoUrl}" style="width:100%;height:100%;border-radius:50%;object-fit:cover" onerror="this.parentElement.textContent='${(name||'').slice(0,2).toUpperCase()}'">`;
+  } else if (name) {
+    const word = name.trim().split(/[\s@._/]+/)[0].replace(/[^a-zA-Z؀-ۿ]/g, '');
+    el.textContent = word.slice(0, 2).toUpperCase();
   }
 }
 
-// Fetch Google user profile to show proper initials in avatar
-async function _fetchUserInfo(token) {
+async function _fetchAndStoreProfile(token) {
   try {
     const info = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
       headers: { Authorization: 'Bearer ' + token }
     }).then(r => r.json());
-    const display = info.given_name || (info.name || '').split(' ')[0] || '';
-    if (display) {
-      localStorage.setItem('tanzeem_user_display', display);
-      _setAvatar(display);
-    }
-  } catch(e) { /* keep default person icon */ }
+    const name  = info.given_name || (info.name || '').split(' ')[0] || '';
+    const photo = info.picture || '';
+    const email = info.email || '';
+    if (name)  localStorage.setItem('tanzeem_user_display', name);
+    if (photo) localStorage.setItem('tanzeem_user_photo', photo);
+    if (email) localStorage.setItem('tanzeem_logged_email', email);
+    _setAvatar(name, photo);
+  } catch(e) { /* keep default */ }
+}
+
+function showProfileMenu() {
+  const name  = localStorage.getItem('tanzeem_user_display') || '';
+  const email = localStorage.getItem('tanzeem_logged_email') || '';
+  const photo = localStorage.getItem('tanzeem_user_photo') || '';
+
+  let ov = document.getElementById('profileMenuOverlay');
+  if (!ov) {
+    ov = document.createElement('div');
+    ov.id = 'profileMenuOverlay';
+    ov.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.4);display:flex;align-items:flex-start;justify-content:flex-end;padding:60px 12px 0';
+    ov.addEventListener('click', e => { if (e.target === ov) closeProfileMenu(); });
+    document.body.appendChild(ov);
+  }
+
+  ov.innerHTML = `
+    <div style="background:#fff;border-radius:20px;padding:24px 20px;width:260px;box-shadow:0 8px 40px rgba(0,0,0,0.18)">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:10px;margin-bottom:20px">
+        ${photo
+          ? `<img src="${photo}" style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:3px solid #f0fdf4">`
+          : `<div style="width:72px;height:72px;border-radius:50%;background:#0f4a29;color:#fff;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:800">${name.slice(0,2).toUpperCase()}</div>`
+        }
+        <div style="text-align:center">
+          <div style="font-size:16px;font-weight:800;color:#0f172a">${name}</div>
+          <div style="font-size:12px;color:#64748b;margin-top:2px">${email}</div>
+        </div>
+      </div>
+      <button onclick="closeProfileMenu();signOut()" style="width:100%;padding:12px;background:#fff1f2;border:1.5px solid #fecdd3;border-radius:12px;color:#be123c;font-weight:700;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Sign Out
+      </button>
+    </div>`;
+  ov.style.display = 'flex';
+  _histPush({ modal: 'profileMenu' });
+}
+
+function closeProfileMenu() {
+  _histBack();
+  const ov = document.getElementById('profileMenuOverlay');
+  if (ov) ov.style.display = 'none';
 }
 
 async function _checkAuthUser(token) {
@@ -114,13 +155,9 @@ async function signIn() {
 
         STATE.accessToken = resp.access_token;
         STATE.loggedInEmail = auth.email;
-        localStorage.setItem('tanzeem_logged_email', auth.email);
         _scheduleRefresh();
         localStorage.setItem(_AUTH_FLAG, '1');
-        if (auth.name) {
-          localStorage.setItem('tanzeem_user_display', auth.name);
-          _setAvatar(auth.name);
-        }
+        _fetchAndStoreProfile(resp.access_token);
         document.getElementById('setupScreen').style.display = 'none';
         document.getElementById('mainApp').style.display = 'block';
         if (typeof loadSessionsConfig === 'function') await loadSessionsConfig();
@@ -177,15 +214,16 @@ function signOut() {
     'Tanzeem Abd-e-Mustafa se sign out karna chahte hain?',
     () => {
       STATE.accessToken = null;
+      STATE.loggedInEmail = '';
       localStorage.removeItem(_AUTH_FLAG);
       localStorage.removeItem('tanzeem_user_display');
+      localStorage.removeItem('tanzeem_user_photo');
+      localStorage.removeItem('tanzeem_logged_email');
       document.getElementById('mainApp').style.display = 'none';
       document.getElementById('setupScreen').style.display = 'flex';
-      // Reset avatar back to person icon
       const av = document.getElementById('userAvatar');
       if (av) {
         av.innerHTML = '<svg id="avatarIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>';
-        av.title = 'Sign Out';
       }
       showToast('Sign out ho gaye ✓');
     }

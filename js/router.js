@@ -44,6 +44,7 @@ const _MODALS = [
   { id: 'financeFormOverlay',      fn: () => typeof closeFinanceForm      !== 'undefined' && closeFinanceForm() },
   { id: 'memberProfileOverlay',    fn: () => typeof closeMemberProfile    !== 'undefined' && closeMemberProfile() },
   { id: 'newSessionOverlay',       fn: () => typeof closeNewSessionModal  !== 'undefined' && closeNewSessionModal(), useDisplay: true },
+  { id: 'profileMenuOverlay',      fn: () => typeof closeProfileMenu      !== 'undefined' && closeProfileMenu(), useDisplay: true },
 ];
 
 window.addEventListener('popstate', e => {
