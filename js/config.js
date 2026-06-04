@@ -2,7 +2,7 @@
 const CONFIG = {
   CLIENT_ID:   '627419494712-e7n7t9dp806aeheqhiroe5s8t6jmhf94.apps.googleusercontent.com',
   SHEET_ID:    '1UOJBM4_pnlZiO4oiENTr5vrO3F2CHCsrsefk-TzMpH4',
-  SCOPES:      'https://www.googleapis.com/auth/spreadsheets',
+  SCOPES:      'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile',
   WORKER_URL:  'https://tanzeem-manager.erhacker81.workers.dev',
   SESSIONS: [
     { label: '2025-26', sheet: 'Session (2025-26)', expenses: 'Expense List (25-26)', donations: 'Donation (25-26)' },
