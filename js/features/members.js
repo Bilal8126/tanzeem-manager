@@ -545,12 +545,14 @@ function saveNewMember() {
         // Also add to session payment sheet with unpaid status for all months
         const months = STATE.allPayments.length > 0 ? Object.keys(STATE.allPayments[0].months) : [];
         if (months.length > 0 && STATE.currentSession?.sheet) {
-          const payId  = STATE.allPayments.length + 1;
-          await sheetsAppend(STATE.currentSession.sheet, [[payId, name, FEE, ...months.map(() => ''), 0]]);
-          const emptyMonths = {};
-          months.forEach(m => { emptyMonths[m] = ''; });
+          const payId     = STATE.allPayments.length + 1;
           const newPayRow = STATE.allPayments.length > 0
             ? Math.max(...STATE.allPayments.map(p => p.row)) + 1 : 2;
+          const lastCol   = colLetter(2 + months.length + 1); // Sr+Name+Fee+months+Total
+          const rowData   = [payId, name, FEE, ...months.map(() => ''), 0];
+          await sheetsPut(`${STATE.currentSession.sheet}!A${newPayRow}:${lastCol}${newPayRow}`, [rowData]);
+          const emptyMonths = {};
+          months.forEach(m => { emptyMonths[m] = ''; });
           STATE.allPayments.push({ row: newPayRow, name, amount: String(FEE), months: emptyMonths, total: '0' });
         }
 
