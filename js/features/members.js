@@ -436,6 +436,8 @@ async function deleteMember(idx) {
         STATE.allMembers.forEach(mb => { if (mb.row > deletedRow) mb.row--; });
         saveCache(STATE.currentSession.label);
         showToast('Member delete ho gaya! 🗑');
+        _trackHistory('Member Deleted', m.name);
+        _pushNotify('Member Delete Ho Gaya! 🗑', `${m.name} ko Tanzeem se remove kiya gaya`);
         closeMemberProfile();
         renderMembers();
       } catch(e) {

@@ -163,6 +163,7 @@ function renderSettings() {
 const _HISTORY_COLORS = {
   'Member Added':   { bg:'#dcfce7', color:'#15803d' },
   'Member Updated': { bg:'#fef9c3', color:'#854d0e' },
+  'Member Deleted': { bg:'#fee2e2', color:'#991b1b' },
   'Mark Payment':   { bg:'#dbeafe', color:'#1d4ed8' },
   'Mark Unpayment': { bg:'#fff1f2', color:'#be123c' },
   'Donation Added': { bg:'#d1fae5', color:'#065f46' },
