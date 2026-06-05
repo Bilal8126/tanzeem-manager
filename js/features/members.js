@@ -541,6 +541,19 @@ function saveNewMember() {
       try {
         // Sheet columns: A=#, B=Name, C=Mobile, D=DOJ, E=Address, F=Aadhar, G=Status, H=DOE, I=Type
         await sheetsAppend('Members List', [[nextId, name, mobile, doj, address, aadhar, status, '', type]]);
+
+        // Also add to session payment sheet with unpaid status for all months
+        const months = STATE.allPayments.length > 0 ? Object.keys(STATE.allPayments[0].months) : [];
+        if (months.length > 0 && STATE.currentSession?.sheet) {
+          const payId  = STATE.allPayments.length + 1;
+          await sheetsAppend(STATE.currentSession.sheet, [[payId, name, FEE, ...months.map(() => ''), 0]]);
+          const emptyMonths = {};
+          months.forEach(m => { emptyMonths[m] = ''; });
+          const newPayRow = STATE.allPayments.length > 0
+            ? Math.max(...STATE.allPayments.map(p => p.row)) + 1 : 2;
+          STATE.allPayments.push({ row: newPayRow, name, amount: String(FEE), months: emptyMonths, total: '0' });
+        }
+
         const newRow = STATE.allMembers.length > 0
           ? Math.max(...STATE.allMembers.map(m => m.row)) + 1
           : 2;
