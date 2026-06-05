@@ -109,6 +109,21 @@ function renderSettings() {
 
     ${renderReportsSection()}
 
+    <!-- Activity History -->
+    <div class="card" id="historyCard" style="margin-bottom:14px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--green-dark)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px">Activity History</div>
+        </div>
+        <button onclick="loadTrackHistory()" style="background:none;border:1px solid var(--border);border-radius:8px;padding:5px 10px;font-size:12px;color:var(--muted);cursor:pointer;display:flex;align-items:center;gap:5px">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+          Refresh
+        </button>
+      </div>
+      <div id="historyContent"><div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">Loading...</div></div>
+    </div>
+
     <!-- App Info -->
     <div class="card" style="margin-bottom:14px">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
@@ -140,4 +155,54 @@ function renderSettings() {
       </div>
     </div>
   `;
+  loadTrackHistory();
+}
+
+// ── Activity History ───────────────────────────────────────────
+
+const _HISTORY_COLORS = {
+  'Member Added':   { bg:'#dcfce7', color:'#15803d' },
+  'Member Updated': { bg:'#fef9c3', color:'#854d0e' },
+  'Mark Payment':   { bg:'#dbeafe', color:'#1d4ed8' },
+  'Mark Unpayment': { bg:'#fff1f2', color:'#be123c' },
+  'Donation Added': { bg:'#d1fae5', color:'#065f46' },
+  'Expense Added':  { bg:'#fee2e2', color:'#991b1b' },
+};
+
+async function loadTrackHistory() {
+  const el = document.getElementById('historyContent');
+  if (!el) return;
+  if (!STATE.accessToken) {
+    el.innerHTML = `<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">Sync karein history dekhne ke liye</div>`;
+    return;
+  }
+  el.innerHTML = `<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">Loading...</div>`;
+  try {
+    const data = await sheetsGet('TrackHistory!A2:E500');
+    const rows = (data.values || []).filter(r => r.length >= 2);
+    if (!rows.length) {
+      el.innerHTML = `<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">Koi activity record nahi hai</div>`;
+      return;
+    }
+    const recent = [...rows].reverse().slice(0, 100);
+    el.innerHTML = recent.map(([ts, action, details, session, admin], i) => {
+      const ac = _HISTORY_COLORS[action] || { bg:'#f1f5f9', color:'#475569' };
+      return `
+        <div style="padding:10px 0;${i < recent.length-1 ? 'border-bottom:1px solid var(--border);' : ''}">
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px">
+            <span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;white-space:nowrap;background:${ac.bg};color:${ac.color}">${action || ''}</span>
+            <span style="font-size:13px;font-weight:600;color:var(--text)">${details || ''}</span>
+          </div>
+          <div style="font-size:11px;color:var(--muted);display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>
+            <span>${admin || '—'}</span>
+            ${session ? `<span>·</span><span style="color:#0369a1;font-weight:600">${session}</span>` : ''}
+            <span>·</span>
+            <span>${ts || ''}</span>
+          </div>
+        </div>`;
+    }).join('');
+  } catch(e) {
+    el.innerHTML = `<div style="text-align:center;padding:20px;color:var(--red);font-size:13px">Error: ${e.message}</div>`;
+  }
 }

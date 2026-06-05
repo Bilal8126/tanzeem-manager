@@ -411,6 +411,9 @@ async function saveEditMember(idx) {
       STATE.allMembers[idx].type   = newType;
       saveCache(STATE.currentSession.label);
       showToast('Member update ho gaya! ✅');
+      const changesSummary = changes.map(c => c.replace(/<[^>]+>/g, '')).join(', ');
+      _trackHistory('Member Updated', `${newName} — ${changesSummary}`);
+      _pushNotify('Member Update! ✏️', `${newName} ki profile mein badlav kiya gaya`);
       openMemberProfile(idx);
     } catch(e) {
       showToast(e.message === 'AUTH_EXPIRED' ? 'Session expired — sync karein' : 'Error: ' + e.message, 'error');
