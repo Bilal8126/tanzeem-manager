@@ -168,6 +168,13 @@ async function _ensureWriteAccess() {
   return false;
 }
 
+// ── Activity history tracker ──────────────────────────────
+function _trackHistory(action, details) {
+  const admin = localStorage.getItem('tanzeem_user_display') || STATE.loggedInEmail || localStorage.getItem('tanzeem_logged_email') || 'Unknown';
+  const now   = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', hour12: true });
+  sheetsAppend('TrackHistory', [[now, action, details, admin]]).catch(() => {});
+}
+
 // ── Column letter helper (0-indexed) ─────────────────────
 function colLetter(n) {
   let s = '';

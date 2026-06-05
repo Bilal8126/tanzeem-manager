@@ -906,6 +906,7 @@ async function togglePaymentCell(payIdx, mo) {
         STATE.allPayments[payIdx].total = String(paidCount * FEE);
         saveCache(session.label);
         showToast(newVal === 'Paid' ? '✅ Paid ho gaya!' : '✗ Unpaid ho gaya!');
+        _trackHistory(newVal === 'Paid' ? 'Mark Payment' : 'Mark Unpayment', `${cleanName} - ${mo}`);
         if (newVal === 'Paid') {
           _pushNotify('Payment Jama! ✅', `${cleanName} — ${mo} ka payment de diya`);
           _checkAllPaid(mo);

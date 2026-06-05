@@ -314,6 +314,7 @@ async function togglePaymentFromProfile(payIdx, mo, memberIdx) {
         STATE.allPayments[payIdx].total = String(paidCount * FEE);
         saveCache(STATE.currentSession.label);
         showToast(newVal === 'Paid' ? '✅ Paid ho gaya!' : '✗ Unpaid ho gaya!');
+        _trackHistory(newVal === 'Paid' ? 'Mark Payment' : 'Mark Unpayment', `${cleanName} - ${mo}`);
         if (newVal === 'Paid') {
           _pushNotify('Payment Jama! ✅', `${cleanName} — ${mo} ka payment de diya`);
           _checkAllPaid(mo);
@@ -541,6 +542,7 @@ function saveNewMember() {
         STATE.allMembers.push({ row: newRow, id: String(nextId), name, mobile, doj, address, aadhar, status, doe: '', type });
         saveCache(STATE.currentSession.label);
         showToast('Member add ho gaya! ✅');
+        _trackHistory('Member Added', name);
         fetch(CONFIG.WORKER_URL + '/api/push/notify', {
           method: 'POST', headers: {'Content-Type':'application/json'},
           body: JSON.stringify({ title: 'Naya Member Add Hua!', body: `${name} Tanzeem mein shamil ho gaye ✅` })

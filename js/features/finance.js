@@ -229,8 +229,13 @@ async function saveFinanceForm() {
         saveCache(session.label);
         showToast(isEdit ? 'Update ho gaya! ✅' : 'Add ho gaya! ✅');
         if (!isEdit) {
-          if (isDonation) _pushNotify('Naya Donation! 💚', `${name} ne Rs.${amount} jama kiya`);
-          else            _pushNotify('Naya Kharcha! 💸',  `${name} — Rs.${amount}`);
+          if (isDonation) {
+            _trackHistory('Donation Added', `${name} - Rs.${amount}`);
+            _pushNotify('Naya Donation! 💚', `${name} ne Rs.${amount} jama kiya`);
+          } else {
+            _trackHistory('Expense Added', `${name} - Rs.${amount}`);
+            _pushNotify('Naya Kharcha! 💸', `${name} — Rs.${amount}`);
+          }
         }
         closeFinanceForm();
         renderFinance();
