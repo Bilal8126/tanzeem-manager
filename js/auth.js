@@ -118,7 +118,8 @@ function closeProfileMenu() {
 const _VAPID_PUBLIC_KEY = 'BBGQBmrCTi6Ob49n5Jk1qV2BqqVpjPJ7llLu4qUbLUkSHDuB3zl8OznvjUmYGZgD7aacCYtcOE97_GkudaUns78';
 
 function _vapidKey() {
-  const str = atob(_VAPID_PUBLIC_KEY.replace(/-/g,'+').replace(/_/g,'/') + '==');
+  const pad = '='.repeat((4 - _VAPID_PUBLIC_KEY.length % 4) % 4);
+  const str = atob((_VAPID_PUBLIC_KEY + pad).replace(/-/g,'+').replace(/_/g,'/'));
   return Uint8Array.from(str, c => c.charCodeAt(0));
 }
 
