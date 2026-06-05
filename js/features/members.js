@@ -548,9 +548,13 @@ function saveNewMember() {
           const payId     = STATE.allPayments.length + 1;
           const newPayRow = STATE.allPayments.length > 0
             ? Math.max(...STATE.allPayments.map(p => p.row)) + 1 : 2;
-          const lastCol   = colLetter(2 + months.length + 1); // Sr+Name+Fee+months+Total
-          const rowData   = [payId, name, FEE, ...months.map(() => ''), 0];
-          await sheetsPut(`${STATE.currentSession.sheet}!A${newPayRow}:${lastCol}${newPayRow}`, [rowData]);
+          // Insert a blank row first so footer/summary rows shift down
+          await sheetsInsertRow(STATE.currentSession.sheet, newPayRow);
+          const lastMonthCol = colLetter(2 + months.length);       // last month column
+          const totalCol     = colLetter(2 + months.length + 1);   // Total column
+          const totalFormula = `=COUNTIF(D${newPayRow}:${lastMonthCol}${newPayRow},"Paid")*C${newPayRow}`;
+          const rowData      = [payId, name, FEE, ...months.map(() => ''), totalFormula];
+          await sheetsPut(`${STATE.currentSession.sheet}!A${newPayRow}:${totalCol}${newPayRow}`, [rowData]);
           const emptyMonths = {};
           months.forEach(m => { emptyMonths[m] = ''; });
           STATE.allPayments.push({ row: newPayRow, name, amount: String(FEE), months: emptyMonths, total: '0' });

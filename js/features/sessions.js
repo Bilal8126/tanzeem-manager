@@ -500,7 +500,7 @@ async function _doCreateSession() {
       }),
       sRow('---', '---'),
       sRow('Last Year Balance', bal),
-      sRow('Current Total',  `=SUM(P${R0}:P${Rn})`),
+      sRow('Current Total',  `=SUMIF(A${R0}:A1000,">0",P${R0}:P1000)`),
       sRow('Total Donation', `=SUM('${info.donations}'!C2:C10000)`),
       sRow('Grand Total',    `=P${ctR}+P${donR}+P${lybR}`),
       sRow('Total Expense',  `=SUM('${info.expenses}'!C2:C10000)`),
