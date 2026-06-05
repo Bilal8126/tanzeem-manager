@@ -172,8 +172,11 @@ async function _ensureWriteAccess() {
 function _trackHistory(action, details) {
   const admin   = localStorage.getItem('tanzeem_user_display') || STATE.loggedInEmail || localStorage.getItem('tanzeem_logged_email') || 'Unknown';
   const session = STATE.currentSession?.label || '';
-  const now     = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', hour12: true });
-  sheetsAppend('TrackHistory', [[now, action, details, session, admin]]).catch(() => {});
+  const d   = new Date();
+  const opt = { timeZone: 'Asia/Kolkata' };
+  const date = d.toLocaleDateString('en-GB', opt);   // DD/MM/YYYY
+  const time = d.toLocaleTimeString('en-US', { ...opt, hour: '2-digit', minute: '2-digit', hour12: true }); // hh:mm AM/PM
+  sheetsAppend('TrackHistory', [[`${date} ${time}`, action, details, session, admin]]).catch(() => {});
 }
 
 // ── Column letter helper (0-indexed) ─────────────────────

@@ -169,6 +169,9 @@ const _HISTORY_COLORS = {
   'Expense Added':  { bg:'#fee2e2', color:'#991b1b' },
 };
 
+let _historyRows  = [];
+let _historyShown = 10;
+
 async function loadTrackHistory() {
   const el = document.getElementById('historyContent');
   if (!el) return;
@@ -183,25 +186,57 @@ async function loadTrackHistory() {
       el.innerHTML = `<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">Koi activity record nahi hai</div>`;
       return;
     }
-    const recent = [...rows].reverse().slice(0, 100);
-    el.innerHTML = recent.map(([ts, action, details, session, admin], i) => {
-      const ac = _HISTORY_COLORS[action] || { bg:'#f1f5f9', color:'#475569' };
-      return `
-        <div style="padding:10px 0;${i < recent.length-1 ? 'border-bottom:1px solid var(--border);' : ''}">
-          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px">
-            <span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;white-space:nowrap;background:${ac.bg};color:${ac.color}">${action || ''}</span>
-            <span style="font-size:13px;font-weight:600;color:var(--text)">${details || ''}</span>
-          </div>
-          <div style="font-size:11px;color:var(--muted);display:flex;gap:6px;flex-wrap:wrap;align-items:center">
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>
-            <span>${admin || '—'}</span>
-            ${session ? `<span>·</span><span style="color:#0369a1;font-weight:600">${session}</span>` : ''}
-            <span>·</span>
-            <span>${ts || ''}</span>
-          </div>
-        </div>`;
-    }).join('');
+    _historyRows  = [...rows].reverse(); // newest first
+    _historyShown = 10;
+    _renderHistoryRows();
   } catch(e) {
     el.innerHTML = `<div style="text-align:center;padding:20px;color:var(--red);font-size:13px">Error: ${e.message}</div>`;
   }
+}
+
+function _renderHistoryRows() {
+  const el = document.getElementById('historyContent');
+  if (!el) return;
+  const visible  = _historyRows.slice(0, _historyShown);
+  const hasMore  = _historyRows.length > _historyShown;
+  const rowsHtml = visible.map(([ts, action, details, session, admin], i) => {
+    const ac = _HISTORY_COLORS[action] || { bg:'#f1f5f9', color:'#475569' };
+    return `
+      <div style="padding:10px 0;${i < visible.length-1 ? 'border-bottom:1px solid var(--border);' : ''}">
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px">
+          <span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;white-space:nowrap;background:${ac.bg};color:${ac.color}">${action || ''}</span>
+          <span style="font-size:13px;font-weight:600;color:var(--text)">${details || ''}</span>
+        </div>
+        <div style="font-size:11px;color:var(--muted);display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>
+          <span>${admin || '—'}</span>
+          ${session ? `<span>·</span><span style="color:#0369a1;font-weight:600">${session}</span>` : ''}
+          <span>·</span><span>${ts || ''}</span>
+        </div>
+      </div>`;
+  }).join('');
+
+  el.innerHTML = `
+    <div id="historyList" style="max-height:520px;overflow-y:auto;overscroll-behavior:contain">
+      ${rowsHtml}
+      ${hasMore
+        ? `<div style="text-align:center;padding:14px 0">
+             <button onclick="_historyLoadMore()" style="background:var(--green-light,#f0fdf4);border:1px solid var(--green,#16a34a);color:var(--green-dark,#0f4a29);border-radius:10px;padding:8px 20px;font-size:13px;font-weight:600;cursor:pointer">
+               Load More (${_historyRows.length - _historyShown} remaining)
+             </button>
+           </div>`
+        : `<div style="text-align:center;padding:10px 0;color:var(--muted);font-size:11px">— ${_historyRows.length} total records —</div>`
+      }
+    </div>`;
+}
+
+function _historyLoadMore() {
+  _historyShown += 10;
+  const list = document.getElementById('historyList');
+  const scrollTop = list ? list.scrollTop : 0;
+  _renderHistoryRows();
+  requestAnimationFrame(() => {
+    const el = document.getElementById('historyList');
+    if (el) el.scrollTop = scrollTop;
+  });
 }
