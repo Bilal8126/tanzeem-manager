@@ -24,15 +24,7 @@ function loadGoogleScript() {
 // Called on page load — restores session from cache without needing a token
 function checkAutoSignIn() {
   const hasFlag = !!localStorage.getItem(_AUTH_FLAG);
-  // Also check sessions cache or any tanzeem data cache (covers users before flag was added)
-  const hasSessionsCache  = !!localStorage.getItem('tanzeem_sessions_v1');
-  const hasCachedData     = hasSessionsCache ||
-    CONFIG.SESSIONS.some(s => !!localStorage.getItem('tanzeem_v1_' + s.label));
-
-  if (!hasFlag && !hasCachedData) return;
-
-  // Ensure flag is set for future loads
-  localStorage.setItem(_AUTH_FLAG, '1');
+  if (!hasFlag) return;
 
   // Restore saved profile (name, photo, email)
   const savedName  = localStorage.getItem('tanzeem_user_display') || '';
@@ -121,6 +113,14 @@ function _vapidKey() {
   const pad = '='.repeat((4 - _VAPID_PUBLIC_KEY.length % 4) % 4);
   const str = atob((_VAPID_PUBLIC_KEY + pad).replace(/-/g,'+').replace(/_/g,'/'));
   return Uint8Array.from(str, c => c.charCodeAt(0));
+}
+
+function _pushNotify(title, body) {
+  fetch(CONFIG.WORKER_URL + '/api/push/notify', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ title, body })
+  }).catch(() => {});
 }
 
 async function subscribePush() {

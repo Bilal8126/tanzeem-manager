@@ -122,16 +122,30 @@ async function handlePushSubscribe(request, env, origin) {
   return json({ ok: true }, 200, origin);
 }
 
+// ── Shared: send to all subscribers ──────────────────────────
+async function _sendToAll(env, title, body) {
+  if (!env.PUSH_SUBS) return { sent: 0, total: 0 };
+  const raw  = await env.PUSH_SUBS.get('subscriptions');
+  if (!raw)  return { sent: 0, total: 0 };
+  const subs = JSON.parse(raw);
+  const res  = await Promise.allSettled(subs.map(s => dispatchPush(env, s, title, body || '')));
+  return { sent: res.filter(r => r.status === 'fulfilled').length, total: subs.length };
+}
+
 // ── Route: POST /api/push/notify ─────────────────────────────
 async function handlePushNotify(request, env, origin) {
   if (!env.PUSH_SUBS) return json({error:'PUSH_SUBS KV not bound'},500,origin);
   const { title, body } = await request.json();
   if (!title) return json({error:'title required'},400,origin);
-  const raw  = await env.PUSH_SUBS.get('subscriptions');
-  if (!raw)  return json({ sent:0, total:0 }, 200, origin);
-  const subs = JSON.parse(raw);
-  const results = await Promise.allSettled(subs.map(s => dispatchPush(env, s, title, body || '')));
-  return json({ sent: results.filter(r=>r.status==='fulfilled').length, total: subs.length }, 200, origin);
+  return json(await _sendToAll(env, title, body), 200, origin);
+}
+
+// ── Route: POST /api/push/stats ───────────────────────────────
+async function handlePushStats(request, env, origin) {
+  if (!env.PUSH_SUBS) return json({error:'PUSH_SUBS KV not bound'},500,origin);
+  const data = await request.json();
+  await env.PUSH_SUBS.put('collection_stats', JSON.stringify({ ...data, updatedAt: new Date().toISOString() }));
+  return json({ ok: true }, 200, origin);
 }
 
 // ── Admin Drive token (refresh → access) ─────────────────────
@@ -280,6 +294,23 @@ async function handleAI(request, env, origin) {
 
 // ── Main handler ──────────────────────────────────────────────
 export default {
+  async scheduled(event, env) {
+    const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    const mo = MONTHS[new Date().getMonth()];
+    if (event.cron === '0 6 1 * *') {
+      // 1st of month — monthly reminder
+      await _sendToAll(env, `${mo} Collection Shuru! 📋`, `${mo} ki payment collection start ho gayi — abhi collect karein`);
+    } else {
+      // Weekly Monday — unpaid reminder
+      const raw = await env.PUSH_SUBS?.get('collection_stats').catch(() => null);
+      if (raw) {
+        const { month, unpaidCount } = JSON.parse(raw);
+        if (unpaidCount > 0)
+          await _sendToAll(env, `${unpaidCount} Members Baaki Hain! ⏰`, `${month} mein ${unpaidCount} members ka payment abhi tak nahi aaya`);
+      }
+    }
+  },
+
   async fetch(request, env) {
     const origin  = request.headers.get('Origin') || '';
     const allowed = ALLOWED_ORIGINS.some(o => origin === o || origin.startsWith(o));
@@ -299,6 +330,9 @@ export default {
       }
       if (url.pathname === '/api/push/notify' && request.method === 'POST') {
         return await handlePushNotify(request, env, origin);
+      }
+      if (url.pathname === '/api/push/stats' && request.method === 'POST') {
+        return await handlePushStats(request, env, origin);
       }
       if (url.pathname === '/api/ai' && request.method === 'POST') {
         return await handleAI(request, env, origin);

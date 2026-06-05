@@ -103,6 +103,34 @@ function buildMemberStats(payments) {
   });
 }
 
+// ── Push notification helpers ─────────────────────────────
+
+function _checkAllPaid(mo) {
+  const activeReg = STATE.allMembers.filter(m => m.status === 'Active' && (m.type || 'Regular') === 'Regular');
+  if (!activeReg.length) return;
+  const paidCount = STATE.allPayments.filter(p => {
+    const m = STATE.allMembers.find(mb => nameMatch(mb.name, p.name));
+    return m && m.status === 'Active' && (m.type || 'Regular') === 'Regular' && isPaid(p.months[mo]);
+  }).length;
+  if (paidCount >= activeReg.length) {
+    const total = (activeReg.length * FEE).toLocaleString('en-IN');
+    _pushNotify(`${mo} Collection Mukammal! 🎉`, `Tamam ${activeReg.length} members ne jama kar diya — Rs.${total} ✅`);
+  }
+}
+
+function _updatePushStats(mo) {
+  const activeReg = STATE.allMembers.filter(m => m.status === 'Active' && (m.type || 'Regular') === 'Regular');
+  const unpaid = activeReg.filter(m => {
+    const p = STATE.allPayments.find(p => nameMatch(p.name, m.name));
+    return !p || !isPaid(p.months[mo]);
+  });
+  fetch(CONFIG.WORKER_URL + '/api/push/stats', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ month: mo, unpaidCount: unpaid.length, totalActive: activeReg.length })
+  }).catch(() => {});
+}
+
 // ── Toggle handlers ───────────────────────────────────────
 
 function toggleOverdue()  { _showOverdue  = !_showOverdue;  renderPayments(); }
@@ -878,6 +906,13 @@ async function togglePaymentCell(payIdx, mo) {
         STATE.allPayments[payIdx].total = String(paidCount * FEE);
         saveCache(session.label);
         showToast(newVal === 'Paid' ? '✅ Paid ho gaya!' : '✗ Unpaid ho gaya!');
+        if (newVal === 'Paid') {
+          _pushNotify('Payment Jama! ✅', `${cleanName} — ${mo} ka payment de diya`);
+          _checkAllPaid(mo);
+        } else {
+          _pushNotify('Payment Hata Diya ✗', `${cleanName} — ${mo} payment wapas liya`);
+        }
+        _updatePushStats(mo);
         renderPayments();
       } catch(e) {
         showToast(e.message === 'AUTH_EXPIRED' ? 'Session expired — sync karein' : 'Error: ' + e.message, 'error');

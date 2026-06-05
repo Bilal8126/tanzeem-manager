@@ -314,6 +314,13 @@ async function togglePaymentFromProfile(payIdx, mo, memberIdx) {
         STATE.allPayments[payIdx].total = String(paidCount * FEE);
         saveCache(STATE.currentSession.label);
         showToast(newVal === 'Paid' ? '✅ Paid ho gaya!' : '✗ Unpaid ho gaya!');
+        if (newVal === 'Paid') {
+          _pushNotify('Payment Jama! ✅', `${cleanName} — ${mo} ka payment de diya`);
+          _checkAllPaid(mo);
+        } else {
+          _pushNotify('Payment Hata Diya ✗', `${cleanName} — ${mo} payment wapas liya`);
+        }
+        _updatePushStats(mo);
         openMemberProfile(memberIdx);
       } catch(e) {
         showToast(e.message === 'AUTH_EXPIRED' ? 'Session expired — sync karein' : 'Error: ' + e.message, 'error');
