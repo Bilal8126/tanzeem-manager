@@ -83,6 +83,19 @@ async function sheetsDeleteRow(sheetName, rowNumber) {
   return d;
 }
 
+async function sheetsAppendRaw(sheetTab, values) {
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/${encodeURIComponent(sheetTab + '!A1')}:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`;
+  const r = await fetch(url, {
+    method: 'POST',
+    headers: { Authorization: 'Bearer ' + STATE.accessToken, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ values })
+  });
+  if (r.status === 401) throw new Error('AUTH_EXPIRED');
+  const d = await r.json();
+  if (d.error) throw new Error(d.error.message);
+  return d;
+}
+
 async function sheetsAppend(sheetTab, values) {
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/${encodeURIComponent(sheetTab + '!A1')}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
   const r = await fetch(url, {

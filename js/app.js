@@ -177,7 +177,7 @@ function _trackHistory(action, details) {
   const pad  = n => String(n).padStart(2, '0');
   const h    = ist.getHours();
   const ts   = `${pad(ist.getDate())}/${pad(ist.getMonth()+1)}/${ist.getFullYear()} ${pad(h%12||12)}:${pad(ist.getMinutes())} ${h>=12?'PM':'AM'}`;
-  sheetsAppend('TrackHistory', [[ts, action, details, session, admin]]).catch(() => {});
+  sheetsAppendRaw('TrackHistory', [[ts, action, details, session, admin]]).catch(() => {});
 }
 
 // ── Column letter helper (0-indexed) ─────────────────────
