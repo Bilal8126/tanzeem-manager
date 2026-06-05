@@ -178,8 +178,7 @@ async function loadTrackHistory() {
   }
   el.innerHTML = `<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">Loading...</div>`;
   try {
-    const data = await sheetsGet('TrackHistory!A2:E500');
-    const rows = (data.values || []).filter(r => r.length >= 2);
+    const rows = (await sheetsGet('TrackHistory!A2:E500')).filter(r => r.length >= 2);
     if (!rows.length) {
       el.innerHTML = `<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">Koi activity record nahi hai</div>`;
       return;
