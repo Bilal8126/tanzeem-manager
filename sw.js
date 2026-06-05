@@ -1,4 +1,4 @@
-const CACHE = 'tanzeem-v147'; // bump this version on every deploy → triggers auto-reload for all users
+const CACHE = 'tanzeem-v148'; // bump this version on every deploy → triggers auto-reload for all users
 const ASSETS = [
   './',
   './index.html',
@@ -63,5 +63,30 @@ self.addEventListener('fetch', e => {
         return res;
       });
     }).catch(() => caches.match('./index.html')) // offline fallback
+  );
+});
+
+// ── Push notifications ────────────────────────────────────────
+self.addEventListener('push', e => {
+  let title = 'Tanzeem Manager';
+  let body  = '';
+  if (e.data) {
+    try { ({ title, body } = e.data.json()); } catch (_) {}
+  }
+  e.waitUntil(
+    self.registration.showNotification(title, {
+      body,
+      icon:  './icons/icon.svg',
+      badge: './icons/icon.svg',
+      tag:   'tanzeem-update'
+    })
+  );
+});
+
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  e.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true })
+      .then(cls => cls.length ? cls[0].focus() : clients.openWindow('./'))
   );
 });

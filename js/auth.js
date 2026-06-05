@@ -115,6 +115,32 @@ function closeProfileMenu() {
   if (ov) ov.style.display = 'none';
 }
 
+const _VAPID_PUBLIC_KEY = 'BBGQBmrCTi6Ob49n5Jk1qV2BqqVpjPJ7llLu4qUbLUkSHDuB3zl8OznvjUmYGZgD7aacCYtcOE97_GkudaUns78';
+
+function _vapidKey() {
+  const str = atob(_VAPID_PUBLIC_KEY.replace(/-/g,'+').replace(/_/g,'/') + '==');
+  return Uint8Array.from(str, c => c.charCodeAt(0));
+}
+
+async function subscribePush() {
+  if (!('PushManager' in window) || !('serviceWorker' in navigator)) return;
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    let sub   = await reg.pushManager.getSubscription();
+    if (!sub) {
+      const perm = await Notification.requestPermission();
+      if (perm !== 'granted') return;
+      sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: _vapidKey() });
+    }
+    const email = STATE.loggedInEmail || localStorage.getItem('tanzeem_logged_email') || '';
+    await fetch(CONFIG.WORKER_URL + '/api/push/subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ subscription: sub.toJSON(), email })
+    });
+  } catch(e) { /* silently ignore */ }
+}
+
 async function _checkAuthUser(token) {
   try {
     const [tokenInfo, sheetRes] = await Promise.all([
@@ -159,6 +185,7 @@ async function signIn() {
         _scheduleRefresh();
         localStorage.setItem(_AUTH_FLAG, '1');
         _fetchAndStoreProfile(resp.access_token);
+        subscribePush();
         document.getElementById('setupScreen').style.display = 'none';
         document.getElementById('mainApp').style.display = 'block';
         if (typeof loadSessionsConfig === 'function') await loadSessionsConfig();

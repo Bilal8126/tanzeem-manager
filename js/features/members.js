@@ -534,6 +534,10 @@ function saveNewMember() {
         STATE.allMembers.push({ row: newRow, id: String(nextId), name, mobile, doj, address, aadhar, status, doe: '', type });
         saveCache(STATE.currentSession.label);
         showToast('Member add ho gaya! ✅');
+        fetch(CONFIG.WORKER_URL + '/api/push/notify', {
+          method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ title: 'Naya Member Add Hua!', body: `${name} Tanzeem mein shamil ho gaye ✅` })
+        }).catch(() => {});
         closeMemberProfile();
         renderMembers();
       } catch(e) {
