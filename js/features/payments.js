@@ -1712,8 +1712,37 @@ async function _qmpSave() {
     }
 
     saveCache(session.label);
+
+    // Collect tracking data before _closeQmp clears _qmpSel
+    const _trackData = [];
+    const _uniqueMonths = new Set();
+    for (const [memberName, monthSet] of _qmpSel) {
+      const months = [...monthSet];
+      months.forEach(mo => _uniqueMonths.add(mo));
+      _trackData.push({ cleanName: memberName.replace(/\(.*?\)/g, '').trim(), months });
+    }
+
     _closeQmp();
     showToast(`✅ ${batchData.length} payment${batchData.length > 1 ? 's' : ''} mark ho gayi!`);
+
+    // Track history per member
+    for (const { cleanName, months } of _trackData) {
+      _trackHistory('Mark Payment', `${cleanName} - ${months.join(', ')}`);
+    }
+
+    // Push notification
+    if (_trackData.length === 1 && _trackData[0].months.length === 1) {
+      _pushNotify('Payment Jama! ✅', `${_trackData[0].cleanName} — ${_trackData[0].months[0]} ka payment de diya`);
+    } else if (_trackData.length > 0) {
+      _pushNotify(`${batchData.length} Payments Mark Ho Gayi! ✅`, `${_trackData.length} member${_trackData.length > 1 ? 's' : ''} ki ${batchData.length} payments jama ho gayi`);
+    }
+
+    // Check collection complete and update stats for each unique month
+    for (const mo of _uniqueMonths) {
+      _checkAllPaid(mo);
+      _updatePushStats(mo);
+    }
+
     renderDashboard();
   } catch(e) {
     showToast(e.message === 'AUTH_EXPIRED' ? 'Session expired — sync karein' : 'Error: ' + e.message, 'error');

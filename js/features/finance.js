@@ -228,10 +228,18 @@ async function saveFinanceForm() {
         }
         saveCache(session.label);
         showToast(isEdit ? 'Update ho gaya! ✅' : 'Add ho gaya! ✅');
-        if (!isEdit) {
-          if (isDonation) {
+        if (isDonation) {
+          if (isEdit) {
+            _trackHistory('Donation Updated', `${name} - Rs.${amount}`);
+            _pushNotify('Donation Update! ✏️', `${name} ki donation update ki gayi — Rs.${amount}`);
+          } else {
             _trackHistory('Donation Added', `${name} - Rs.${amount}`);
             _pushNotify('Naya Donation! 💚', `${name} ne Rs.${amount} jama kiya`);
+          }
+        } else {
+          if (isEdit) {
+            _trackHistory('Expense Updated', `${name} - Rs.${amount}`);
+            _pushNotify('Kharcha Update! ✏️', `${name} — Rs.${amount}`);
           } else {
             _trackHistory('Expense Added', `${name} - Rs.${amount}`);
             _pushNotify('Naya Kharcha! 💸', `${name} — Rs.${amount}`);
@@ -273,6 +281,13 @@ async function deleteFinanceItem(type, idx) {
         }
         saveCache(session.label);
         showToast('Delete ho gaya! 🗑');
+        if (isDonation) {
+          _trackHistory('Donation Deleted', `${label} - Rs.${item.amount}`);
+          _pushNotify('Donation Delete Ho Gayi! 🗑', `${label} ki donation remove ki gayi — Rs.${item.amount}`);
+        } else {
+          _trackHistory('Expense Deleted', `${label} - Rs.${item.amount}`);
+          _pushNotify('Kharcha Delete Ho Gaya! 🗑', `${label} — Rs.${item.amount}`);
+        }
         renderFinance();
       } catch(e) {
         showToast(e.message === 'AUTH_EXPIRED' ? 'Session expired — sync karein' : 'Error: ' + e.message, 'error');
