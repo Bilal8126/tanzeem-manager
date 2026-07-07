@@ -149,8 +149,13 @@ function nameMatch(a, b) {
   a = normName(a);
   b = normName(b);
   if (a === b) return true;
-  // Allow up to 1 edit per ~7 chars (handles Siddiqi/Siddiqui etc.)
-  return levenshtein(a, b) <= Math.max(1, Math.floor(Math.max(a.length, b.length) / 7));
+  const maxLen = Math.max(a.length, b.length);
+  // Full names (with space): stricter — 1 edit only if 13+ chars (prevents Kamal/Jamal false match)
+  if (a.includes(' ') || b.includes(' ')) {
+    return levenshtein(a, b) <= Math.floor(maxLen / 13);
+  }
+  // Single words (surnames): allow 1 edit per 7 chars (handles Siddiqi/Siddiqui etc.)
+  return levenshtein(a, b) <= Math.max(1, Math.floor(maxLen / 7));
 }
 
 // ── Auto-sync + wait for access token ────────────────────
