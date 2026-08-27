@@ -1285,6 +1285,7 @@ input:focus, select:focus, textarea:focus {
   white-space: nowrap;
   box-shadow: 0 6px 24px rgba(0,0,0,0.2);
   letter-spacing: -0.1px;
+  pointer-events: none;
 }
 
 /* ── Progress Bar (Dashboard) ──────────────────────── */
@@ -1404,6 +1405,8 @@ input:focus, select:focus, textarea:focus {
   border-color: transparent;
   box-shadow: 0 3px 8px rgba(5,150,105,.28);
 }
+.qmp-pill.future { border-style: dashed; border-color: #bfdbfe; background: #eff6ff; color: #3b82f6; }
+.qmp-pill.future.selected { border-color: transparent; background: linear-gradient(135deg, #064e3b, #059669); color: #fff; }
 .qmp-empty {
   text-align: center;
   color: var(--muted);

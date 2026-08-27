@@ -33,7 +33,7 @@ function showToast(msg, type = 'success') {
   t.style.color = '#fff';
   t.style.opacity = '1';
   clearTimeout(t._timer);
-  t._timer = setTimeout(() => { t.style.opacity = '0'; }, 2800);
+  t._timer = setTimeout(() => { t.style.opacity = '0'; }, 3000);
 }
 
 function showLoading(id) {
@@ -61,9 +61,10 @@ function updateSyncStatus(ts) {
   if (!el) return;
   if (!ts) { el.textContent = ''; return; }
   const mins = Math.round((Date.now() - ts) / 60000);
-  if (mins < 1)   el.textContent = 'just now';
-  else if (mins < 60) el.textContent = mins + 'm ago';
-  else            el.textContent = Math.round(mins / 60) + 'h ago';
+  if (mins < 1)        el.textContent = 'just now';
+  else if (mins < 60)  el.textContent = mins + 'm ago';
+  else if (mins < 2880) el.textContent = Math.round(mins / 60) + 'h ago';
+  else                 el.textContent = Math.round(mins / 1440) + 'd ago';
 }
 
 // ── PWA Install Prompt ───────────────────────────────────

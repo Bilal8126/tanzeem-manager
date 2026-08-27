@@ -1596,7 +1596,7 @@ function _renderQmpModal() {
 
   // Build member rows — show only members with at least one unpaid past/current month
   const memberRows = activeStats.map(s => {
-    const unpaidMonths = allMonths.filter(mo => isPastOrCurrent(mo) && !isPaid(s.months[mo]));
+    const unpaidMonths = allMonths.filter(mo => !isPaid(s.months[mo]));
     if (unpaidMonths.length === 0) return ''; // all paid — skip
 
     const initials = getInitials(s.name.replace(/\(.*?\)/g, '').trim());
@@ -1604,7 +1604,8 @@ function _renderQmpModal() {
 
     const pills = unpaidMonths.map(mo => {
       const sel = selSet.has(mo);
-      return `<span class="qmp-pill${sel ? ' selected' : ''}"
+      const fut = !isPastOrCurrent(mo);
+      return `<span class="qmp-pill${sel ? ' selected' : ''}${fut ? ' future' : ''}"
         onclick="_qmpToggle(this,'${s.name.replace(/'/g,"\\'")}','${mo}')">${mo}</span>`;
     }).join('');
 
@@ -1628,7 +1629,7 @@ function _renderQmpModal() {
       </div>
       <div style="font-size:12px;color:var(--muted);margin-bottom:10px">Months ko tap karein select karne ke liye</div>
       <div style="overflow-y:auto;flex:1">
-        ${memberRows || '<div class="qmp-empty">✅ Sab active members ne is session ke sab past months pay kar diye!</div>'}
+        ${memberRows || '<div class="qmp-empty">✅ Sab active members ne is session ke sab months pay kar diye!</div>'}
       </div>
       ${memberRows ? `
       <div style="padding-top:12px;border-top:1px solid #f1f5f9;margin-top:4px">

@@ -334,12 +334,14 @@ async function togglePaymentFromProfile(payIdx, mo, memberIdx) {
 
 let _editMemberStatus = null;
 let _editMemberType   = null;
+let _editMemberRef    = null;
 
 function openEditMember(idx) {
   const m = STATE.allMembers[idx];
   if (!m) return;
   _editMemberStatus = m.status;
   _editMemberType   = m.type || 'Regular';
+  _editMemberRef    = m;
   document.getElementById('memberProfileContent').innerHTML = `
     <div class="modal-header">
       <div class="modal-title">Edit Member</div>
@@ -368,7 +370,9 @@ function openEditMember(idx) {
       </div>
     </div>
     <button class="btn btn-primary" style="width:100%;margin-top:6px;display:flex;align-items:center;justify-content:center;gap:8px" onclick="saveEditMember(${idx})"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>Save Changes</button>
+    <!--
     <button class="btn btn-danger" style="width:100%;margin-top:8px;display:flex;align-items:center;justify-content:center;gap:8px" onclick="deleteMember(${idx})"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>Member Delete Karein</button>
+    -->
   `;
 }
 
@@ -378,7 +382,18 @@ function setEditStatus(s) {
   document.getElementById('emStatusInactive').className = 'btn ' + (s !== 'Active' ? 'btn-danger' : 'btn-secondary');
 }
 
+function _memberHasSessionPayment(m) {
+  if (!m) return false;
+  const payRec = STATE.allPayments.find(p => nameMatch(p.name, m.name));
+  if (!payRec) return false;
+  return Object.values(payRec.months).some(v => isPaid(v));
+}
+
 function setEditType(t) {
+  if (t === 'Donor' && _memberHasSessionPayment(_editMemberRef)) {
+    showToast('Is member ne payment ki hai — wo payment Donation mein add karke payment sheet se hatayein, tabhi Donor bana sakte hain', 'error');
+    return;
+  }
   _editMemberType = t;
   document.getElementById('emTypeRegular').className = 'btn ' + (t === 'Regular' ? 'btn-primary' : 'btn-secondary');
   document.getElementById('emTypeDonor').className   = 'btn ' + (t === 'Donor'   ? 'btn-primary' : 'btn-secondary');
