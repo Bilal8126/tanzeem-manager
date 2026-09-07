@@ -382,6 +382,8 @@ function clearChat() {
     <div class="msg ai">
       <div class="msg-bubble">Assalamu Alaikum! Main aapka Tanzeem assistant hoon. Members, payments, ya finance ke baare mein kuch bhi poochein.</div>
     </div>`;
+  const input = document.getElementById('chatInput');
+  if (input) input.value = '';
 }
 
 // ── Lightweight markdown → HTML (AI responses + local answers)
