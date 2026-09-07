@@ -85,21 +85,33 @@ document.addEventListener('visibilitychange', () => {
 });
 
 function _showSyncPrompt() {
-  const el = document.getElementById('syncPromptBanner');
+  const el = document.getElementById('syncPromptOverlay');
   if (el) el.style.display = 'flex';
 }
 
 function _hideSyncPrompt() {
-  const el = document.getElementById('syncPromptBanner');
+  const el = document.getElementById('syncPromptOverlay');
   if (el) el.style.display = 'none';
 }
 
 async function _runIdleSync() {
-  _hideSyncPrompt();
-  const block = document.getElementById('syncBlockOverlay');
-  if (block) block.style.display = 'flex';
+  const icon = document.getElementById('syncPromptIcon');
+  const text = document.getElementById('syncPromptText');
+  const sub  = document.getElementById('syncPromptSub');
+  const btn  = document.getElementById('syncPromptBtn');
+  if (icon) icon.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="animation:spin .9s linear infinite"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>`;
+  if (text) text.textContent = 'Syncing…';
+  if (sub)  sub.textContent  = 'Thoda intezaar karein';
+  if (btn)  { btn.disabled = true; btn.style.opacity = '0.6'; btn.textContent = 'Syncing…'; }
+
   await syncData();
-  if (block) block.style.display = 'none';
+  _hideSyncPrompt();
+
+  // Reset back to the default prompt state for next time
+  if (icon) icon.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>`;
+  if (text) text.textContent = 'Naya data ho sakta hai';
+  if (sub)  sub.textContent  = 'Latest data ke liye sync karna zaroori hai';
+  if (btn)  { btn.disabled = false; btn.style.opacity = '1'; btn.textContent = 'Sync Now'; }
 }
 
 // ── PWA Install Prompt ───────────────────────────────────
