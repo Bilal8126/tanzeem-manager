@@ -63,7 +63,7 @@ function renderDashboard() {
   const isActiveSess = !!(CONFIG.SESSIONS[STATE.currentSessionIdx]?.active);
   const qaMarkPay    = isActiveSess
     ? `onclick="showQuickMarkPayment()"`
-    : `onclick="showToast('Sirf active session mein payment mark ho sakti hai','error')" style="opacity:.55"`;
+    : `onclick="showAlert('Edit Nahi Ho Sakta','Sirf active session mein payment mark ho sakti hai.')" style="opacity:.55"`;
 
   document.getElementById('dashboardContent').innerHTML = `
     <div class="metrics">
@@ -87,6 +87,11 @@ function renderDashboard() {
         <div class="metric-value sm" style="color:${balanceColor}">${formatCurrency(s.balance)}</div>
         <div class="metric-bg-icon"><svg width="58" height="58" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.18"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
       </div>
+    </div>
+
+    <div id="activitySection" style="display:none">
+      <div class="stories-title">Last 10 Activity in Tanzeem</div>
+      <div id="storiesRow" class="stories-row"></div>
     </div>
 
     ${progressCard}
@@ -159,6 +164,7 @@ function renderDashboard() {
     </div>`;
 
   setTimeout(() => buildDashChart(months, monthlyTotals), 80);
+  if (isActiveSess) _loadRecentActivity();
 }
 
 function buildDashChart(months, data) {
@@ -211,4 +217,110 @@ function buildDashChart(months, data) {
       }
     }
   });
+}
+
+// ── Recent Activity "stories" row (last 5, current active session only) ──
+const _STORY_META = {
+  'Member Added':     { grad: 'linear-gradient(145deg,#064e3b 0%,#047857 55%,#059669 85%,#2563eb 130%)', label: 'Naya Member',
+    icon: '<path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/>' },
+  'Member Updated':   { grad: 'linear-gradient(145deg,#92400e 0%,#d97706 60%,#f59e0b 120%)', label: 'Member Edit',
+    icon: '<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>' },
+  'Member Deleted':   { grad: 'linear-gradient(145deg,#7f1d1d 0%,#b91c1c 55%,#ef4444 120%)', label: 'Member Delete',
+    icon: '<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>' },
+  'Mark Payment':     { grad: 'linear-gradient(145deg,#1e3a8a 0%,#1d4ed8 55%,#3b82f6 120%)', label: 'Payment',
+    icon: '<circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/>' },
+  'Mark Unpayment':   { grad: 'linear-gradient(145deg,#881337 0%,#be123c 55%,#f43f5e 120%)', label: 'Unpaid',
+    icon: '<circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>' },
+  'Donation Added':   { grad: 'linear-gradient(145deg,#064e3b 0%,#059669 55%,#34d399 120%)', label: 'Donation',
+    icon: '<polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/>' },
+  'Donation Updated': { grad: 'linear-gradient(145deg,#92400e 0%,#d97706 60%,#f59e0b 120%)', label: 'Donation Edit',
+    icon: '<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>' },
+  'Donation Deleted': { grad: 'linear-gradient(145deg,#7f1d1d 0%,#b91c1c 55%,#ef4444 120%)', label: 'Donation Del',
+    icon: '<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>' },
+  'Expense Added':    { grad: 'linear-gradient(145deg,#7f1d1d 0%,#b91c1c 55%,#ef4444 120%)', label: 'Expense',
+    icon: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>' },
+  'Expense Updated':  { grad: 'linear-gradient(145deg,#92400e 0%,#d97706 60%,#f59e0b 120%)', label: 'Expense Edit',
+    icon: '<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>' },
+  'Expense Deleted':  { grad: 'linear-gradient(145deg,#831843 0%,#be185d 55%,#ec4899 120%)', label: 'Expense Del',
+    icon: '<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>' },
+  _default: { grad: 'linear-gradient(145deg,#334155 0%,#475569 60%,#64748b 120%)', label: 'Activity',
+    icon: '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>' },
+};
+
+let _recentActivity = [];
+
+async function _loadRecentActivity() {
+  const section = document.getElementById('activitySection');
+  const el = document.getElementById('storiesRow');
+  if (!el || !section || !STATE.accessToken) return;
+  try {
+    const rows = (await sheetsGet('TrackHistory!A1:E1000')).filter(r => r.length >= 2);
+    if (STATE.currentScreen !== 'dashboard') return; // user navigated away while fetching
+    _recentActivity = rows.slice(-10).reverse(); // newest first, last 10
+    if (!_recentActivity.length) { section.style.display = 'none'; el.innerHTML = ''; return; }
+    section.style.display = 'block';
+    el.innerHTML = _recentActivity.map(([, action], i) => {
+      const meta = _STORY_META[action] || _STORY_META._default;
+      return `
+        <div class="story-item" onclick="_showActivityDetail(${i})">
+          <div class="story-circle" style="background:${meta.grad}">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">${meta.icon}</svg>
+          </div>
+          <div class="story-label">${meta.label}</div>
+        </div>`;
+    }).join('');
+  } catch (e) { /* non-critical widget — fail silently */ }
+}
+
+// Builds a natural Hinglish sentence from the raw TrackHistory row.
+// `details` formats (set by _trackHistory callers): see js/features/{members,payments,finance}.js
+function _activitySentence(action, details) {
+  const d = details || '';
+  const splitDash = s => s.split(' - ').map(x => x.trim());
+
+  switch (action) {
+    case 'Member Added':
+      return `${d} ko Tanzeem mein add kiya`;
+    case 'Member Deleted':
+      return `${d} ko Tanzeem se remove kiya`;
+    case 'Member Updated': {
+      const [name, changes] = d.split(' — ').map(x => x.trim());
+      return `${name || d} ki profile update ki${changes ? ' (' + changes + ')' : ''}`;
+    }
+    case 'Mark Payment':
+    case 'Mark Unpayment': {
+      const [name, months] = splitDash(d);
+      const verb = action === 'Mark Payment' ? 'mark' : 'unmark';
+      return `${name || d} ki ${months || ''} ki payment ${verb} ki`;
+    }
+    case 'Donation Added':
+    case 'Donation Updated':
+    case 'Donation Deleted': {
+      const [name, amount, note] = splitDash(d);
+      const verb = action === 'Donation Added' ? 'add ki' : action === 'Donation Updated' ? 'update ki' : 'delete ki';
+      return `${name || d} ki ${amount || ''} ki donation ${verb}${note ? ' ' + note + ' ke liye' : ''}`;
+    }
+    case 'Expense Added':
+    case 'Expense Updated':
+    case 'Expense Deleted': {
+      const [desc, amount] = splitDash(d);
+      const verb = action === 'Expense Added' ? 'add kiya' : action === 'Expense Updated' ? 'update kiya' : 'delete kiya';
+      return `${desc || d} ke liye ${amount || ''} ka kharcha ${verb}`;
+    }
+    default:
+      return d;
+  }
+}
+
+function _showActivityDetail(i) {
+  const row = _recentActivity[i];
+  if (!row) return;
+  const [ts, action, details] = row;
+  const admin = row[4];
+  const meta = _STORY_META[action] || _STORY_META._default;
+  const sentence = _activitySentence(action, details);
+  showAlert(
+    meta.label,
+    `${sentence} ${admin || 'kisi'} ne, ${ts || '—'} ko.`
+  );
 }

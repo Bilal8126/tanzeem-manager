@@ -200,7 +200,7 @@ function cancelGalleryMultiSelect() { _gMulti = false; _gSelected.clear(); rende
 // ── Upload ────────────────────────────────────────────────────
 
 function openGalleryUpload() {
-  if (!_gallerySgnedIn()) { showToast('Upload ke liye pehle Sign in karein', 'error'); return; }
+  if (!_gallerySgnedIn()) { showAlert('Sign In Zaroori Hai', 'Photo upload karne ke liye pehle Sign in karein.'); return; }
   _histPush({ modal: 'galleryUpload' });
   document.getElementById('galleryUploadOverlay').classList.add('open');
 }
@@ -217,8 +217,8 @@ let _pendingUploadFiles = [];
 function _galleryFileChanged(input) {
   const files = Array.from(input.files || []);
   if (!files.length) return;
-  if (files.some(f => !f.type.startsWith('image/'))) { showToast('Sirf images upload kar sakte hain', 'error'); return; }
-  if (files.length > 20) { showToast('Maximum 20 photos ek baar mein select karein', 'error'); return; }
+  if (files.some(f => !f.type.startsWith('image/'))) { showAlert('Sirf Images Chalengi', 'Sirf image files upload kar sakte hain.'); return; }
+  if (files.length > 20) { showAlert('Limit Paar Ho Gayi', 'Maximum 20 photos ek baar mein select karein.'); return; }
 
   _pendingUploadFiles = files;
   closeGalleryUpload();
@@ -338,11 +338,11 @@ async function _doUpload(file, occasion, note) {
     _gLoaded = true;
     _showUploadProgress('Upload complete!', 1, 1, '');
     setTimeout(_hideUploadProgress, 2000);
-    showToast('Photo upload ho gayi!');
+    showAlert('Photo Upload Ho Gayi', 'Photo Tanzeem Gallery mein add ho gayi! ✅');
     if (STATE.currentScreen === 'gallery') renderGallery();
   } catch (e) {
     _hideUploadProgress();
-    showToast('Upload error: ' + e.message, 'error');
+    showAlert('Upload Error', 'Upload nahi ho paya: ' + e.message);
   }
 }
 
@@ -371,7 +371,7 @@ async function _doBatchUpload(files, occasion, note) {
   _showUploadProgress('Upload complete!', files.length, files.length,
     failed > 0 ? `${success} ok · ${failed} failed` : `All ${success} photos done`);
   setTimeout(_hideUploadProgress, 2500);
-  showToast(failed > 0 ? `${success} upload hui, ${failed} fail hui` : `${success} Photos upload ho gayi!`, failed > 0 ? 'error' : '');
+  showAlert('Upload Complete', failed > 0 ? `${success} photos upload hui, ${failed} fail hui` : `${success} Photos upload ho gayi! ✅`);
   if (STATE.currentScreen === 'gallery') renderGallery();
 }
 
@@ -525,9 +525,9 @@ function deletePhoto(id) {
       await _wDelete('/api/gallery/delete?id=' + id);
       _gPhotos = _gPhotos.filter(p => p.id !== id);
       _gSelected.delete(id);
-      showToast('Photo delete ho gayi');
+      showAlert('Photo Delete Ho Gayi', 'Photo permanently delete ho gayi. 🗑');
       renderGallery();
-    } catch (e) { showToast('Delete error: ' + e.message, 'error'); }
+    } catch (e) { showAlert('Delete Error', 'Delete nahi ho paya: ' + e.message); }
   });
 }
 
@@ -539,8 +539,8 @@ function deleteSelectedPhotos() {
       await Promise.all(ids.map(id => _wDelete('/api/gallery/delete?id=' + id)));
       _gPhotos = _gPhotos.filter(p => !ids.includes(p.id));
       _gSelected.clear(); _gMulti = false;
-      showToast(`${ids.length} Photos delete ho gayi`);
+      showAlert('Photos Delete Ho Gayi', `${ids.length} photos permanently delete ho gayin. 🗑`);
       renderGallery();
-    } catch (e) { showToast('Delete error: ' + e.message, 'error'); }
+    } catch (e) { showAlert('Delete Error', 'Delete nahi ho paya: ' + e.message); }
   });
 }

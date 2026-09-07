@@ -840,15 +840,15 @@ function shareWhatsApp(filter) {
 
 async function togglePaymentCell(payIdx, mo) {
   if (!await _ensureWriteAccess()) return;
-  if (STATE.currentSessionIdx !== 0) { showToast('Purane session mein edit nahi ho sakta', 'error'); return; }
+  if (STATE.currentSessionIdx !== 0) { showAlert('Edit Nahi Ho Sakta', 'Purane session mein edit nahi ho sakta — sirf current active session editable hai.'); return; }
   const p = STATE.allPayments[payIdx];
   if (!p) return;
   const memberRec = STATE.allMembers.find(m => nameMatch(m.name, p.name));
   if (memberRec && memberRec.status !== 'Active') {
-    showToast('Inactive member ko pehle Active karein', 'error'); return;
+    showAlert('Pehle Active Karein', 'Yeh member Inactive hai. Payment mark karne se pehle isko Active karein.'); return;
   }
   if (memberRec && (memberRec.type || 'Regular') !== 'Regular') {
-    showToast('Donor member ki payment mark nahi ho sakti', 'error'); return;
+    showAlert('Payment Mark Nahi Ho Sakti', 'Donor member ki payment mark nahi ho sakti.'); return;
   }
   const months = Object.keys(p.months);
   const mIdx   = months.indexOf(mo);
@@ -868,7 +868,7 @@ async function togglePaymentCell(payIdx, mo) {
         const paidCount = Object.values(STATE.allPayments[payIdx].months).filter(v => isPaid(v)).length;
         STATE.allPayments[payIdx].total = String(paidCount * FEE);
         saveCache(session.label);
-        showToast(newVal === 'Paid' ? '✅ Paid ho gaya!' : '✗ Unpaid ho gaya!');
+        showAlert(newVal === 'Paid' ? 'Payment Mark Ho Gaya' : 'Payment Unmark Ho Gaya', `${cleanName} — ${mo} ${newVal === 'Paid' ? 'Paid mark ho gaya ✅' : 'Unpaid mark ho gaya'}`);
         _trackHistory(newVal === 'Paid' ? 'Mark Payment' : 'Mark Unpayment', `${cleanName} - ${mo}`);
         if (newVal === 'Paid') {
           _pushNotify('Payment Jama! ✅', `${cleanName} — ${mo} ka payment de diya`);
@@ -879,7 +879,7 @@ async function togglePaymentCell(payIdx, mo) {
         _updatePushStats(mo);
         renderPayments();
       } catch(e) {
-        showToast(e.message === 'AUTH_EXPIRED' ? 'Session expired — sync karein' : 'Error: ' + e.message, 'error');
+        showAlert('Error', e.message === 'AUTH_EXPIRED' ? 'Session expired — sync karein' : 'Error: ' + e.message);
       }
     }
   );
@@ -1631,8 +1631,19 @@ function _closeQmp() {
   _qmpSel.clear();
 }
 
+let _qmpSaving = false;
 async function _qmpSave() {
-  if (!await _ensureWriteAccess()) return;
+  if (_qmpSaving) return; // guard against double-tap before the button visually disables
+  _qmpSaving = true;
+  const guardBtn = document.querySelector('#qmpOverlay .qmp-save-btn');
+  const guardLbl = guardBtn ? guardBtn.innerHTML : '';
+  if (guardBtn) { guardBtn.disabled = true; guardBtn.style.opacity = '0.7'; guardBtn.style.cursor = 'not-allowed'; }
+
+  if (!await _ensureWriteAccess()) {
+    _qmpSaving = false;
+    if (guardBtn) { guardBtn.disabled = false; guardBtn.style.opacity = '1'; guardBtn.style.cursor = 'pointer'; }
+    return;
+  }
 
   const session  = STATE.currentSession;
   const allMonths = STATE.allPayments.length > 0 ? Object.keys(STATE.allPayments[0].months) : [];
@@ -1654,10 +1665,9 @@ async function _qmpSave() {
     }
   }
 
-  if (batchData.length === 0) { _closeQmp(); return; }
+  if (batchData.length === 0) { _qmpSaving = false; _closeQmp(); return; }
 
-  const btn = document.querySelector('#qmpOverlay .btn-primary');
-  if (btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
+  if (guardBtn) guardBtn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="animation:spin .8s linear infinite;margin-right:7px;vertical-align:-3px"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>Saving...`;
 
   try {
     await sheetsBatchPut(batchData);
@@ -1687,7 +1697,7 @@ async function _qmpSave() {
     }
 
     _closeQmp();
-    showToast(`✅ ${batchData.length} payment${batchData.length > 1 ? 's' : ''} mark ho gayi!`);
+    showAlert('Payments Mark Ho Gayi', `${batchData.length} payment${batchData.length > 1 ? 's' : ''} mark ho gayi! ✅`);
 
     // Track history per member
     for (const { cleanName, months } of _trackData) {
@@ -1708,8 +1718,10 @@ async function _qmpSave() {
     }
 
     renderDashboard();
+    _qmpSaving = false;
   } catch(e) {
-    showToast(e.message === 'AUTH_EXPIRED' ? 'Session expired — sync karein' : 'Error: ' + e.message, 'error');
-    if (btn) { btn.disabled = false; btn.textContent = 'Mark Paid'; }
+    showAlert('Error', e.message === 'AUTH_EXPIRED' ? 'Session expired — sync karein' : 'Error: ' + e.message);
+    _qmpSaving = false;
+    if (guardBtn) { guardBtn.disabled = false; guardBtn.style.opacity = '1'; guardBtn.style.cursor = 'pointer'; guardBtn.innerHTML = guardLbl; }
   }
 }

@@ -254,7 +254,7 @@ function _promptSetActive(idx) {
         style="flex:1;background:#f1f5f9;color:#475569;border:none;font-weight:600">
         Cancel
       </button>
-      <button class="btn btn-primary" style="flex:2;display:flex;align-items:center;
+      <button id="setActiveBtn" class="btn btn-primary" style="flex:2;display:flex;align-items:center;
                 justify-content:center;gap:5px" onclick="_doSetActive(${idx})">
         ${_SVG.check} Confirm
       </button>
@@ -264,7 +264,10 @@ function _promptSetActive(idx) {
 }
 
 async function _doSetActive(idx) {
+  const btn = document.getElementById('setActiveBtn');
+  if (btn?.disabled) return; // guard against double-tap
   if (!_checkPwd()) return;
+  if (btn) { btn.disabled = true; btn.innerHTML = `${_SVG.spinner} Confirming...`; }
   CONFIG.SESSIONS.forEach((s, i) => s.active = i === idx);
   STATE.currentSessionIdx = idx;
   STATE.currentSession    = CONFIG.SESSIONS[idx];
@@ -272,9 +275,9 @@ async function _doSetActive(idx) {
   _saveSessionsToCache();
   try {
     await _persistSessions();
-    showToast('Active: ' + CONFIG.SESSIONS[idx].label, 'success');
+    showAlert('Session Active Ho Gaya', 'Active session ab: ' + CONFIG.SESSIONS[idx].label);
     loadAllData(true);
-  } catch(e) { showToast('Set locally. Sync to persist.', 'error'); }
+  } catch(e) { showAlert('Sync Nahi Hua', 'Locally set ho gaya hai, lekin sync nahi ho paya. Baad mein sync karein.'); }
   closeNewSessionModal();
   if (typeof syncAiNav === 'function') syncAiNav();
   if (STATE.currentScreen === 'settings') renderSettings();
@@ -450,11 +453,11 @@ async function _doCreateSession() {
 
   const info = _computeSessionInfo(_createState.month, _createState.year);
   if (CONFIG.SESSIONS.some(s => s.label === info.label)) {
-    showToast('Session ' + info.label + ' already exists', 'error'); return;
+    showAlert('Session Pehle Se Hai', 'Session ' + info.label + ' already exists.'); return;
   }
 
   const bal           = STATE.sessionSummary.balance || 0;
-  const activeMembers = STATE.allMembers.filter(m => m.status !== 'Inactive');
+  const activeMembers = STATE.allMembers.filter(m => m.status === 'Active');
   const nM            = activeMembers.length;
   const btn           = document.getElementById('createSessionBtn');
   btn.innerHTML       = `${_SVG.spinner} Creating sheets...`;
@@ -560,7 +563,7 @@ async function _doCreateSession() {
     `;
 
   } catch(e) {
-    showToast(e.message === 'AUTH_EXPIRED' ? 'Session expire — sign in again' : e.message, 'error');
+    showAlert('Error', e.message === 'AUTH_EXPIRED' ? 'Session expire — sign in again' : e.message);
     btn.innerHTML = `${_SVG.play} Create Session`;
     btn.disabled  = false;
   }

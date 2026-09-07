@@ -109,41 +109,41 @@ function openFinanceForm(type, idx) {
     ${isDonation ? `
       <datalist id="ff_memberList">${_memberOptions}</datalist>
       <div class="form-group">
-        <label>Donor Ka Naam *</label>
+        <label><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>Donor Ka Naam *</label>
         <input id="ff_name" list="ff_memberList"
           value="${(item?.donor || '').replace(/"/g,'&quot;')}"
           placeholder="Naam likhein ya list se chunein…"
           autocomplete="off">
-        <div style="font-size:11px;color:var(--muted);margin-top:4px">
+        <div style="font-size:11px;color:var(--muted);margin-top:6px">
           Member chunein ya koi bhi naam likhein
         </div>
       </div>
       <div class="form-group">
-        <label>Amount (Rs.) *</label>
+        <label><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Amount (Rs.) *</label>
         <input id="ff_amount" type="number" value="${item?.amount || ''}" placeholder="0">
       </div>
       <div class="form-group">
-        <label>Tarikh</label>
+        <label><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Tarikh</label>
         <input id="ff_date" type="date" value="${item?.date || ''}">
       </div>
       <div class="form-group">
-        <label>Note</label>
+        <label><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Note</label>
         <input id="ff_note" value="${(item?.note || '').replace(/"/g,'&quot;')}" placeholder="Optional...">
       </div>
     ` : `
       <div class="form-group">
-        <label>Kharcha Ki Wajah *</label>
+        <label><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Kharcha Ki Wajah *</label>
         <input id="ff_name"
           value="${(item?.desc || '').replace(/"/g,'&quot;')}"
           placeholder="Kya kharcha hua ya kisko diya…"
           autocomplete="off">
       </div>
       <div class="form-group">
-        <label>Amount (Rs.) *</label>
+        <label><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Amount (Rs.) *</label>
         <input id="ff_amount" type="number" value="${item?.amount || ''}" placeholder="0">
       </div>
       <div class="form-group">
-        <label>Tarikh</label>
+        <label><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Tarikh</label>
         <input id="ff_date" type="date" value="${item?.date || ''}">
       </div>
     `}
@@ -165,7 +165,7 @@ function closeFinanceForm() {
 
 async function saveFinanceForm() {
   if (!await _ensureWriteAccess()) return;
-  if (STATE.currentSessionIdx !== 0) { showToast('Purane session mein edit nahi ho sakta', 'error'); return; }
+  if (STATE.currentSessionIdx !== 0) { showAlert('Edit Nahi Ho Sakta', 'Purane session mein edit nahi ho sakta — sirf current active session editable hai.'); return; }
 
   const isDonation = _ffType === 'donation';
   const isEdit     = _ffIdx !== null;
@@ -179,8 +179,8 @@ async function saveFinanceForm() {
     ? (document.getElementById('ff_note').value || '').trim()
     : '';
 
-  if (!name)   { showToast('Naam/Wajah likhein', 'error'); return; }
-  if (!amount || isNaN(parseFloat(amount))) { showToast('Sahi amount likhein', 'error'); return; }
+  if (!name)   { showAlert('Naam/Wajah Zaroori Hai', 'Naam ya wajah likhein.'); return; }
+  if (!amount || isNaN(parseFloat(amount))) { showAlert('Amount Galat Hai', 'Sahi amount likhein.'); return; }
 
   const confirmBody = `<b>${name}</b><br>Rs.${amount}${date ? ' — ' + date : ''}${extra ? '<br>Note: ' + extra : ''}`;
 
@@ -219,13 +219,16 @@ async function saveFinanceForm() {
           }
         }
         saveCache(session.label);
-        showToast(isEdit ? 'Update ho gaya! ✅' : 'Add ho gaya! ✅');
+        showAlert(
+          isEdit ? (isDonation ? 'Donation Update Ho Gaya' : 'Kharcha Update Ho Gaya') : (isDonation ? 'Donation Add Ho Gaya' : 'Kharcha Add Ho Gaya'),
+          `${name} — Rs.${amount} ${isEdit ? 'update' : 'add'} ho gaya! ✅`
+        );
         if (isDonation) {
           if (isEdit) {
-            _trackHistory('Donation Updated', `${name} - Rs.${amount}`);
+            _trackHistory('Donation Updated', `${name} - Rs.${amount}${extra ? ' - ' + extra : ''}`);
             _pushNotify('Donation Update! ✏️', `${name} ki donation update ki gayi — Rs.${amount}`);
           } else {
-            _trackHistory('Donation Added', `${name} - Rs.${amount}`);
+            _trackHistory('Donation Added', `${name} - Rs.${amount}${extra ? ' - ' + extra : ''}`);
             _pushNotify('Naya Donation! 💚', `${name} ne Rs.${amount} jama kiya`);
           }
         } else {
@@ -240,7 +243,7 @@ async function saveFinanceForm() {
         closeFinanceForm();
         renderFinance();
       } catch(e) {
-        showToast(e.message === 'AUTH_EXPIRED' ? 'Session expired — sync karein' : 'Error: ' + e.message, 'error');
+        showAlert('Error', e.message === 'AUTH_EXPIRED' ? 'Session expired — sync karein' : 'Error: ' + e.message);
       }
     }
   );
@@ -250,7 +253,7 @@ async function saveFinanceForm() {
 
 async function deleteFinanceItem(type, idx) {
   if (!await _ensureWriteAccess()) return;
-  if (STATE.currentSessionIdx !== 0) { showToast('Purane session mein edit nahi ho sakta', 'error'); return; }
+  if (STATE.currentSessionIdx !== 0) { showAlert('Edit Nahi Ho Sakta', 'Purane session mein edit nahi ho sakta — sirf current active session editable hai.'); return; }
   const isDonation = type === 'donation';
   const item    = isDonation ? STATE.allDonations[idx] : STATE.allExpenses[idx];
   if (!item) return;
@@ -272,9 +275,9 @@ async function deleteFinanceItem(type, idx) {
           STATE.allExpenses.forEach(e => { if (e.row > deletedRow) e.row--; });
         }
         saveCache(session.label);
-        showToast('Delete ho gaya! 🗑');
+        showAlert(isDonation ? 'Donation Delete Ho Gaya' : 'Kharcha Delete Ho Gaya', `${label} — Rs.${item.amount} delete ho gaya! 🗑`);
         if (isDonation) {
-          _trackHistory('Donation Deleted', `${label} - Rs.${item.amount}`);
+          _trackHistory('Donation Deleted', `${label} - Rs.${item.amount}${item.note ? ' - ' + item.note : ''}`);
           _pushNotify('Donation Delete Ho Gayi! 🗑', `${label} ki donation remove ki gayi — Rs.${item.amount}`);
         } else {
           _trackHistory('Expense Deleted', `${label} - Rs.${item.amount}`);
@@ -282,7 +285,7 @@ async function deleteFinanceItem(type, idx) {
         }
         renderFinance();
       } catch(e) {
-        showToast(e.message === 'AUTH_EXPIRED' ? 'Session expired — sync karein' : 'Error: ' + e.message, 'error');
+        showAlert('Error', e.message === 'AUTH_EXPIRED' ? 'Session expired — sync karein' : 'Error: ' + e.message);
       }
     }
   );

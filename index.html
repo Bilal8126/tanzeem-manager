@@ -442,6 +442,34 @@
   </div>
 </div>
 
+<!-- Validation Alert Modal: centered, blurred-backdrop popup for blocking
+     validation messages (e.g. Inactive/Donor guard on active payments).
+     Dismissible via the × button, the OK button, or tapping the backdrop. -->
+<div id="alertOverlay" style="display:none;position:fixed;inset:0;z-index:9999;
+     background:rgba(15,23,42,.5);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+     align-items:center;justify-content:center;padding:24px" onclick="if(event.target===this) closeAlert()">
+  <div style="background:#fff;border-radius:20px;padding:24px 22px 22px;max-width:300px;width:100%;
+       box-shadow:0 20px 50px rgba(0,0,0,.35);text-align:center;position:relative;
+       animation:modalSlideUp .28s cubic-bezier(.34,1,.64,1)">
+    <button onclick="closeAlert()" style="position:absolute;top:10px;right:10px;background:#f1f5f9;border:none;
+      border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;
+      cursor:pointer;color:#64748b;font-size:16px;line-height:1">×</button>
+    <div style="width:54px;height:54px;border-radius:50%;margin:0 auto 16px;
+         background:linear-gradient(135deg,#b45309,#f59e0b);display:flex;align-items:center;justify-content:center">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"
+           stroke-linecap="round" stroke-linejoin="round">
+        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+        <line x1="12" y1="9" x2="12" y2="13"/>
+        <line x1="12" y1="17" x2="12.01" y2="17"/>
+      </svg>
+    </div>
+    <div id="alertTitle" style="font-size:15px;font-weight:800;color:#0f172a;margin-bottom:7px"></div>
+    <div id="alertMsg" style="font-size:13px;color:#475569;margin-bottom:20px;line-height:1.55;white-space:pre-line;text-align:left"></div>
+    <button onclick="closeAlert()" style="width:100%;background:#059669;color:#fff;border:none;
+      border-radius:12px;padding:13px;font-size:14px;font-weight:800;cursor:pointer">Theek Hai</button>
+  </div>
+</div>
+
 <!-- JS: load order matters -->
 <script src="js/config.js"></script>
 <script src="js/app.js"></script>

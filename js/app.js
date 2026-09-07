@@ -264,14 +264,31 @@ function showConfirm(title, body, onYes) {
   document.getElementById('confirmContent').innerHTML = `
     <div class="modal-header">
       <div class="modal-title">${title}</div>
-      <button class="close-btn" onclick="closeConfirm()">×</button>
+      <button class="close-btn" id="confirmCloseBtn" onclick="closeConfirm()">×</button>
     </div>
     <p style="color:var(--muted);font-size:14px;margin-bottom:22px;line-height:1.6">${body}</p>
     <div style="display:flex;gap:10px">
-      <button class="btn btn-secondary" style="flex:1" onclick="closeConfirm()">Nahi, Cancel</button>
+      <button class="btn btn-secondary" style="flex:1" id="confirmNoBtn" onclick="closeConfirm()">Nahi, Cancel</button>
       <button class="btn btn-primary" style="flex:1" id="confirmYesBtn">Haan, Confirm</button>
     </div>`;
-  document.getElementById('confirmYesBtn').onclick = () => { closeConfirm(); onYes(); };
+  const yesBtn   = document.getElementById('confirmYesBtn');
+  const noBtn    = document.getElementById('confirmNoBtn');
+  const closeBtn = document.getElementById('confirmCloseBtn');
+  const yesLabel = yesBtn.innerHTML;
+  yesBtn.onclick = async () => {
+    if (yesBtn.disabled) return; // guard against double-tap
+    yesBtn.disabled = closeBtn.disabled = noBtn.disabled = true;
+    yesBtn.style.opacity = '0.7';
+    yesBtn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="animation:spin .8s linear infinite;margin-right:7px;vertical-align:-3px"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>Processing...`;
+    try {
+      await onYes();
+    } finally {
+      yesBtn.disabled = closeBtn.disabled = noBtn.disabled = false;
+      yesBtn.style.opacity = '1';
+      yesBtn.innerHTML = yesLabel;
+      closeConfirm();
+    }
+  };
   _histPush({ modal: 'confirm' });
   overlay.classList.add('open');
 }
@@ -279,6 +296,22 @@ function showConfirm(title, body, onYes) {
 function closeConfirm() {
   _histBack();
   document.getElementById('confirmOverlay')?.classList.remove('open');
+}
+
+// ── Validation alert modal (centered, blurred backdrop) ───
+function showAlert(title, message) {
+  const titleEl = document.getElementById('alertTitle');
+  const msgEl   = document.getElementById('alertMsg');
+  const overlay = document.getElementById('alertOverlay');
+  if (!titleEl || !msgEl || !overlay) return;
+  titleEl.textContent = title;
+  msgEl.textContent   = message;
+  overlay.style.display = 'flex';
+}
+
+function closeAlert() {
+  const overlay = document.getElementById('alertOverlay');
+  if (overlay) overlay.style.display = 'none';
 }
 
 // ── App Init ─────────────────────────────────────────────

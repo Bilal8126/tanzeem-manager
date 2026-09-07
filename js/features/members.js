@@ -293,10 +293,10 @@ async function togglePaymentFromProfile(payIdx, mo, memberIdx) {
   if (!p) return;
   const memberRec = STATE.allMembers.find(m => nameMatch(m.name, p.name));
   if (memberRec && memberRec.status !== 'Active') {
-    showToast('Inactive member ko pehle Active karein', 'error'); return;
+    showAlert('Pehle Active Karein', 'Yeh member Inactive hai. Payment mark karne se pehle isko Active karein.'); return;
   }
   if (memberRec && (memberRec.type || 'Regular') !== 'Regular') {
-    showToast('Donor member ki payment mark nahi ho sakti', 'error'); return;
+    showAlert('Payment Mark Nahi Ho Sakti', 'Donor member ki payment mark nahi ho sakti.'); return;
   }
   if (!await _ensureWriteAccess()) return;
   const months = Object.keys(p.months);
@@ -316,7 +316,7 @@ async function togglePaymentFromProfile(payIdx, mo, memberIdx) {
         const paidCount = Object.values(STATE.allPayments[payIdx].months).filter(v => isPaid(v)).length;
         STATE.allPayments[payIdx].total = String(paidCount * FEE);
         saveCache(STATE.currentSession.label);
-        showToast(newVal === 'Paid' ? '✅ Paid ho gaya!' : '✗ Unpaid ho gaya!');
+        showAlert(newVal === 'Paid' ? 'Payment Mark Ho Gaya' : 'Payment Unmark Ho Gaya', `${cleanName} — ${mo} ${newVal === 'Paid' ? 'Paid mark ho gaya ✅' : 'Unpaid mark ho gaya'}`);
         _trackHistory(newVal === 'Paid' ? 'Mark Payment' : 'Mark Unpayment', `${cleanName} - ${mo}`);
         if (newVal === 'Paid') {
           _pushNotify('Payment Jama! ✅', `${cleanName} — ${mo} ka payment de diya`);
@@ -327,7 +327,7 @@ async function togglePaymentFromProfile(payIdx, mo, memberIdx) {
         _updatePushStats(mo);
         openMemberProfile(memberIdx);
       } catch(e) {
-        showToast(e.message === 'AUTH_EXPIRED' ? 'Session expired — sync karein' : 'Error: ' + e.message, 'error');
+        showAlert('Error', e.message === 'AUTH_EXPIRED' ? 'Session expired — sync karein' : 'Error: ' + e.message);
       }
     }
   );
@@ -337,6 +337,7 @@ async function togglePaymentFromProfile(payIdx, mo, memberIdx) {
 
 let _editMemberStatus = null;
 let _editMemberType   = null;
+let _editMemberAadhar = null;
 let _editMemberRef    = null;
 
 function openEditMember(idx) {
@@ -344,6 +345,7 @@ function openEditMember(idx) {
   if (!m) return;
   _editMemberStatus = m.status;
   _editMemberType   = m.type || 'Regular';
+  _editMemberAadhar = m.aadhar || 'No';
   _editMemberRef    = m;
   document.getElementById('memberProfileContent').innerHTML = `
     <div class="modal-header">
@@ -351,25 +353,32 @@ function openEditMember(idx) {
       <button class="close-btn" onclick="openMemberProfile(${idx})">×</button>
     </div>
     <div class="form-group">
-      <label>Naam</label>
+      <label><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>Naam</label>
       <input id="em_name" value="${m.name.replace(/"/g, '&quot;')}" placeholder="Naam likhein...">
     </div>
     <div class="form-group">
-      <label>Mobile Number</label>
+      <label><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>Mobile Number</label>
       <input id="em_mobile" type="tel" value="${(m.mobile || '').replace(/"/g, '&quot;')}" placeholder="Mobile number...">
     </div>
     <div class="form-group">
-      <label>Status</label>
+      <label><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>Status</label>
       <div style="display:flex;gap:8px">
         <button id="emStatusActive" class="btn ${m.status === 'Active' ? 'btn-primary' : 'btn-secondary'}" style="flex:1;padding:10px;display:flex;align-items:center;justify-content:center;gap:7px" onclick="setEditStatus('Active')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>Active</button>
         <button id="emStatusInactive" class="btn ${m.status !== 'Active' ? 'btn-danger' : 'btn-secondary'}" style="flex:1;padding:10px;display:flex;align-items:center;justify-content:center;gap:7px" onclick="setEditStatus('In Active')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>In Active</button>
       </div>
     </div>
     <div class="form-group">
-      <label>Type</label>
+      <label><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>Type</label>
       <div style="display:flex;gap:8px">
         <button id="emTypeRegular" class="btn ${(m.type||'Regular')==='Regular' ? 'btn-primary' : 'btn-secondary'}" style="flex:1;padding:10px;display:flex;align-items:center;justify-content:center;gap:7px" onclick="setEditType('Regular')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg> Regular</button>
         <button id="emTypeDonor"   class="btn ${m.type==='Donor' ? 'btn-primary' : 'btn-secondary'}" style="flex:1;padding:10px;display:flex;align-items:center;justify-content:center;gap:7px" onclick="setEditType('Donor')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg> Donor</button>
+      </div>
+    </div>
+    <div class="form-group">
+      <label><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><circle cx="8" cy="10" r="2"/><path d="M4 16c0-1.5 1.5-3 4-3s4 1.5 4 3"/><line x1="14" y1="8" x2="19" y2="8"/><line x1="14" y1="12" x2="19" y2="12"/></svg>Aadhar Card</label>
+      <div style="display:flex;gap:8px">
+        <button id="emAadharNo" class="btn ${(m.aadhar||'No')!=='Yes' ? 'btn-danger' : 'btn-secondary'}" style="flex:1;padding:10px;display:flex;align-items:center;justify-content:center;gap:7px" onclick="setEditAadhar('No')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>No</button>
+        <button id="emAadharYes" class="btn ${m.aadhar==='Yes' ? 'btn-primary' : 'btn-secondary'}" style="flex:1;padding:10px;display:flex;align-items:center;justify-content:center;gap:7px" onclick="setEditAadhar('Yes')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>Yes</button>
       </div>
     </div>
     <button class="btn btn-primary" style="width:100%;margin-top:6px;display:flex;align-items:center;justify-content:center;gap:8px" onclick="saveEditMember(${idx})"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>Save Changes</button>
@@ -380,6 +389,10 @@ function openEditMember(idx) {
 }
 
 function setEditStatus(s) {
+  if (s !== 'Active' && _memberHasSessionPayment(_editMemberRef)) {
+    showAlert('Inactive Nahi Kar Sakte', 'Is member ne is session mein payment ki hai. Ye Inactive agle session ke liye ho sakta hai.');
+    return;
+  }
   _editMemberStatus = s;
   document.getElementById('emStatusActive').className   = 'btn ' + (s === 'Active' ? 'btn-primary'   : 'btn-secondary');
   document.getElementById('emStatusInactive').className = 'btn ' + (s !== 'Active' ? 'btn-danger' : 'btn-secondary');
@@ -394,12 +407,18 @@ function _memberHasSessionPayment(m) {
 
 function setEditType(t) {
   if (t === 'Donor' && _memberHasSessionPayment(_editMemberRef)) {
-    showToast('Is member ne payment ki hai — wo payment Donation mein add karke payment sheet se hatayein, tabhi Donor bana sakte hain', 'error');
+    showAlert('Donor Nahi Bana Sakte', 'Is member ne payment ki hai. Wo payment Donation mein add karke payment sheet se hatayein, tabhi Donor bana sakte hain.');
     return;
   }
   _editMemberType = t;
   document.getElementById('emTypeRegular').className = 'btn ' + (t === 'Regular' ? 'btn-primary' : 'btn-secondary');
   document.getElementById('emTypeDonor').className   = 'btn ' + (t === 'Donor'   ? 'btn-primary' : 'btn-secondary');
+}
+
+function setEditAadhar(v) {
+  _editMemberAadhar = v;
+  document.getElementById('emAadharNo').className  = 'btn ' + (v !== 'Yes' ? 'btn-danger'  : 'btn-secondary');
+  document.getElementById('emAadharYes').className = 'btn ' + (v === 'Yes' ? 'btn-primary' : 'btn-secondary');
 }
 
 async function saveEditMember(idx) {
@@ -410,31 +429,66 @@ async function saveEditMember(idx) {
   const newMobile = (document.getElementById('em_mobile').value || '').trim();
   const newStatus = _editMemberStatus || m.status;
   const newType   = _editMemberType   || (m.type || 'Regular');
-  if (!newName) { showToast('Naam khali nahi ho sakta', 'error'); return; }
+  const newAadhar = _editMemberAadhar || (m.aadhar || 'No');
+  if (!newName) { showAlert('Naam Zaroori Hai', 'Naam khali nahi ho sakta.'); return; }
   const changes = [];
   if (newName   !== m.name)              changes.push(`Naam: <b>${m.name}</b> → <b>${newName}</b>`);
   if (newMobile !== (m.mobile || ''))    changes.push(`Mobile: <b>${m.mobile || '—'}</b> → <b>${newMobile || '—'}</b>`);
   if (newStatus !== m.status)            changes.push(`Status: <b>${m.status}</b> → <b>${newStatus}</b>`);
   if (newType   !== (m.type||'Regular')) changes.push(`Type: <b>${m.type||'Regular'}</b> → <b>${newType}</b>`);
+  if (newAadhar !== (m.aadhar||'No'))    changes.push(`Aadhar Card: <b>${m.aadhar||'No'}</b> → <b>${newAadhar}</b>`);
   if (!changes.length) { openMemberProfile(idx); return; }
   showConfirm('Yeh changes save karein?', changes.join('<br>'), async () => {
     try {
       if (newName   !== m.name)              await sheetsPut(`Members List!B${m.row}`, [[newName]]);
       if (newMobile !== (m.mobile||''))      await sheetsPut(`Members List!C${m.row}`, [[newMobile]]);
+      if (newAadhar !== (m.aadhar||'No'))    await sheetsPut(`Members List!F${m.row}`, [[newAadhar]]);
       if (newStatus !== m.status)            await sheetsPut(`Members List!G${m.row}`, [[newStatus]]);
       if (newType   !== (m.type||'Regular')) await sheetsPut(`Members List!I${m.row}`, [[newType]]);
+
+      // Reactivated (Inactive → Active): add to this session's payment sheet
+      // if they aren't already a row there (e.g. session was created while
+      // they were inactive). Never remove a row when going Active → Inactive.
+      let _reactivateNote = '';
+      if (newStatus === 'Active' && m.status !== 'Active') {
+        const existingMatch = STATE.allPayments.find(p => nameMatch(p.name, newName));
+        if (existingMatch) {
+          _reactivateNote = ` (session sheet mein already "${existingMatch.name}" ke naam se row mili — nayi row nahi banayi)`;
+        } else {
+          const months = STATE.allPayments.length > 0 ? Object.keys(STATE.allPayments[0].months) : [];
+          if (months.length > 0 && STATE.currentSession?.sheet) {
+            const payId     = STATE.allPayments.length + 1;
+            const newPayRow = STATE.allPayments.length > 0
+              ? Math.max(...STATE.allPayments.map(p => p.row)) + 1 : 2;
+            await sheetsInsertRow(STATE.currentSession.sheet, newPayRow);
+            const lastMonthCol = colLetter(2 + months.length);
+            const totalCol     = colLetter(2 + months.length + 1);
+            const totalFormula = `=COUNTIF(D${newPayRow}:${lastMonthCol}${newPayRow},"Paid")*C${newPayRow}`;
+            await sheetsPut(`${STATE.currentSession.sheet}!A${newPayRow}:${totalCol}${newPayRow}`,
+              [[payId, newName, FEE, ...months.map(() => ''), totalFormula]]);
+            const emptyMonths = {};
+            months.forEach(mo => { emptyMonths[mo] = ''; });
+            STATE.allPayments.push({ row: newPayRow, name: newName, amount: String(FEE), months: emptyMonths, total: '0' });
+            _reactivateNote = ' (session sheet mein nayi row add ho gayi)';
+          } else {
+            _reactivateNote = ' (session sheet update nahi hui — months/sheet data missing)';
+          }
+        }
+      }
+
       STATE.allMembers[idx].name   = newName;
       STATE.allMembers[idx].mobile = newMobile;
       STATE.allMembers[idx].status = newStatus;
       STATE.allMembers[idx].type   = newType;
+      STATE.allMembers[idx].aadhar = newAadhar;
       saveCache(STATE.currentSession.label);
-      showToast('Member update ho gaya! ✅');
+      showAlert('Member Update Ho Gaya', 'Member ki details save ho gayin!' + _reactivateNote + ' ✅');
       const changesSummary = changes.map(c => c.replace(/<[^>]+>/g, '')).join(', ');
       _trackHistory('Member Updated', `${newName} — ${changesSummary}`);
       _pushNotify('Member Update! ✏️', `${newName} ki profile mein badlav kiya gaya`);
       openMemberProfile(idx);
     } catch(e) {
-      showToast(e.message === 'AUTH_EXPIRED' ? 'Session expired — sync karein' : 'Error: ' + e.message, 'error');
+      showAlert('Error', e.message === 'AUTH_EXPIRED' ? 'Session expired — sync karein' : 'Error: ' + e.message);
     }
   });
 }
@@ -453,13 +507,13 @@ async function deleteMember(idx) {
         STATE.allMembers.splice(idx, 1);
         STATE.allMembers.forEach(mb => { if (mb.row > deletedRow) mb.row--; });
         saveCache(STATE.currentSession.label);
-        showToast('Member delete ho gaya! 🗑');
+        showAlert('Member Delete Ho Gaya', `${m.name} ko hamesha ke liye remove kar diya gaya. 🗑`);
         _trackHistory('Member Deleted', m.name);
         _pushNotify('Member Delete Ho Gaya! 🗑', `${m.name} ko Tanzeem se remove kiya gaya`);
         closeMemberProfile();
         renderMembers();
       } catch(e) {
-        showToast(e.message === 'AUTH_EXPIRED' ? 'Session expired — sync karein' : 'Error: ' + e.message, 'error');
+        showAlert('Error', e.message === 'AUTH_EXPIRED' ? 'Session expired — sync karein' : 'Error: ' + e.message);
       }
     }
   );
@@ -475,40 +529,26 @@ async function openAddMember() {
       <button class="close-btn" onclick="closeMemberProfile()">×</button>
     </div>
     <div class="form-group">
-      <label>Naam *</label>
+      <label><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>Naam *</label>
       <input id="nm_name" placeholder="Naam likhein...">
     </div>
     <div class="form-group">
-      <label>Mobile Number</label>
+      <label><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>Mobile Number</label>
       <input id="nm_mobile" type="tel" placeholder="Mobile number...">
     </div>
     <div class="form-group">
-      <label>Date of Joining (DOJ)</label>
+      <label><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Date of Joining (DOJ)</label>
       <input id="nm_doj" type="date">
     </div>
     <div class="form-group">
-      <label>Address</label>
+      <label><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 12-9 12s-9-5-9-12a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Address</label>
       <input id="nm_address" placeholder="Ghar ka pata...">
     </div>
     <div class="form-group">
-      <label>Aadhar Card</label>
-      <div style="display:flex;gap:8px">
-        <button id="nmAadharNo" class="btn btn-secondary" style="flex:1;padding:10px;display:flex;align-items:center;justify-content:center;gap:7px" onclick="setNewMemberAadhar('No')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>No</button>
-        <button id="nmAadharYes" class="btn btn-secondary" style="flex:1;padding:10px;display:flex;align-items:center;justify-content:center;gap:7px" onclick="setNewMemberAadhar('Yes')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>Yes</button>
-      </div>
-    </div>
-    <div class="form-group">
-      <label>Type</label>
+      <label><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>Type</label>
       <div style="display:flex;gap:8px">
         <button id="nmTypeRegular" class="btn btn-primary" style="flex:1;padding:10px;display:flex;align-items:center;justify-content:center;gap:7px" onclick="setNewMemberType('Regular')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg> Regular</button>
         <button id="nmTypeDonor"   class="btn btn-secondary" style="flex:1;padding:10px;display:flex;align-items:center;justify-content:center;gap:7px" onclick="setNewMemberType('Donor')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg> Donor</button>
-      </div>
-    </div>
-    <div class="form-group">
-      <label>Status</label>
-      <div style="display:flex;gap:8px">
-        <button id="nmStatusActive" class="btn btn-primary" style="flex:1;padding:10px;display:flex;align-items:center;justify-content:center;gap:7px" onclick="setNewMemberStatus('Active')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>Active</button>
-        <button id="nmStatusInactive" class="btn btn-secondary" style="flex:1;padding:10px;display:flex;align-items:center;justify-content:center;gap:7px" onclick="setNewMemberStatus('In Active')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>In Active</button>
       </div>
     </div>
     <button class="btn btn-primary" style="width:100%;margin-top:6px;display:flex;align-items:center;justify-content:center;gap:8px" onclick="saveNewMember()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Member Add Karein</button>
@@ -524,22 +564,10 @@ let _newMemberStatus = 'Active';
 let _newMemberAadhar = 'No';
 let _newMemberType   = 'Regular';
 
-function setNewMemberStatus(s) {
-  _newMemberStatus = s;
-  document.getElementById('nmStatusActive').className   = 'btn ' + (s === 'Active' ? 'btn-primary'   : 'btn-secondary');
-  document.getElementById('nmStatusInactive').className = 'btn ' + (s !== 'Active' ? 'btn-danger' : 'btn-secondary');
-}
-
 function setNewMemberType(t) {
   _newMemberType = t;
   document.getElementById('nmTypeRegular').className = 'btn ' + (t === 'Regular' ? 'btn-primary' : 'btn-secondary');
   document.getElementById('nmTypeDonor').className   = 'btn ' + (t === 'Donor'   ? 'btn-primary' : 'btn-secondary');
-}
-
-function setNewMemberAadhar(v) {
-  _newMemberAadhar = v;
-  document.getElementById('nmAadharNo').className  = 'btn ' + (v === 'No'  ? 'btn-danger'   : 'btn-secondary');
-  document.getElementById('nmAadharYes').className = 'btn ' + (v === 'Yes' ? 'btn-primary' : 'btn-secondary');
 }
 
 function saveNewMember() {
@@ -550,11 +578,15 @@ function saveNewMember() {
   const aadhar = _newMemberAadhar;
   const status = _newMemberStatus;
   const type   = _newMemberType;
-  if (!name) { showToast('Naam likhein', 'error'); return; }
+  if (!name) { showAlert('Naam Zaroori Hai', 'Member add karne ke liye naam likhein.'); return; }
+  if (STATE.allMembers.some(m => nameMatch(m.name, name))) {
+    showAlert('Member Pehle Se Maujood Hai', `Is naam se milta-julta member (“${name}”) already Members List mein hai. Alag naam istemal karein ya us purane member ko dhundh kar edit karein.`);
+    return;
+  }
   const nextId = STATE.allMembers.length + 1;
   showConfirm(
     'Member add karein?',
-    `<b>${name}</b>${mobile ? '<br>📞 ' + mobile : ''}${doj ? '<br>DOJ: ' + doj : ''}${address ? '<br>🏠 ' + address : ''}<br>Type: ${type}<br>Status: ${status}`,
+    `<b>${name}</b>${mobile ? '<br>📞 ' + mobile : ''}${doj ? '<br>DOJ: ' + doj : ''}${address ? '<br>🏠 ' + address : ''}<br>Type: ${type}`,
     async () => {
       try {
         // Sheet columns: A=#, B=Name, C=Mobile, D=DOJ, E=Address, F=Aadhar, G=Status, H=DOE, I=Type
@@ -583,7 +615,7 @@ function saveNewMember() {
           : 2;
         STATE.allMembers.push({ row: newRow, id: String(nextId), name, mobile, doj, address, aadhar, status, doe: '', type });
         saveCache(STATE.currentSession.label);
-        showToast('Member add ho gaya! ✅');
+        showAlert('Member Add Ho Gaya', `${name} Tanzeem mein add ho gaye! ✅`);
         _trackHistory('Member Added', name);
         fetch(CONFIG.WORKER_URL + '/api/push/notify', {
           method: 'POST', headers: {'Content-Type':'application/json'},
@@ -592,7 +624,7 @@ function saveNewMember() {
         closeMemberProfile();
         renderMembers();
       } catch(e) {
-        showToast(e.message === 'AUTH_EXPIRED' ? 'Session expired — sync karein' : 'Error: ' + e.message, 'error');
+        showAlert('Error', e.message === 'AUTH_EXPIRED' ? 'Session expired — sync karein' : 'Error: ' + e.message);
       }
     }
   );
