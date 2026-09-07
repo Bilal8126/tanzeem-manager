@@ -67,6 +67,41 @@ function updateSyncStatus(ts) {
   else                 el.textContent = Math.round(mins / 1440) + 'd ago';
 }
 
+// ── Idle re-sync: app minimized/backgrounded for 30s+, then reopened ──
+// (First-ever app open already force-syncs immediately via checkAutoSignIn().)
+let _bgHiddenAt = null;
+const IDLE_SYNC_MS = 30000;
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') {
+    _bgHiddenAt = Date.now();
+  } else if (document.visibilityState === 'visible') {
+    const wasIdleLongEnough = _bgHiddenAt && (Date.now() - _bgHiddenAt) >= IDLE_SYNC_MS;
+    _bgHiddenAt = null;
+    if (wasIdleLongEnough && document.getElementById('mainApp').style.display !== 'none') {
+      _showSyncPrompt();
+    }
+  }
+});
+
+function _showSyncPrompt() {
+  const el = document.getElementById('syncPromptBanner');
+  if (el) el.style.display = 'flex';
+}
+
+function _hideSyncPrompt() {
+  const el = document.getElementById('syncPromptBanner');
+  if (el) el.style.display = 'none';
+}
+
+async function _runIdleSync() {
+  _hideSyncPrompt();
+  const block = document.getElementById('syncBlockOverlay');
+  if (block) block.style.display = 'flex';
+  await syncData();
+  if (block) block.style.display = 'none';
+}
+
 // ── PWA Install Prompt ───────────────────────────────────
 let _installPrompt = null;
 

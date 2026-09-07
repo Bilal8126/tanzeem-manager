@@ -37,7 +37,8 @@ function checkAutoSignIn() {
 
   document.getElementById('setupScreen').style.display = 'none';
   document.getElementById('mainApp').style.display = 'block';
-  loadAllData(false); // serve from localStorage cache; no token required
+  loadAllData(false); // serve from localStorage cache instantly; no token required
+  syncData();          // then silently pull fresh data in the background (fixes stale row numbers)
 }
 
 function _setAvatar(name, photoUrl) {
@@ -199,42 +200,50 @@ async function signIn() {
   }
 }
 
-async function syncData() {
-  try {
-    await loadGoogleScript();
-    const onToken = async (resp) => {
-      if (resp.error) { showToast('Sync failed: ' + resp.error, 'error'); return; }
+function syncData() {
+  // Returns a Promise that resolves once the sync actually finishes (success or
+  // failure) so callers like _runIdleSync() can await it — fire-and-forget
+  // callers (onclick="syncData()") can simply ignore the returned promise.
+  return new Promise(async (resolve) => {
+    try {
+      await loadGoogleScript();
+      const onToken = async (resp) => {
+        if (resp.error) { showToast('Sync failed: ' + resp.error, 'error'); resolve(false); return; }
 
-      // Verify same account as original login
-      const savedEmail = STATE.loggedInEmail || localStorage.getItem('tanzeem_logged_email');
-      if (savedEmail) {
-        const info = await fetch(`https://oauth2.googleapis.com/tokeninfo?access_token=${resp.access_token}`).then(r => r.json()).catch(() => ({}));
-        const newEmail = (info.email || '').toLowerCase().trim();
-        if (newEmail && newEmail !== savedEmail) {
-          showToast(`Wrong account — please sign in as ${savedEmail}`, 'error');
-          return;
+        // Verify same account as original login
+        const savedEmail = STATE.loggedInEmail || localStorage.getItem('tanzeem_logged_email');
+        if (savedEmail) {
+          const info = await fetch(`https://oauth2.googleapis.com/tokeninfo?access_token=${resp.access_token}`).then(r => r.json()).catch(() => ({}));
+          const newEmail = (info.email || '').toLowerCase().trim();
+          if (newEmail && newEmail !== savedEmail) {
+            showToast(`Wrong account — please sign in as ${savedEmail}`, 'error');
+            resolve(false);
+            return;
+          }
         }
-      }
 
-      STATE.accessToken = resp.access_token;
-      _scheduleRefresh();
-      if (typeof reloadSessionsConfig === 'function') await reloadSessionsConfig();
-      await loadAllData(true);
-    };
-    if (!_tokenClient) {
-      _tokenClient = google.accounts.oauth2.initTokenClient({
-        client_id: CONFIG.CLIENT_ID,
-        scope: _SCOPES,
-        callback: onToken
-      });
-    } else {
-      _tokenClient.callback = onToken;
+        STATE.accessToken = resp.access_token;
+        _scheduleRefresh();
+        if (typeof reloadSessionsConfig === 'function') await reloadSessionsConfig();
+        await loadAllData(true);
+        resolve(true);
+      };
+      if (!_tokenClient) {
+        _tokenClient = google.accounts.oauth2.initTokenClient({
+          client_id: CONFIG.CLIENT_ID,
+          scope: _SCOPES,
+          callback: onToken
+        });
+      } else {
+        _tokenClient.callback = onToken;
+      }
+      // prompt:'' tries silent token refresh; shows popup only if required
+      _tokenClient.requestAccessToken({ prompt: '' });
+    } catch (e) {
+      showToast('Sync error: ' + e.message, 'error');
+      resolve(false);
     }
-    // prompt:'' tries silent token refresh; shows popup only if required
-    _tokenClient.requestAccessToken({ prompt: '' });
-  } catch (e) {
-    showToast('Sync error: ' + e.message, 'error');
-  }
+  });
 }
 
 function signOut() {
