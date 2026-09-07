@@ -422,7 +422,7 @@ function _genFileName(label) {
 function _buildPdfHtmlString(title, bodyHtml, mode) {
   const session  = STATE.currentSession ? STATE.currentSession.label : '';
   const dateStr  = new Date().toLocaleDateString('en-IN', { day:'numeric', month:'long', year:'numeric' });
-  const logoUrl  = new URL('icons/icon.svg', location.href).href;
+  const logoUrl  = new URL('icons/icon.svg?v=2', location.href).href;
   const fileName = _genFileName(title);
 
   const shareBanner = mode === 'share' ? `

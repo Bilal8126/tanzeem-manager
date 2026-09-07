@@ -648,7 +648,7 @@ function _sendAsText() {
 async function _sendAsPdf() {
   const session = STATE.currentSession ? STATE.currentSession.label : '';
   const dateStr = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
-  const logoUrl = new URL('icons/icon.svg', location.href).href;
+  const logoUrl = new URL('icons/icon.svg?v=2', location.href).href;
   const content = _pendingShare.msg
     .replace(/━+/g, '<hr>')
     .replace(/\*([^*\n]+)\*/g, '<strong>$1</strong>')
@@ -1139,7 +1139,7 @@ async function openPaymentReceiptFromPopup(mode) {
   const member     = STATE.allMembers.find(m => nameMatch(m.name, memberName) || m.name.replace(/\(.*?\)/g,'').trim() === memberName);
   const session    = STATE.currentSession?.label || '';
   const dateStr    = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
-  const logoUrl    = new URL('icons/icon.svg', location.href).href;
+  const logoUrl    = new URL('icons/icon.svg?v=2', location.href).href;
   const cleanName  = memberName.replace(/\(.*?\)/g,'').trim();
   const status     = member?.status || 'Active';
   const mobile     = member?.mobile || '';
@@ -1331,7 +1331,7 @@ async function openPaymentReceipt(memberName, mode) {
   const months     = Object.keys(payRec.months);
   const session    = STATE.currentSession?.label || '';
   const dateStr    = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
-  const logoUrl    = new URL('icons/icon.svg', location.href).href;
+  const logoUrl    = new URL('icons/icon.svg?v=2', location.href).href;
   const cleanName  = memberName.replace(/\(.*?\)/g,'').trim();
   const initials   = getInitials(cleanName);
   const receiptNo  = `PAY-${initials}-${session.replace(/[^a-zA-Z0-9]/g,'')}`;
