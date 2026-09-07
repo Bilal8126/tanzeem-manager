@@ -81,7 +81,7 @@ function showProfileMenu() {
   }
 
   ov.innerHTML = `
-    <div style="background:#fff;border-radius:20px;padding:24px 20px;width:260px;box-shadow:0 8px 40px rgba(0,0,0,0.18)">
+    <div style="background:#fff;border-radius:20px;padding:24px 20px;width:260px;box-shadow:0 8px 40px rgba(0,0,0,0.18);animation:modalSlideUp .22s cubic-bezier(.34,1,.64,1)">
       <div style="display:flex;flex-direction:column;align-items:center;gap:10px;margin-bottom:20px">
         ${photo
           ? `<img src="${photo}" style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:3px solid #f0fdf4">`

@@ -164,7 +164,7 @@ function renderGallery() {
     </div>`;
 
   const grid = `
-    <div class="gallery-grid">
+    <div class="gallery-grid" style="animation:fadeUp .22s ease-out">
       ${photos.map(p => {
         const thumb = _thumbUrl(p.id, 400);
         const badge = `<div class="gallery-badge">${p.occasion || 'General'}</div>`;

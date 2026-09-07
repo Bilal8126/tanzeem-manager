@@ -13,7 +13,7 @@
   <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/app.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -178,7 +178,7 @@
     <div class="card" style="padding:14px">
       <div class="chat-messages" id="chatMessages">
         <div class="msg ai">
-          <div class="msg-bubble">Assalamu Alaikum! I am your Tanzeem assistant. Ask me anything about members, payments, or finances.</div>
+          <div class="msg-bubble">Assalamu Alaikum! Main aapka Tanzeem assistant hoon. Members, payments, ya finance ke baare mein kuch bhi poochein.</div>
         </div>
       </div>
       <div class="chat-input-row">
@@ -219,19 +219,21 @@
       </svg>
       Members
     </button>
-    <button class="nav-item" onclick="showScreen('payments',this)">
-      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-        <rect x="2" y="5" width="20" height="14" rx="2.5"/>
-        <path d="M2 10h20"/>
-        <path d="M6 15h4"/>
-      </svg>
-      Payments
-    </button>
     <button class="nav-item" onclick="showScreen('finance',this)">
       <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
         <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
       </svg>
       Finance
+    </button>
+    <button class="nav-item nav-raised" onclick="showScreen('payments',this)">
+      <span class="nav-raised-circle">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <rect x="2" y="5" width="20" height="14" rx="2.5"/>
+          <path d="M2 10h20"/>
+          <path d="M6 15h4"/>
+        </svg>
+      </span>
+      Payments
     </button>
     <button class="nav-item" onclick="showScreen('gallery',this)">
       <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">

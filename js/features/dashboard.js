@@ -199,7 +199,7 @@ function buildDashChart(months, data) {
       },
       scales: {
         y: {
-          ticks: { callback: v => 'Rs.' + (v/1000).toFixed(0) + 'k', font: { size: 10 }, color: '#9ca3af' },
+          ticks: { stepSize: 1000, callback: v => 'Rs.' + (v/1000).toFixed(0) + 'k', font: { size: 10 }, color: '#9ca3af' },
           grid: { color: '#f3f4f6' },
           border: { display: false }
         },

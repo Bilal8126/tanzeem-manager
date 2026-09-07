@@ -75,14 +75,15 @@ function renderReportsSection() {
       <div style="font-size:11px;font-weight:700;color:var(--muted);
                   text-transform:uppercase;letter-spacing:.6px">Reports</div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px 6px">
       ${_RPT_TYPES.map(r => `
         <button onclick="openReport('${r.id}')"
-          style="background:${r.bg};border:1.5px solid ${r.color}22;border-radius:12px;
-                 padding:12px 10px;cursor:pointer;text-align:left;
-                 display:flex;flex-direction:column;gap:6px">
-          <div style="color:${r.color}">${_RSVG[r.id]}</div>
-          <div style="font-size:12px;font-weight:600;color:#1e293b;line-height:1.3">${r.label}</div>
+          style="background:none;border:none;cursor:pointer;padding:2px;
+                 display:flex;flex-direction:column;align-items:center;gap:7px">
+          <div style="width:46px;height:46px;border-radius:50%;background:${r.bg};
+                      display:flex;align-items:center;justify-content:center;
+                      color:${r.color};flex-shrink:0">${_RSVG[r.id]}</div>
+          <div style="font-size:9.5px;font-weight:700;color:var(--text-2);text-align:center;line-height:1.25">${r.label}</div>
         </button>`).join('')}
     </div>
     <div style="margin-top:10px;font-size:11px;color:var(--muted);text-align:center">

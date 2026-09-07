@@ -375,11 +375,12 @@ function quickAsk(q) {
 }
 
 function clearChat() {
+  clearInterval(_dotsTimer);
   _chatHistory.length = 0;
   const c = document.getElementById('chatMessages');
   if (c) c.innerHTML = `
     <div class="msg ai">
-      <div class="msg-bubble">Assalamu Alaikum! I am your Tanzeem assistant. Ask me anything about members, payments, or finances.</div>
+      <div class="msg-bubble">Assalamu Alaikum! Main aapka Tanzeem assistant hoon. Members, payments, ya finance ke baare mein kuch bhi poochein.</div>
     </div>`;
 }
 

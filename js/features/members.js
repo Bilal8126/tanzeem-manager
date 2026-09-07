@@ -85,18 +85,21 @@ function openMemberProfile(idx) {
       else if (past)  { unpaidCount++; totalDue += FEE; }
       // future + unpaid = not due yet, don't count
 
+      const _icoUp    = `<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:3px"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>`;
+      const _icoCheck = `<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:3px"><polyline points="20 6 9 17 4 12"/></svg>`;
+      const _icoX     = `<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:3px"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
       let chip, amt;
       if (paid && !past) {
-        chip = `<span class="txn-chip txn-chip--paid">↑ Advance</span>`;
+        chip = `<span class="txn-chip txn-chip--paid">${_icoUp}Advance</span>`;
         amt  = `<span class="txn-amt txn-amt--paid">+${formatCurrency(FEE)}</span>`;
       } else if (paid) {
-        chip = `<span class="txn-chip txn-chip--paid">✓ Paid</span>`;
+        chip = `<span class="txn-chip txn-chip--paid">${_icoCheck}Paid</span>`;
         amt  = `<span class="txn-amt txn-amt--paid">+${formatCurrency(FEE)}</span>`;
       } else if (!past) {
         chip = `<span class="txn-chip txn-chip--upcoming">Upcoming</span>`;
         amt  = `<span class="txn-amt txn-amt--muted">—</span>`;
       } else {
-        chip = `<span class="txn-chip txn-chip--unpaid">✗ Unpaid</span>`;
+        chip = `<span class="txn-chip txn-chip--unpaid">${_icoX}Unpaid</span>`;
         amt  = `<span class="txn-amt txn-amt--unpaid">−${formatCurrency(FEE)}</span>`;
       }
 

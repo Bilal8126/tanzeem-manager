@@ -215,74 +215,37 @@ function renderPayments() {
       </div>` : ''}
     </div>` : ''}
 
-    ${isCurrentSession ? `<!-- Summary Cards -->
-    <div class="metrics">
-      <div class="metric green">
-        <div class="metric-label">Paid · ${sel}</div>
-        <div style="margin-top:6px">
-          <div style="display:flex;justify-content:space-between;font-size:11px;opacity:0.88">
-            <span>Active</span><span style="font-weight:700">${paidThisMon.length}</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;font-size:11px;opacity:0.88;margin-top:3px">
-            <span>In Active</span><span style="font-weight:700">${paidThisMonInactive.length}</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;margin-top:5px;border-top:1px solid rgba(255,255,255,0.35);padding-top:5px">
-            <span>Total</span><span>${paidThisMon.length + paidThisMonInactive.length}</span>
-          </div>
-        </div>
-        <div class="metric-bg-icon"><svg width="58" height="58" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.18"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg></div>
+    ${isCurrentSession ? `<!-- Passbook Hero + Stat Row -->
+    <div class="passbook-hero">
+      <div class="passbook-hero-label">Total Collected · ${STATE.currentSession.label}</div>
+      <div class="passbook-hero-amount">${formatCurrency(collectedTotal)}</div>
+      <div class="passbook-hero-split">
+        <span>Active ${formatCurrency(collectedActive)}</span>
+        <span class="dot"></span>
+        <span>In Active ${formatCurrency(collectedInactive)}</span>
       </div>
-      <div class="metric" style="background:linear-gradient(135deg,#b91c1c,#e53e3e)">
-        <div class="metric-label">Pending · ${sel}</div>
-        ${selIsPast ? `
-        <div style="margin-top:6px">
-          <div style="display:flex;justify-content:space-between;font-size:11px;opacity:0.88">
-            <span>Active</span><span style="font-weight:700">${pendingThisMon.length}</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;font-size:11px;opacity:0.88;margin-top:3px">
-            <span>In Active</span><span style="font-weight:700">${pendingThisMonInact.length}</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;margin-top:5px;border-top:1px solid rgba(255,255,255,0.35);padding-top:5px">
-            <span>Total</span><span>${pendingThisMon.length + pendingThisMonInact.length}</span>
-          </div>
-        </div>` : `<div class="metric-value">—</div>`}
-        <div class="metric-bg-icon"><svg width="58" height="58" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.18"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+    </div>
+
+    <div class="passbook-stats">
+      <div class="passbook-stat">
+        <div class="passbook-stat-label">Paid · ${sel}</div>
+        <div class="passbook-stat-value" style="color:${C_GREEN}">${paidThisMon.length + paidThisMonInactive.length}</div>
+        <div class="passbook-stat-sub">${paidThisMon.length} active · ${paidThisMonInactive.length} inactive</div>
       </div>
-      <div class="metric blue">
-        <div class="metric-label">Total Collected</div>
-        <div style="margin-top:6px">
-          <div style="display:flex;justify-content:space-between;font-size:11px;opacity:0.88">
-            <span>Active</span><span style="font-weight:700">${formatCurrency(collectedActive)}</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;font-size:11px;opacity:0.88;margin-top:3px">
-            <span>In Active</span><span style="font-weight:700">${formatCurrency(collectedInactive)}</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;margin-top:5px;border-top:1px solid rgba(255,255,255,0.35);padding-top:5px">
-            <span>Total</span><span>${formatCurrency(collectedTotal)}</span>
-          </div>
-        </div>
-        <div class="metric-bg-icon"><svg width="58" height="58" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.18"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 6v2m0 8v2"/></svg></div>
+      <div class="passbook-stat">
+        <div class="passbook-stat-label">Pending · ${sel}</div>
+        <div class="passbook-stat-value" style="color:${selIsPast ? C_RED : C_MUTED}">${selIsPast ? (pendingThisMon.length + pendingThisMonInact.length) : '—'}</div>
+        <div class="passbook-stat-sub">${selIsPast ? `${pendingThisMon.length} active · ${pendingThisMonInact.length} inactive` : 'Future month'}</div>
       </div>
-      <div class="metric orange">
-        <div class="metric-label">Total Pending</div>
-        <div style="font-size:10px;opacity:0.8;margin-top:1px">${months[0]} – ${sel} tak</div>
-        <div style="margin-top:4px">
-          <div style="display:flex;justify-content:space-between;font-size:11px;opacity:0.88">
-            <span>Active</span><span style="font-weight:700">${formatCurrency(pendingActiveSel)}</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;font-size:11px;opacity:0.88;margin-top:3px">
-            <span>In Active</span><span style="font-weight:700">${formatCurrency(pendingInactiveSel)}</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;margin-top:5px;border-top:1px solid rgba(255,255,255,0.35);padding-top:5px">
-            <span>Total</span><span>${formatCurrency(pendingTotalSel)}</span>
-          </div>
-        </div>
-        <div class="metric-bg-icon"><svg width="58" height="58" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.18"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg></div>
+      <div class="passbook-stat">
+        <div class="passbook-stat-label">Total Pending</div>
+        <div class="passbook-stat-value" style="color:${C_ORANGE}">${formatCurrency(pendingTotalSel)}</div>
+        <div class="passbook-stat-sub">${months[0]}–${sel} tak</div>
       </div>
     </div>` : ''}
 
-    <!-- Year Target Bar (current session only) -->
-    ${isCurrentSession ? `
+    <!-- Year Target Bar (current session only) — commented out per request -->
+    ${false && isCurrentSession ? `
     <div style="background:linear-gradient(135deg,#0f4a29,#1a6b3c);border-radius:12px;padding:10px 14px;color:#fff;margin-bottom:12px">
       <div style="font-size:12px;font-weight:600;margin-bottom:2px;display:flex;align-items:center;gap:6px">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
@@ -335,7 +298,7 @@ function renderPayments() {
         ${chevron(_showOverdue)}
       </div>
       ${_showOverdue ? `
-      <div style="margin-top:10px">
+      <div style="margin-top:10px;animation:fadeUp .22s ease-out">
         ${overdue.map(m => `
           <div class="pay-row">
             <div class="pay-avatar pay-avatar--overdue">${getInitials(m.name)}</div>
@@ -363,7 +326,7 @@ function renderPayments() {
         ${chevron(_showInactive)}
       </div>
       ${_showInactive ? `
-      <div style="margin-top:10px">
+      <div style="margin-top:10px;animation:fadeUp .22s ease-out">
         ${inactiveStats.map(m => `
           <div class="pay-row" style="opacity:0.8">
             <div class="pay-avatar" style="background:#e2e8f0;color:#64748b">${getInitials(m.name)}</div>
@@ -389,9 +352,9 @@ function renderPayments() {
         ${chevron(_showUnpaid)}
       </div>
       ${_showUnpaid ? `
-      <div style="margin-top:10px">
+      <div style="margin-top:10px;animation:fadeUp .22s ease-out">
         ${pendingThisMon.length === 0
-          ? `<div style="padding:8px 0;color:${C_MUTED};font-size:13px;text-align:center">🎉 All members paid for ${sel}!</div>`
+          ? `<div style="padding:8px 0;color:${C_MUTED};font-size:13px;text-align:center;display:flex;align-items:center;justify-content:center;gap:6px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="${C_GREEN}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>All members paid for ${sel}!</div>`
           : pendingThisMon.map(m => `
               <div class="pay-row">
                 <div class="pay-avatar pay-avatar--unpaid">${getInitials(m.name)}</div>
@@ -418,7 +381,7 @@ function renderPayments() {
         ${chevron(_showPaid)}
       </div>
       ${_showPaid ? `
-      <div style="margin-top:10px">
+      <div style="margin-top:10px;animation:fadeUp .22s ease-out">
         ${paidThisMon.length === 0
           ? `<div style="padding:8px 0;color:${C_MUTED};font-size:13px;text-align:center">
                ${selIsPast ? 'No payments recorded yet' : 'Future month — nothing to show'}
@@ -456,7 +419,7 @@ function renderPayments() {
         ${chevron(_showSummary)}
       </div>
       ${_showSummary ? `
-      <div class="summary-scroll" style="margin-top:10px">
+      <div class="summary-scroll" style="margin-top:10px;animation:fadeUp .22s ease-out">
         <table class="summary-table">
           <thead>
             <tr>
@@ -500,7 +463,7 @@ function renderPayments() {
         <span class="section-count" style="background:#f0f9ff;color:#0369a1">${stats.length}</span>
         ${chevron(_showGrid)}
       </div>
-      ${_showGrid ? `<div class="payment-grid" style="margin-top:10px">
+      ${_showGrid ? `<div class="payment-grid" style="margin-top:10px;animation:fadeUp .22s ease-out">
         <table class="payment-table">
           <thead>
             <tr>
@@ -555,7 +518,7 @@ function renderPayments() {
         <span class="section-count" style="background:#f0fdf4;color:${C_GREEN}">${months.filter(isPastOrCurrent).length}</span>
         ${chevron(_showMonthWise)}
       </div>
-      ${_showMonthWise ? `<div class="summary-scroll" style="margin-top:10px">
+      ${_showMonthWise ? `<div class="summary-scroll" style="margin-top:10px;animation:fadeUp .22s ease-out">
         <table style="width:100%;border-collapse:collapse;font-size:12px">
           <thead>
             <tr style="border-bottom:2px solid #e2e8f0">
@@ -1629,7 +1592,7 @@ function _renderQmpModal() {
       </div>
       <div style="font-size:12px;color:var(--muted);margin-bottom:10px">Months ko tap karein select karne ke liye</div>
       <div style="overflow-y:auto;flex:1">
-        ${memberRows || '<div class="qmp-empty">✅ Sab active members ne is session ke sab months pay kar diye!</div>'}
+        ${memberRows || `<div class="qmp-empty" style="display:flex;align-items:center;justify-content:center;gap:6px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--green-dark)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>Sab active members ne is session ke sab months pay kar diye!</div>`}
       </div>
       ${memberRows ? `
       <div style="padding-top:12px;border-top:1px solid #f1f5f9;margin-top:4px">

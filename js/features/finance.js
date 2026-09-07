@@ -13,19 +13,15 @@ function renderFinance() {
 function renderDonations() {
   const total = STATE.allDonations.reduce((s, d) => s + (parseFloat(d.amount) || 0), 0);
   document.getElementById('financeContent').innerHTML = `
-    <div class="metrics">
-      <div class="metric green">
-        <div class="metric-label">Total Donations</div>
-        <div class="metric-value sm">${formatCurrency(total)}</div>
-        <div class="metric-bg-icon"><svg width="58" height="58" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.18"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg></div>
-      </div>
-      <div class="metric blue">
-        <div class="metric-label">Count</div>
-        <div class="metric-value">${STATE.allDonations.length}</div>
-        <div class="metric-bg-icon">#</div>
+    <div class="passbook-hero">
+      <div class="passbook-hero-label">Total Donations</div>
+      <div class="passbook-hero-amount">${formatCurrency(total)}</div>
+      <div class="passbook-hero-split">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <span>${STATE.allDonations.length} donation${STATE.allDonations.length === 1 ? '' : 's'} recorded</span>
       </div>
     </div>
-    <div class="card">
+    <div class="card" style="animation:fadeUp .22s ease-out">
       ${STATE.allDonations.length === 0
         ? '<div class="empty-state"><div class="empty-state-icon"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg></div><p>Koi donation nahi. + dabayein add karne ke liye.</p></div>'
         : STATE.allDonations.map((d, i) => `
@@ -51,19 +47,15 @@ function renderDonations() {
 function renderExpenses() {
   const total = STATE.allExpenses.reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
   document.getElementById('financeContent').innerHTML = `
-    <div class="metrics">
-      <div class="metric" style="background:linear-gradient(135deg,#b91c1c,#e53e3e)">
-        <div class="metric-label">Total Expenses</div>
-        <div class="metric-value sm">${formatCurrency(total)}</div>
-        <div class="metric-bg-icon"><svg width="58" height="58" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.18"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div>
-      </div>
-      <div class="metric blue">
-        <div class="metric-label">Count</div>
-        <div class="metric-value">${STATE.allExpenses.length}</div>
-        <div class="metric-bg-icon">#</div>
+    <div class="passbook-hero" style="background:linear-gradient(150deg,#7f1d1d 0%,#b91c1c 55%,#ef4444 100%);box-shadow:0 10px 26px rgba(185,28,28,.28)">
+      <div class="passbook-hero-label">Total Expenses</div>
+      <div class="passbook-hero-amount">${formatCurrency(total)}</div>
+      <div class="passbook-hero-split">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        <span>${STATE.allExpenses.length} expense${STATE.allExpenses.length === 1 ? '' : 's'} recorded</span>
       </div>
     </div>
-    <div class="card">
+    <div class="card" style="animation:fadeUp .22s ease-out">
       ${STATE.allExpenses.length === 0
         ? '<div class="empty-state"><div class="empty-state-icon"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div><p>Koi kharcha nahi. + dabayein add karne ke liye.</p></div>'
         : STATE.allExpenses.map((e, i) => `

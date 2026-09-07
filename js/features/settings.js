@@ -41,7 +41,7 @@ function renderSettings() {
                 : ''}display:flex;align-items:center;gap:10px">
 
                 <!-- Session icon -->
-                <div style="width:36px;height:36px;border-radius:10px;flex-shrink:0;
+                <div style="width:36px;height:36px;border-radius:50%;flex-shrink:0;
                             background:${isActive ? '#dcfce7' : '#f1f5f9'};
                             display:flex;align-items:center;justify-content:center">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none"

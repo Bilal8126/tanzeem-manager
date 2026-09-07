@@ -62,7 +62,7 @@ window.addEventListener('popstate', e => {
   const prev = e.state?.screen;
   if (prev && prev !== STATE.currentScreen) {
     const navEls = document.querySelectorAll('.nav-item');
-    const screens = ['dashboard', 'members', 'payments', 'finance', 'gallery', 'settings', 'ai'];
+    const screens = ['dashboard', 'members', 'finance', 'payments', 'gallery', 'settings', 'ai'];
     const navEl   = navEls[screens.indexOf(prev)] || navEls[0];
     showScreen(prev, navEl, true);
     return;
