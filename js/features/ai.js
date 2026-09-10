@@ -346,12 +346,26 @@ function _animateDots() {
   }, 500);
 }
 
+// Enter sends; Shift+Enter inserts a newline (textarea's default behavior).
+function _chatInputKeydown(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendChat();
+  }
+}
+
+function _autoGrowChatInput(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
 async function sendChat() {
   const input = document.getElementById('chatInput');
   const q = input.value.trim();
   if (!q) return;
 
   input.value = '';
+  input.style.height = 'auto';
   appendMessage('user', q);
 
   // ── Local answer — zero API cost ──────────────────────────
@@ -414,7 +428,7 @@ function clearChat() {
       <div class="msg-bubble">Assalamu Alaikum! Main aapka Tanzeem assistant hoon. Members, payments, ya finance ke baare mein kuch bhi poochein.</div>
     </div>`;
   const input = document.getElementById('chatInput');
-  if (input) input.value = '';
+  if (input) { input.value = ''; input.style.height = 'auto'; }
 }
 
 // ── Lightweight markdown → HTML (AI responses + local answers)

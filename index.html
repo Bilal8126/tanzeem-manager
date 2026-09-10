@@ -249,7 +249,7 @@
         </div>
       </div>
       <div class="chat-input-row">
-        <input type="text" id="chatInput" placeholder="Type your question…" onkeydown="if(event.key==='Enter') sendChat()">
+        <textarea id="chatInput" rows="1" placeholder="Type your question…" onkeydown="_chatInputKeydown(event)" oninput="_autoGrowChatInput(this)"></textarea>
         <button class="btn btn-primary btn-sm" onclick="sendChat()">Send</button>
         <button onclick="clearChat()" title="Clear chat"
           style="flex-shrink:0;background:#f1f5f9;border:none;border-radius:10px;
