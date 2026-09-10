@@ -576,10 +576,10 @@ function _rptMember() {
   const html = `
     <h2>Member Report — ${label} (${members.length})</h2>
     <table>
-      <thead><tr><th>#</th><th>Name</th><th>Mobile</th><th>Type</th><th>Status</th></tr></thead>
+      <thead><tr><th>#</th><th>Name</th><th>Mobile</th><th>Type</th><th>Status</th><th>Session</th></tr></thead>
       <tbody>
         ${members.length === 0
-          ? '<tr><td colspan="5" style="text-align:center;color:#94a3b8">No members found</td></tr>'
+          ? '<tr><td colspan="6" style="text-align:center;color:#94a3b8">No members found</td></tr>'
           : members.map((m,i) => `
               <tr>
                 <td class="grey">${i+1}</td>
@@ -587,6 +587,7 @@ function _rptMember() {
                 <td>${m.mobile || '—'}</td>
                 <td>${m.type || 'Regular'}</td>
                 <td><span class="badge ${m.status === 'Active' || !m.status ? 'bg' : 'br'}">${m.status || 'Active'}</span></td>
+                <td>${m.session || '—'}</td>
               </tr>`).join('')}
       </tbody>
     </table>`;

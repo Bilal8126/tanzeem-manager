@@ -110,6 +110,11 @@ ${activeRows || 'No data'}
 ${inactiveRows || 'None'}`;
 }
 
+function _pMemberSessions() {
+  const rows = STATE.allMembers.map(m => `  ${m.name}: ${m.session || 'N/A'}`).join('\n') || '  No data';
+  return `=== MEMBER JOIN SESSION (jis session mein member Tanzeem mein add hua) ===\n${rows}`;
+}
+
 function _pDonations() {
   const rows = STATE.allDonations.map(d =>
     `  ${d.donor || 'Unknown'}: Rs.${d.amount}${d.note ? ' (' + d.note + ')' : ''} ${d.date || ''}`
@@ -284,14 +289,14 @@ function buildDataContext(type = 'full', includeInactiveDetail = false) {
       parts.push(_pSession(d), _pFinancials(d), _pDonations(), _pExpenses());
       break;
     case 'payments':
-      parts.push(_pDisambiguation(d), _pSession(d), _pFinancials(d), _pMonthly(d), _pMembers(d, false));
+      parts.push(_pDisambiguation(d), _pSession(d), _pFinancials(d), _pMonthly(d), _pMembers(d, false), _pMemberSessions());
       break;
     case 'member':
-      parts.push(_pDisambiguation(d), _pSession(d), _pFinancials(d), _pMonthly(d), _pMembers(d, includeInactiveDetail));
+      parts.push(_pDisambiguation(d), _pSession(d), _pFinancials(d), _pMonthly(d), _pMembers(d, includeInactiveDetail), _pMemberSessions());
       break;
     default: // 'full'
       parts.push(_pAppInfo(d), _pDisambiguation(d), _pSession(d), _pFinancials(d),
-                 _pMonthly(d), _pMembers(d, includeInactiveDetail), _pDonations(), _pExpenses());
+                 _pMonthly(d), _pMembers(d, includeInactiveDetail), _pMemberSessions(), _pDonations(), _pExpenses());
   }
 
   parts.push('\nJawab Hinglish mein do. Friendly aur concise raho.');

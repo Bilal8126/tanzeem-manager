@@ -157,7 +157,7 @@ async function loadAllData(forceRefresh = false) {
   setSyncLoading(true);
   try {
     const [membersRaw, sessionRaw, donationsRaw, expensesRaw] = await Promise.all([
-      sheetsGet('Members List!A:I'),
+      sheetsGet('Members List!A:J'),
       sheetsGet(session.sheet + '!A:P'),
       sheetsGet(session.donations + '!A:F').catch(() => []),
       sheetsGet(session.expenses  + '!A:F').catch(() => [])
@@ -197,7 +197,8 @@ function parseMembers(rows) {
       aadhar: r[5] || '',
       status: r[6] || 'Active',
       doe:    r[7] || '',
-      type:   r[8] || 'Regular'
+      type:   r[8] || 'Regular',
+      session: r[9] || ''
     });
   }
 }

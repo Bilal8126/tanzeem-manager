@@ -1537,6 +1537,7 @@ ${mode === 'export' ? '<scr\x69pt>window.addEventListener("load",function(){setT
 const _qmpSel = new Map(); // memberName → Set of selected months
 
 async function showQuickMarkPayment() {
+  if (!_isActiveSession()) { showAlert('Edit Nahi Ho Sakta', 'Purane session mein payment mark nahi ho sakti — sirf current active session mein yeh kaam ho sakta hai.'); return; }
   if (!await _ensureWriteAccess()) return;
   _qmpSel.clear();
   _renderQmpModal();

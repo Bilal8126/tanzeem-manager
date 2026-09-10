@@ -90,6 +90,7 @@ let _ffType = null;
 let _ffIdx  = null;
 
 function openFinanceForm(type, idx) {
+  if (!_isActiveSession()) { showAlert('Edit Nahi Ho Sakta', 'Purane session mein donation/expense add ya edit nahi ho sakta — sirf current active session mein yeh kaam ho sakta hai.'); return; }
   _ffType = type;
   _ffIdx  = (idx === undefined || idx === null) ? null : idx;
   const isEdit     = _ffIdx !== null;

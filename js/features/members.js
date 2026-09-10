@@ -1,4 +1,41 @@
+// Converts dd/mm/yyyy or dd-Mon-yyyy (sheet's manual-entry formats) to
+// yyyy-mm-dd so a native <input type="date"> can display it.
+function _toISODate(str) {
+  if (!str) return '';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
+  let m = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (m) return `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+  m = str.match(/^(\d{1,2})-([A-Za-z]{3})-(\d{4})$/);
+  if (m) {
+    const months = { Jan:'01',Feb:'02',Mar:'03',Apr:'04',May:'05',Jun:'06',Jul:'07',Aug:'08',Sep:'09',Oct:'10',Nov:'11',Dec:'12' };
+    const mo = months[m[2]];
+    if (mo) return `${m[3]}-${mo}-${m[1].padStart(2,'0')}`;
+  }
+  return '';
+}
+
 function renderMembers() {
+  const addBtn = document.getElementById('memberAddBtn');
+  if (addBtn) addBtn.style.display = _isActiveSession() ? 'flex' : 'none';
+
+  // Session filter pills — built from whichever session labels actually
+  // appear on members (newest first), regardless of what's currently selected.
+  const sessionsEl = document.getElementById('memberSessionFilters');
+  if (sessionsEl) {
+    const uniqueSessions = [...new Set(STATE.allMembers.map(m => m.session).filter(Boolean))]
+      .sort((a, b) => b.localeCompare(a));
+    if (uniqueSessions.length > 0) {
+      sessionsEl.style.display = 'flex';
+      sessionsEl.innerHTML = `
+        <button class="month-pill ${STATE.memberSessionFilter === 'all' ? 'active' : ''}" onclick="setMemberSessionFilter('all')">All Sessions</button>
+        ${uniqueSessions.map(s => `<button class="month-pill ${STATE.memberSessionFilter === s ? 'active' : ''}" onclick="setMemberSessionFilter('${s}')">${s}</button>`).join('')}
+      `;
+    } else {
+      sessionsEl.style.display = 'none';
+      sessionsEl.innerHTML = '';
+    }
+  }
+
   const q = (document.getElementById('memberSearch')?.value || '').toLowerCase();
   const list = STATE.allMembers.filter(m => {
     const matchQ = !q || m.name.toLowerCase().includes(q) || m.mobile.includes(q);
@@ -7,7 +44,8 @@ function renderMembers() {
       || (STATE.memberFilter === 'Inactive' && m.status !== 'Active')
       || (STATE.memberFilter === 'Regular'  && (m.type || 'Regular') === 'Regular')
       || (STATE.memberFilter === 'Donor'    && m.type === 'Donor');
-    return matchQ && matchF;
+    const matchS = STATE.memberSessionFilter === 'all' || m.session === STATE.memberSessionFilter;
+    return matchQ && matchF && matchS;
   });
 
   const isActive = m => m.status === 'Active';
@@ -34,6 +72,9 @@ function renderMembers() {
                   : `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>`
                 }${m.type || 'Regular'}
               </span>
+              ${m.session ? `<span style="display:inline-flex;align-items:center;gap:3px;font-size:10px;padding:2px 7px;border-radius:8px;font-weight:600;background:#ede9fe;color:#6d28d9">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>${m.session}
+              </span>` : ''}
             </div>
             <div class="member-sub">${m.mobile || 'No mobile'}</div>
             ${m.address ? `<div class="member-sub">${m.address}</div>` : ''}
@@ -50,6 +91,11 @@ function setMemberFilter(f, el) {
   renderMembers();
 }
 
+function setMemberSessionFilter(s) {
+  STATE.memberSessionFilter = s;
+  renderMembers();
+}
+
 function filterMembers() { renderMembers(); }
 
 // ── Member Profile Modal ──────────────────────────────────
@@ -63,8 +109,8 @@ function openMemberProfile(idx) {
   const hasToken   = !!STATE.accessToken;
   const isActive   = member.status === 'Active';
   const isRegular  = (member.type || 'Regular') === 'Regular';
-  const canEdit    = payIdx !== -1 && hasToken && isActive && isRegular;
-  const needsSync  = payIdx !== -1 && !hasToken && isActive && isRegular;
+  const canEdit    = payIdx !== -1 && hasToken && isActive && isRegular && _isActiveSession();
+  const needsSync  = payIdx !== -1 && !hasToken && isActive && isRegular && _isActiveSession();
   // Fall back to month list from any payment record if this member has no row
   const monthKeys = payRec
     ? Object.keys(payRec.months)
@@ -289,6 +335,7 @@ function shareWhatsAppMember(idx) {
 // ── Toggle payment from member profile ───────────────────
 
 async function togglePaymentFromProfile(payIdx, mo, memberIdx) {
+  if (!_isActiveSession()) { showAlert('Edit Nahi Ho Sakta', 'Purane session mein payment mark/unmark nahi ho sakti — sirf current active session editable hai.'); return; }
   const p = STATE.allPayments[payIdx];
   if (!p) return;
   const memberRec = STATE.allMembers.find(m => nameMatch(m.name, p.name));
@@ -341,6 +388,7 @@ let _editMemberAadhar = null;
 let _editMemberRef    = null;
 
 function openEditMember(idx) {
+  if (!_isActiveSession()) { showAlert('Edit Nahi Ho Sakta', 'Purane session mein member add/edit nahi ho sakta — sirf current active session mein yeh kaam ho sakta hai.'); return; }
   const m = STATE.allMembers[idx];
   if (!m) return;
   _editMemberStatus = m.status;
@@ -366,6 +414,10 @@ function openEditMember(idx) {
         <button id="emStatusActive" class="btn ${m.status === 'Active' ? 'btn-primary' : 'btn-secondary'}" style="flex:1;padding:10px;display:flex;align-items:center;justify-content:center;gap:7px" onclick="setEditStatus('Active')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>Active</button>
         <button id="emStatusInactive" class="btn ${m.status !== 'Active' ? 'btn-danger' : 'btn-secondary'}" style="flex:1;padding:10px;display:flex;align-items:center;justify-content:center;gap:7px" onclick="setEditStatus('In Active')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>In Active</button>
       </div>
+    </div>
+    <div class="form-group" id="emDoeGroup" style="display:${m.status !== 'Active' ? 'block' : 'none'}">
+      <label><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Date of Exit (DOE)</label>
+      <input id="em_doe" type="date" value="${_toISODate(m.doe) || (m.status !== 'Active' ? todayDate() : '')}">
     </div>
     <div class="form-group">
       <label><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>Type</label>
@@ -396,6 +448,14 @@ function setEditStatus(s) {
   _editMemberStatus = s;
   document.getElementById('emStatusActive').className   = 'btn ' + (s === 'Active' ? 'btn-primary'   : 'btn-secondary');
   document.getElementById('emStatusInactive').className = 'btn ' + (s !== 'Active' ? 'btn-danger' : 'btn-secondary');
+
+  const doeGroup = document.getElementById('emDoeGroup');
+  const doeInput = document.getElementById('em_doe');
+  if (doeGroup) doeGroup.style.display = s !== 'Active' ? 'block' : 'none';
+  if (doeInput) {
+    if (s !== 'Active' && !doeInput.value) doeInput.value = todayDate();
+    if (s === 'Active') doeInput.value = '';
+  }
 }
 
 function _memberHasSessionPayment(m) {
@@ -430,13 +490,16 @@ async function saveEditMember(idx) {
   const newStatus = _editMemberStatus || m.status;
   const newType   = _editMemberType   || (m.type || 'Regular');
   const newAadhar = _editMemberAadhar || (m.aadhar || 'No');
+  let   newDoe    = newStatus === 'Active' ? '' : (document.getElementById('em_doe')?.value || '');
   if (!newName) { showAlert('Naam Zaroori Hai', 'Naam khali nahi ho sakta.'); return; }
+  if (newStatus !== 'Active' && !newDoe) { showAlert('DOE Zaroori Hai', 'Member ko Inactive karne ke liye Date of Exit (DOE) bharein.'); return; }
   const changes = [];
   if (newName   !== m.name)              changes.push(`Naam: <b>${m.name}</b> → <b>${newName}</b>`);
   if (newMobile !== (m.mobile || ''))    changes.push(`Mobile: <b>${m.mobile || '—'}</b> → <b>${newMobile || '—'}</b>`);
   if (newStatus !== m.status)            changes.push(`Status: <b>${m.status}</b> → <b>${newStatus}</b>`);
   if (newType   !== (m.type||'Regular')) changes.push(`Type: <b>${m.type||'Regular'}</b> → <b>${newType}</b>`);
   if (newAadhar !== (m.aadhar||'No'))    changes.push(`Aadhar Card: <b>${m.aadhar||'No'}</b> → <b>${newAadhar}</b>`);
+  if (newDoe    !== (m.doe||''))         changes.push(`DOE: <b>${m.doe||'—'}</b> → <b>${newDoe||'—'}</b>`);
   if (!changes.length) { openMemberProfile(idx); return; }
   showConfirm('Yeh changes save karein?', changes.join('<br>'), async () => {
     try {
@@ -444,6 +507,7 @@ async function saveEditMember(idx) {
       if (newMobile !== (m.mobile||''))      await sheetsPut(`Members List!C${m.row}`, [[newMobile]]);
       if (newAadhar !== (m.aadhar||'No'))    await sheetsPut(`Members List!F${m.row}`, [[newAadhar]]);
       if (newStatus !== m.status)            await sheetsPut(`Members List!G${m.row}`, [[newStatus]]);
+      if (newDoe    !== (m.doe||''))         await sheetsPut(`Members List!H${m.row}`, [[newDoe]]);
       if (newType   !== (m.type||'Regular')) await sheetsPut(`Members List!I${m.row}`, [[newType]]);
 
       // Reactivated (Inactive → Active): add to this session's payment sheet
@@ -481,6 +545,7 @@ async function saveEditMember(idx) {
       STATE.allMembers[idx].status = newStatus;
       STATE.allMembers[idx].type   = newType;
       STATE.allMembers[idx].aadhar = newAadhar;
+      STATE.allMembers[idx].doe    = newDoe;
       saveCache(STATE.currentSession.label);
       showAlert('Member Update Ho Gaya', 'Member ki details save ho gayin!' + _reactivateNote + ' ✅');
       const changesSummary = changes.map(c => c.replace(/<[^>]+>/g, '')).join(', ');
@@ -494,6 +559,7 @@ async function saveEditMember(idx) {
 }
 
 async function deleteMember(idx) {
+  if (!_isActiveSession()) { showAlert('Edit Nahi Ho Sakta', 'Purane session mein member delete nahi ho sakta — sirf current active session mein yeh kaam ho sakta hai.'); return; }
   const m = STATE.allMembers[idx];
   if (!m) return;
   if (!await _ensureWriteAccess()) return;
@@ -522,6 +588,7 @@ async function deleteMember(idx) {
 // ── Add New Member ────────────────────────────────────────
 
 async function openAddMember() {
+  if (!_isActiveSession()) { showAlert('Edit Nahi Ho Sakta', 'Purane session mein naya member add nahi ho sakta — sirf current active session mein yeh kaam ho sakta hai.'); return; }
   if (!STATE.accessToken) await syncData();
   document.getElementById('memberProfileContent').innerHTML = `
     <div class="modal-header">
@@ -589,8 +656,9 @@ function saveNewMember() {
     `<b>${name}</b>${mobile ? '<br>📞 ' + mobile : ''}${doj ? '<br>DOJ: ' + doj : ''}${address ? '<br>🏠 ' + address : ''}<br>Type: ${type}`,
     async () => {
       try {
-        // Sheet columns: A=#, B=Name, C=Mobile, D=DOJ, E=Address, F=Aadhar, G=Status, H=DOE, I=Type
-        await sheetsAppend('Members List', [[nextId, name, mobile, doj, address, aadhar, status, '', type]]);
+        // Sheet columns: A=#, B=Name, C=Mobile, D=DOJ, E=Address, F=Aadhar, G=Status, H=DOE, I=Type, J=Session
+        const joinSession = STATE.currentSession?.label || '';
+        await sheetsAppend('Members List', [[nextId, name, mobile, doj, address, aadhar, status, '', type, joinSession]]);
 
         // Also add to session payment sheet with unpaid status for all months
         const months = STATE.allPayments.length > 0 ? Object.keys(STATE.allPayments[0].months) : [];
@@ -613,7 +681,7 @@ function saveNewMember() {
         const newRow = STATE.allMembers.length > 0
           ? Math.max(...STATE.allMembers.map(m => m.row)) + 1
           : 2;
-        STATE.allMembers.push({ row: newRow, id: String(nextId), name, mobile, doj, address, aadhar, status, doe: '', type });
+        STATE.allMembers.push({ row: newRow, id: String(nextId), name, mobile, doj, address, aadhar, status, doe: '', type, session: joinSession });
         saveCache(STATE.currentSession.label);
         showAlert('Member Add Ho Gaya', `${name} Tanzeem mein add ho gaye! ✅`);
         _trackHistory('Member Added', name);

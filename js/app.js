@@ -5,6 +5,7 @@ const STATE = {
   currentSession:    null,
   currentFinanceTab: 'donations',
   memberFilter:          'all',
+  memberSessionFilter:   'all',
   selectedPaymentMonth:  null,
   dashChart:         null,
   allMembers:        [],
