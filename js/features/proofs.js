@@ -118,6 +118,10 @@ function _renderProofEntry(prefillName) {
       <div class="modal-title">Payment Proofs — ${STATE.currentSession?.label || ''}</div>
       <button class="close-btn" onclick="closeProofOverlay()">×</button>
     </div>
+    <button type="button" onclick="openAllProofsBrowse()" style="width:100%;margin-bottom:16px;display:flex;align-items:center;justify-content:center;gap:7px;padding:10px;background:#f5f3ff;color:#6d28d9;border:none;border-radius:12px;font-weight:700;font-size:12.5px;cursor:pointer">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+      Sabhi Proofs Dekhein — Session/Member/Month Wise
+    </button>
     <div class="form-group">
       <label><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>Member Ka Naam</label>
       <select id="pf_member" onchange="_pfMemberChanged()">
@@ -528,4 +532,124 @@ async function _deleteProof(p) {
   } finally {
     _proofBusy = false;
   }
+}
+
+// ── "Sabhi Proofs" — one master list of every uploaded proof, filterable
+// by Session / Member / Month / Type all in one place (photo + name + months).
+
+let _apFilters = { session: '', member: '', month: '', type: '' };
+
+async function openAllProofsBrowse() {
+  _openProofOverlay();
+  document.getElementById('proofOverlayContent').innerHTML = '<div class="loading">Loading...</div>';
+  await _loadProofs();
+  _apFilters = { session: STATE.currentSession?.label || '', member: '', month: '', type: '' };
+  _renderAllProofsBrowse();
+}
+
+function _apMembersFor(sessionLabel) {
+  const names = new Set();
+  _proofRows.forEach(p => { if (p.session === sessionLabel) names.add(p.name); });
+  return [...names].sort((a, b) => a.localeCompare(b));
+}
+
+function _apMonthsFor(sessionLabel, memberName) {
+  const set = new Set();
+  _proofRows.forEach(p => {
+    if (p.session !== sessionLabel) return;
+    if (memberName && p.name !== memberName) return;
+    _monthsListOf(p).forEach(m => set.add(m));
+  });
+  // Prefer the app's canonical Jan..Dec-style order when possible, fall back to A-Z for the rest
+  const canonical = STATE.allPayments.length ? Object.keys(STATE.allPayments[0].months) : [];
+  const ordered = canonical.filter(m => set.has(m));
+  const extra   = [...set].filter(m => !canonical.includes(m)).sort();
+  return [...ordered, ...extra];
+}
+
+function _apFilteredRows() {
+  return _proofRows.filter(p =>
+    (!_apFilters.session || p.session === _apFilters.session) &&
+    (!_apFilters.member  || p.name === _apFilters.member) &&
+    (!_apFilters.type    || p.type === _apFilters.type) &&
+    (!_apFilters.month   || _monthsListOf(p).includes(_apFilters.month))
+  ).sort((a, b) => (b.date || '').localeCompare(a.date || '')); // newest first
+}
+
+// Same grid as everywhere else, but the badge also carries the member name —
+// this view spans multiple members at once, unlike every other proof grid.
+function _apGridHtml(list) {
+  if (!list.length) return `<div style="font-size:12px;color:var(--muted);text-align:center;padding:24px 0">Is filter ke liye koi proof nahi mila.</div>`;
+  return `<div class="gallery-grid">
+    ${list.map(p => `
+      <div class="gallery-item" onclick="_openProofLightbox('${p.driveId}')">
+        <img src="${_thumbUrlProof(p.driveId, 400)}" alt="" loading="lazy"
+             onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+        <div class="gallery-placeholder" style="display:none">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        </div>
+        <div class="gallery-badge">${p.name} · ${p.type}${p.months ? ' · ' + p.months : ''}</div>
+      </div>`).join('')}
+  </div>`;
+}
+
+function _renderAllProofsBrowse() {
+  const sessionOptions = (CONFIG.SESSIONS || []).map(s =>
+    `<option value="${s.label.replace(/"/g, '&quot;')}"${s.label === _apFilters.session ? ' selected' : ''}>${s.label}${s.active ? ' (Active)' : ''}</option>`
+  ).join('');
+  const members = _apMembersFor(_apFilters.session);
+  const memberOptions = members.map(n =>
+    `<option value="${n.replace(/"/g, '&quot;')}"${n === _apFilters.member ? ' selected' : ''}>${n}</option>`
+  ).join('');
+  const months = _apMonthsFor(_apFilters.session, _apFilters.member);
+  const monthOptions = months.map(m =>
+    `<option value="${m}"${m === _apFilters.month ? ' selected' : ''}>${m}</option>`
+  ).join('');
+  const typeOptions = ['Payment', 'Advance', 'Donation', 'Expense'].map(t =>
+    `<option value="${t}"${t === _apFilters.type ? ' selected' : ''}>${t}</option>`
+  ).join('');
+  const list = _apFilteredRows();
+
+  document.getElementById('proofOverlayContent').innerHTML = `
+    <div class="modal-header">
+      <div class="modal-title">Sabhi Proofs</div>
+      <button class="close-btn" onclick="closeProofOverlay()">×</button>
+    </div>
+    <div class="form-group">
+      <label>Session</label>
+      <select onchange="_apSetFilter('session', this.value)">${sessionOptions}</select>
+    </div>
+    <div class="form-group">
+      <label>Member</label>
+      <select onchange="_apSetFilter('member', this.value)">
+        <option value="">Sabhi Members${members.length ? ' (' + members.length + ')' : ''}</option>
+        ${memberOptions}
+      </select>
+    </div>
+    <div style="display:flex;gap:10px">
+      <div class="form-group" style="flex:1">
+        <label>Month</label>
+        <select onchange="_apSetFilter('month', this.value)">
+          <option value="">Sabhi Months</option>
+          ${monthOptions}
+        </select>
+      </div>
+      <div class="form-group" style="flex:1">
+        <label>Type</label>
+        <select onchange="_apSetFilter('type', this.value)">
+          <option value="">Sabhi Types</option>
+          ${typeOptions}
+        </select>
+      </div>
+    </div>
+    <div style="font-size:12px;color:var(--muted);margin:4px 0 12px">${list.length} proof${list.length === 1 ? '' : 's'} mile</div>
+    ${_apGridHtml(list)}
+  `;
+}
+
+function _apSetFilter(key, value) {
+  _apFilters[key] = value;
+  if (key === 'session') { _apFilters.member = ''; _apFilters.month = ''; } // stale member/month from old session don't carry over
+  if (key === 'member')  { _apFilters.month  = ''; }
+  _renderAllProofsBrowse();
 }

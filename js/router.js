@@ -2,7 +2,12 @@ const _scrollPos = {};
 
 // ── Android back-button navigation ────────────────────────
 let _historyReady  = false;
-let _manualClose   = false; // set true when modal closes via its own button
+// Counts _histBack() calls whose popstate hasn't fired yet. A boolean here used to
+// swallow only the FIRST of several manual closes fired back-to-back in the same
+// tick (e.g. a delete confirm's onYes closing the proof overlay, then showConfirm's
+// own finally{} closing itself right after) — the second, un-swallowed popstate would
+// fall through and close one extra modal underneath. A counter absorbs all of them.
+let _manualCloseCount = 0;
 let _fromPopstate  = false; // set true while popstate handler is closing a modal
 
 function _histPush(extra) {
@@ -13,7 +18,7 @@ function _histPush(extra) {
 // Skipped when called from popstate (hardware back already popped the entry)
 function _histBack() {
   if (_fromPopstate) return;
-  _manualClose = true;
+  _manualCloseCount++;
   history.back();
 }
 
@@ -49,7 +54,7 @@ const _MODALS = [
 ];
 
 window.addEventListener('popstate', e => {
-  if (_manualClose) { _manualClose = false; return; }
+  if (_manualCloseCount > 0) { _manualCloseCount--; return; }
 
   // 1. Close topmost open modal
   for (const m of _MODALS) {

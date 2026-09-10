@@ -64,12 +64,12 @@ function renderExpenses() {
             <div class="finance-item">
               <div class="finance-left">
                 <div class="finance-dot red"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div>
-                <div>
+                <div style="min-width:0">
                   <div class="finance-name">${e.desc}</div>
                   <div class="finance-sub">${e.date || ''}</div>
                 </div>
               </div>
-              <div style="display:flex;align-items:center;gap:8px">
+              <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
                 <div class="finance-amount red">${formatCurrency(e.amount)}</div>
                 ${_proofRecordIconHtml('Expense', i, e.desc)}
                 ${_isActiveSession() ? `
