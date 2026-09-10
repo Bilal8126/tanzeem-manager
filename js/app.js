@@ -7,6 +7,7 @@ const STATE = {
   memberFilter:          'all',
   memberSessionFilter:   'all',
   memberSortMode:        'default', // 'default' | 'date' | 'alpha'
+  memberSortDir:         'desc',    // 'asc' | 'desc' — applies to whichever mode is active
   selectedPaymentMonth:  null,
   dashChart:         null,
   allMembers:        [],

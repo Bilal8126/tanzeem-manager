@@ -14,6 +14,15 @@ function _toISODate(str) {
   return '';
 }
 
+// Formats any of the sheet's date styles into "11-Apr-2026" for display badges.
+function _toDisplayDate(str) {
+  const iso = _toISODate(str);
+  if (!iso) return str || '';
+  const [y, mo, d] = iso.split('-');
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${d}-${months[parseInt(mo, 10) - 1]}-${y}`;
+}
+
 function renderMembers() {
   const addBtn = document.getElementById('memberAddBtn');
   if (addBtn) addBtn.style.display = _isActiveSession() ? 'flex' : 'none';
@@ -38,6 +47,10 @@ function renderMembers() {
 
   document.querySelectorAll('#screen-members .month-pills button[id^="memberSort"]').forEach(b => b.classList.remove('active'));
   document.getElementById('memberSort' + STATE.memberSortMode[0].toUpperCase() + STATE.memberSortMode.slice(1))?.classList.add('active');
+  const dateBtn  = document.getElementById('memberSortDate');
+  const alphaBtn = document.getElementById('memberSortAlpha');
+  if (dateBtn)  dateBtn.textContent  = (STATE.memberSortMode === 'date'  && STATE.memberSortDir === 'asc')  ? 'Date Wise ↑ (Oldest)' : 'Date Wise ↓ (Newest)';
+  if (alphaBtn) alphaBtn.textContent = (STATE.memberSortMode === 'alpha' && STATE.memberSortDir === 'desc') ? 'Z-A' : 'A-Z';
 
   const q = (document.getElementById('memberSearch')?.value || '').toLowerCase();
   const list = STATE.allMembers.filter(m => {
@@ -52,9 +65,11 @@ function renderMembers() {
   });
 
   if (STATE.memberSortMode === 'date') {
-    list.sort((a, b) => (_toISODate(b.doj) || '').localeCompare(_toISODate(a.doj) || '')); // newest join first
+    const dir = STATE.memberSortDir === 'asc' ? 1 : -1; // desc = newest first
+    list.sort((a, b) => dir * (_toISODate(a.doj) || '').localeCompare(_toISODate(b.doj) || ''));
   } else if (STATE.memberSortMode === 'alpha') {
-    list.sort((a, b) => a.name.localeCompare(b.name));
+    const dir = STATE.memberSortDir === 'desc' ? -1 : 1; // asc = A-Z
+    list.sort((a, b) => dir * a.name.localeCompare(b.name));
   } // 'default' → keep sheet row order as-is
 
   const isActive = m => m.status === 'Active';
@@ -84,11 +99,11 @@ function renderMembers() {
               ${m.session ? `<span style="display:inline-flex;align-items:center;gap:3px;font-size:10px;padding:2px 7px;border-radius:8px;font-weight:600;background:#ede9fe;color:#6d28d9">
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>${m.session}
               </span>` : ''}
-              ${m.doj ? `<span style="display:inline-flex;align-items:center;gap:3px;font-size:10px;padding:2px 7px;border-radius:8px;font-weight:600;background:#f1f5f9;color:#475569">
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>DOJ ${m.doj}
+              ${m.doj ? `<span style="display:inline-flex;align-items:center;gap:3px;font-size:10px;padding:2px 7px;border-radius:8px;font-weight:600;background:#e0f2fe;color:#0369a1">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>DOJ ${_toDisplayDate(m.doj)}
               </span>` : ''}
               ${(!isActive(m) && m.doe) ? `<span style="display:inline-flex;align-items:center;gap:3px;font-size:10px;padding:2px 7px;border-radius:8px;font-weight:600;background:#fee2e2;color:#991b1b">
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>DOE ${m.doe}
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>DOE ${_toDisplayDate(m.doe)}
               </span>` : ''}
             </div>
             <div class="member-sub">${m.mobile || 'No mobile'}</div>
@@ -105,6 +120,7 @@ function goToMembersTab(el) {
   STATE.memberFilter = 'all';
   STATE.memberSessionFilter = 'all';
   STATE.memberSortMode = 'default';
+  STATE.memberSortDir = 'desc';
   const search = document.getElementById('memberSearch');
   if (search) search.value = '';
   document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
@@ -125,7 +141,13 @@ function setMemberSessionFilter(s) {
 }
 
 function setMemberSortMode(mode) {
-  STATE.memberSortMode = mode;
+  if (STATE.memberSortMode === mode && mode !== 'default') {
+    // Tapping the already-active sort pill flips its direction
+    STATE.memberSortDir = STATE.memberSortDir === 'asc' ? 'desc' : 'asc';
+  } else {
+    STATE.memberSortMode = mode;
+    STATE.memberSortDir  = mode === 'alpha' ? 'asc' : 'desc'; // A-Z default / newest-first default
+  }
   renderMembers();
 }
 
