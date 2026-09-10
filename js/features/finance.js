@@ -250,6 +250,178 @@ async function saveFinanceForm() {
   );
 }
 
+// ── AI-driven finance actions ─────────────────────────────
+// Mirrors saveFinanceForm()'s add-donation/add-expense branches exactly.
+
+function _aiValidateAddDonation({ donor, amount, date, note }) {
+  if (!_isActiveSession()) return { ok: false, error: _sessionLockedMsg('Donation add karne') };
+  donor  = (donor  || '').trim();
+  amount = (amount || '').toString().trim();
+  date   = (date   || '').trim();
+  note   = (note   || '').trim();
+  if (!donor) return { ok: false, error: 'Donation add karne ke liye donor ka naam zaroori hai.' };
+  if (!amount || isNaN(parseFloat(amount))) return { ok: false, error: 'Sahi amount batayein.' };
+  const preview = `<b>${donor}</b><br>Rs.${amount}${date ? ' — ' + date : ''}${note ? '<br>Note: ' + note : ''}<br>Session: ${STATE.currentSession?.label || ''}`;
+  return { ok: true, preview, args: { donor, amount, date, note } };
+}
+
+async function _aiCommitAddDonation({ donor, amount, date, note }) {
+  if (!await _ensureWriteAccess()) return { ok: false, error: 'Google sign-in/sync zaroori hai.' };
+  try {
+    const session = STATE.currentSession;
+    const sr      = STATE.allDonations.length + 1;
+    const newRow  = STATE.allDonations.length > 0 ? STATE.allDonations[STATE.allDonations.length - 1].row + 1 : 3;
+    // Sheet columns: A=Sr, B=Name, C=Amount, D=Description, E=Date, F=Session
+    await sheetsAppend(session.donations, [[sr, donor, amount, note, date, session.label]]);
+    STATE.allDonations.push({ row: newRow, sr: String(sr), donor, amount, note, date });
+    saveCache(session.label);
+    _trackHistory('Donation Added', `${donor} - Rs.${amount}${note ? ' - ' + note : ''}`, true);
+    _pushNotify('Naya Donation! 💚', `${donor} ne Rs.${amount} jama kiya (AI se)`);
+    renderFinance();
+    return { ok: true, message: `✅ **${donor}** — Rs.${amount} donation add ho gaya!${note ? ' (' + note + ')' : ''}` };
+  } catch (e) {
+    return { ok: false, error: e.message === 'AUTH_EXPIRED' ? 'Session expired — sync karein.' : 'Error: ' + e.message };
+  }
+}
+
+function _aiValidateAddExpense({ desc, amount, date }) {
+  if (!_isActiveSession()) return { ok: false, error: _sessionLockedMsg('Expense add karne') };
+  desc   = (desc   || '').trim();
+  amount = (amount || '').toString().trim();
+  date   = (date   || '').trim();
+  if (!desc) return { ok: false, error: 'Expense add karne ke liye wajah/description zaroori hai.' };
+  if (!amount || isNaN(parseFloat(amount))) return { ok: false, error: 'Sahi amount batayein.' };
+  const preview = `<b>${desc}</b><br>Rs.${amount}${date ? ' — ' + date : ''}<br>Session: ${STATE.currentSession?.label || ''}`;
+  return { ok: true, preview, args: { desc, amount, date } };
+}
+
+async function _aiCommitAddExpense({ desc, amount, date }) {
+  if (!await _ensureWriteAccess()) return { ok: false, error: 'Google sign-in/sync zaroori hai.' };
+  try {
+    const session = STATE.currentSession;
+    const sr      = STATE.allExpenses.length + 1;
+    const newRow  = STATE.allExpenses.length > 0 ? STATE.allExpenses[STATE.allExpenses.length - 1].row + 1 : 3;
+    // Sheet columns: B=Description, C=Amount, D=Date, E=Session
+    await sheetsAppend(session.expenses, [[sr, desc, amount, date, session.label]]);
+    STATE.allExpenses.push({ row: newRow, sr: String(sr), desc, amount, date, session: session.label });
+    saveCache(session.label);
+    _trackHistory('Expense Added', `${desc} - Rs.${amount}`, true);
+    _pushNotify('Naya Kharcha! 💸', `${desc} — Rs.${amount} (AI se)`);
+    renderFinance();
+    return { ok: true, message: `✅ **${desc}** — Rs.${amount} kharcha add ho gaya!` };
+  } catch (e) {
+    return { ok: false, error: e.message === 'AUTH_EXPIRED' ? 'Session expired — sync karein.' : 'Error: ' + e.message };
+  }
+}
+
+// Mirrors saveFinanceForm()'s edit-donation/edit-expense branches exactly.
+// matchAmount disambiguates when the same donor/description appears more
+// than once in this session (e.g. two separate donations from one person).
+
+function _aiValidateEditDonation({ donor, matchAmount, newDonor, newAmount, newDate, newNote }) {
+  if (!_isActiveSession()) return { ok: false, error: _sessionLockedMsg('Donation edit karne') };
+  let matches = STATE.allDonations.filter(d => nameMatch(d.donor, donor || ''));
+  if (matches.length === 0) return { ok: false, error: `"${donor}" naam se is session mein koi donation nahi mili.` };
+  if (matches.length > 1 && matchAmount) matches = matches.filter(d => String(d.amount) === String(matchAmount).trim());
+  if (matches.length === 0) return { ok: false, error: `"${donor}" ki koi donation Rs.${matchAmount} amount ke saath nahi mili.` };
+  if (matches.length > 1) {
+    const list = matches.map(d => `Rs.${d.amount}${d.date ? ' (' + d.date + ')' : ''}`).join(', ');
+    return { ok: false, error: `"${donor}" ki ${matches.length} donations mili: ${list}. Amount ya date batakar specify karein ke kaunsi update karni hai.` };
+  }
+  const rec = matches[0];
+  const idx = STATE.allDonations.indexOf(rec);
+
+  if (newAmount !== undefined && newAmount !== '' && isNaN(parseFloat(newAmount)))
+    return { ok: false, error: 'Sahi amount batayein.' };
+
+  const finalDonor  = (newDonor  !== undefined && newDonor  !== '') ? newDonor : rec.donor;
+  const finalAmount = (newAmount !== undefined && newAmount !== '') ? String(newAmount) : rec.amount;
+  const finalDate   = newDate !== undefined ? newDate : (rec.date || '');
+  const finalNote   = newNote !== undefined ? newNote : (rec.note || '');
+
+  const changes = [];
+  if (finalDonor  !== rec.donor)        changes.push(`Naam: ${rec.donor} → ${finalDonor}`);
+  if (finalAmount !== rec.amount)       changes.push(`Amount: Rs.${rec.amount} → Rs.${finalAmount}`);
+  if (finalDate   !== (rec.date || '')) changes.push(`Date: ${rec.date || '—'} → ${finalDate || '—'}`);
+  if (finalNote   !== (rec.note || '')) changes.push(`Note: ${rec.note || '—'} → ${finalNote || '—'}`);
+  if (!changes.length) return { ok: false, error: `${rec.donor} ki donation mein koi change nahi hai — bataye kya update karna hai.` };
+
+  return {
+    ok: true,
+    preview: `<b>${rec.donor}</b><br>${changes.join('<br>')}<br>Session: ${STATE.currentSession?.label || ''}`,
+    args: { idx, finalDonor, finalAmount, finalDate, finalNote },
+  };
+}
+
+async function _aiCommitEditDonation({ idx, finalDonor, finalAmount, finalDate, finalNote }) {
+  const rec = STATE.allDonations[idx];
+  if (!rec) return { ok: false, error: 'Donation record mil nahi raha — dobara try karein.' };
+  if (!await _ensureWriteAccess()) return { ok: false, error: 'Google sign-in/sync zaroori hai.' };
+  try {
+    const session = STATE.currentSession;
+    await sheetsPut(`${session.donations}!B${rec.row}:E${rec.row}`, [[finalDonor, finalAmount, finalNote, finalDate]]);
+    STATE.allDonations[idx] = { ...rec, donor: finalDonor, amount: finalAmount, note: finalNote, date: finalDate };
+    saveCache(session.label);
+    _trackHistory('Donation Updated', `${finalDonor} - Rs.${finalAmount}${finalNote ? ' - ' + finalNote : ''}`, true);
+    _pushNotify('Donation Update! ✏️', `${finalDonor} ki donation AI se update hui`);
+    renderFinance();
+    return { ok: true, message: `✅ **${finalDonor}** ki donation update ho gayi — Rs.${finalAmount}${finalDate ? ' — ' + finalDate : ''}${finalNote ? ' (' + finalNote + ')' : ''}` };
+  } catch (e) {
+    return { ok: false, error: e.message === 'AUTH_EXPIRED' ? 'Session expired — sync karein.' : 'Error: ' + e.message };
+  }
+}
+
+function _aiValidateEditExpense({ desc, matchAmount, newDesc, newAmount, newDate }) {
+  if (!_isActiveSession()) return { ok: false, error: _sessionLockedMsg('Expense edit karne') };
+  let matches = STATE.allExpenses.filter(e => nameMatch(e.desc, desc || ''));
+  if (matches.length === 0) return { ok: false, error: `"${desc}" se is session mein koi expense nahi mila.` };
+  if (matches.length > 1 && matchAmount) matches = matches.filter(e => String(e.amount) === String(matchAmount).trim());
+  if (matches.length === 0) return { ok: false, error: `"${desc}" ka koi expense Rs.${matchAmount} amount ke saath nahi mila.` };
+  if (matches.length > 1) {
+    const list = matches.map(e => `Rs.${e.amount}${e.date ? ' (' + e.date + ')' : ''}`).join(', ');
+    return { ok: false, error: `"${desc}" ke ${matches.length} expenses mile: ${list}. Amount ya date batakar specify karein ke kaunsa update karna hai.` };
+  }
+  const rec = matches[0];
+  const idx = STATE.allExpenses.indexOf(rec);
+
+  if (newAmount !== undefined && newAmount !== '' && isNaN(parseFloat(newAmount)))
+    return { ok: false, error: 'Sahi amount batayein.' };
+
+  const finalDesc   = (newDesc   !== undefined && newDesc   !== '') ? newDesc : rec.desc;
+  const finalAmount = (newAmount !== undefined && newAmount !== '') ? String(newAmount) : rec.amount;
+  const finalDate   = newDate !== undefined ? newDate : (rec.date || '');
+
+  const changes = [];
+  if (finalDesc   !== rec.desc)         changes.push(`Wajah: ${rec.desc} → ${finalDesc}`);
+  if (finalAmount !== rec.amount)       changes.push(`Amount: Rs.${rec.amount} → Rs.${finalAmount}`);
+  if (finalDate   !== (rec.date || '')) changes.push(`Date: ${rec.date || '—'} → ${finalDate || '—'}`);
+  if (!changes.length) return { ok: false, error: `${rec.desc} mein koi change nahi hai — bataye kya update karna hai.` };
+
+  return {
+    ok: true,
+    preview: `<b>${rec.desc}</b><br>${changes.join('<br>')}<br>Session: ${STATE.currentSession?.label || ''}`,
+    args: { idx, finalDesc, finalAmount, finalDate },
+  };
+}
+
+async function _aiCommitEditExpense({ idx, finalDesc, finalAmount, finalDate }) {
+  const rec = STATE.allExpenses[idx];
+  if (!rec) return { ok: false, error: 'Expense record mil nahi raha — dobara try karein.' };
+  if (!await _ensureWriteAccess()) return { ok: false, error: 'Google sign-in/sync zaroori hai.' };
+  try {
+    const session = STATE.currentSession;
+    await sheetsPut(`${session.expenses}!B${rec.row}:E${rec.row}`, [[finalDesc, finalAmount, finalDate, session.label]]);
+    STATE.allExpenses[idx] = { ...rec, desc: finalDesc, amount: finalAmount, date: finalDate };
+    saveCache(session.label);
+    _trackHistory('Expense Updated', `${finalDesc} - Rs.${finalAmount}`, true);
+    _pushNotify('Kharcha Update! ✏️', `${finalDesc} — Rs.${finalAmount} (AI se)`);
+    renderFinance();
+    return { ok: true, message: `✅ **${finalDesc}** update ho gaya — Rs.${finalAmount}${finalDate ? ' — ' + finalDate : ''}` };
+  } catch (e) {
+    return { ok: false, error: e.message === 'AUTH_EXPIRED' ? 'Session expired — sync karein.' : 'Error: ' + e.message };
+  }
+}
+
 // ── Delete Finance Item ───────────────────────────────────
 
 async function deleteFinanceItem(type, idx) {

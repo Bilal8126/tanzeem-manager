@@ -903,10 +903,10 @@ input:focus, select:focus, textarea:focus {
 .chat-input-row { display: flex; gap: 8px; align-items: flex-end; }
 .chat-input-row textarea {
   margin-bottom: 0; flex: 1; border-radius: 14px;
-  resize: none; max-height: 120px; overflow-y: auto;
+  resize: none; min-height: 48px; max-height: 120px; overflow-y: auto;
   line-height: 1.4; font-family: inherit;
 }
-.chat-input-row .btn-sm { flex-shrink: 0; }
+.chat-input-row .btn-sm { flex-shrink: 0; height: 48px; padding: 0 16px; }
 
 /* ── AI screen header ─────────────────────────────────── */
 .ai-header {
@@ -947,6 +947,12 @@ input:focus, select:focus, textarea:focus {
   backdrop-filter: blur(8px);
 }
 .chip:active { background: var(--green-light); transform: scale(0.95); }
+.chip-action {
+  background: linear-gradient(135deg, var(--green-dark) 0%, var(--green) 60%, #2563eb 130%);
+  color: #fff;
+  border-color: transparent;
+}
+.chip-action:active { background: linear-gradient(135deg, var(--green-dark) 0%, var(--green) 60%, #2563eb 130%); opacity: 0.85; }
 
 /* ── Finance Tabs ────────────────────────────────────── */
 .tabs {

@@ -885,6 +885,74 @@ async function togglePaymentCell(payIdx, mo) {
   );
 }
 
+// ── AI-driven payment mark/unmark ─────────────────────────
+// Mirrors togglePaymentCell()'s validation and write logic exactly, but
+// resolves the member/month from plain text and reports back whether the
+// requested state was already true instead of silently toggling blind.
+
+function _aiValidateMarkPayment({ name, month, action }) {
+  if (!_isActiveSession()) return { ok: false, error: _sessionLockedMsg('Payment mark/unmark karne') };
+  const matches = STATE.allMembers.filter(m => nameMatch(m.name, name || ''));
+  if (matches.length === 0) return { ok: false, error: `"${name}" naam ka koi member nahi mila.` };
+  if (matches.length > 1) return { ok: false, error: `"${name}" se milte-julte ${matches.length} members hain: ${matches.map(x => x.name).join(', ')}. Pura naam batayein.` };
+  const memberRec = matches[0];
+  if (memberRec.status !== 'Active')
+    return { ok: false, error: `${memberRec.name} Inactive hain. Payment mark karne se pehle inhe Active karna padega.` };
+  if ((memberRec.type || 'Regular') !== 'Regular')
+    return { ok: false, error: `${memberRec.name} Donor hain — Donor ki payment mark nahi ho sakti.` };
+
+  const sessionLabel = STATE.currentSession?.label || 'current session';
+  const payIdx = STATE.allPayments.findIndex(p => nameMatch(p.name, memberRec.name));
+  if (payIdx === -1)
+    return { ok: false, error: `${memberRec.name} Members List mein hain, lekin "${sessionLabel}" session mein nahi hain — is session ki payment sheet mein inka koi record nahi hai, isliye payment mark/unmark nahi ho sakti.` };
+  const p      = STATE.allPayments[payIdx];
+  const months = Object.keys(p.months);
+  const mo     = months.find(x => x.toLowerCase() === (month || '').toLowerCase());
+  if (!mo) return { ok: false, error: `"${month}" naam ka month "${sessionLabel}" session mein nahi mila. Available months: ${months.join(', ')}` };
+
+  const currentlyPaid = isPaid(p.months[mo]);
+  const wantMark       = /^mark$/i.test(action);
+  const cleanName      = memberRec.name.replace(/\(.*?\)/g, '').trim();
+
+  if (wantMark && currentlyPaid)
+    return { ok: false, error: `${cleanName} — ${mo} ka payment pehle se hi Paid hai. Dubara mark nahi kar raha.` };
+  if (!wantMark && !currentlyPaid)
+    return { ok: false, error: `${cleanName} — ${mo} ka payment pehle se hi Unpaid hai. Unmark karne ko kuch nahi hai.` };
+
+  const newVal  = wantMark ? 'Paid' : '';
+  const preview = `<b>${cleanName}</b> — ${mo}<br>Session: ${sessionLabel}<br>${wantMark ? 'Paid mark karein?' : 'Unpaid (unmark) karein?'}`;
+  return { ok: true, preview, args: { payIdx, mo, newVal, cleanName } };
+}
+
+async function _aiCommitMarkPayment({ payIdx, mo, newVal, cleanName }) {
+  const p = STATE.allPayments[payIdx];
+  if (!p) return { ok: false, error: 'Payment record mil nahi raha — dobara try karein.' };
+  if (!await _ensureWriteAccess()) return { ok: false, error: 'Google sign-in/sync zaroori hai.' };
+  try {
+    const months = Object.keys(p.months);
+    const mIdx   = months.indexOf(mo);
+    const col     = colLetter(3 + mIdx);
+    const session = STATE.currentSession;
+    await sheetsPut(`${session.sheet}!${col}${p.row}`, [[newVal]]);
+    STATE.allPayments[payIdx].months[mo] = newVal;
+    const paidCount = Object.values(STATE.allPayments[payIdx].months).filter(v => isPaid(v)).length;
+    STATE.allPayments[payIdx].total = String(paidCount * FEE);
+    saveCache(session.label);
+    _trackHistory(newVal === 'Paid' ? 'Mark Payment' : 'Mark Unpayment', `${cleanName} - ${mo}`, true);
+    if (newVal === 'Paid') {
+      _pushNotify('Payment Jama! ✅', `${cleanName} — ${mo} ka payment de diya (AI se)`);
+      _checkAllPaid(mo);
+    } else {
+      _pushNotify('Payment Hata Diya ✗', `${cleanName} — ${mo} payment wapas liya (AI se)`);
+    }
+    _updatePushStats(mo);
+    renderPayments();
+    return { ok: true, message: `✅ **${cleanName}** — ${mo} ${newVal === 'Paid' ? 'Paid mark ho gaya' : 'Unpaid mark ho gaya'}.` };
+  } catch (e) {
+    return { ok: false, error: e.message === 'AUTH_EXPIRED' ? 'Session expired — sync karein.' : 'Error: ' + e.message };
+  }
+}
+
 // ── WhatsApp Share Popup ──────────────────────────────────
 
 function showWhatsAppPopup() {

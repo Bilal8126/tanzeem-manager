@@ -752,3 +752,152 @@ function saveNewMember() {
     }
   );
 }
+
+// ── AI-driven member actions ──────────────────────────────
+// Mirrors saveNewMember()/saveEditMember()'s validation and write logic
+// exactly, but takes plain arguments instead of reading form inputs — so the
+// AI chat can propose the same action, get it confirmed via the same
+// showConfirm() sheet, and have it executed the same way.
+
+function _aiResolveMember(name) {
+  return STATE.allMembers.filter(m => nameMatch(m.name, name || ''));
+}
+
+function _aiValidateAddMember({ name, mobile, address, type }) {
+  if (!_isActiveSession()) return { ok: false, error: _sessionLockedMsg('Member add karne') };
+  name    = (name    || '').trim();
+  mobile  = (mobile  || '').trim();
+  address = (address || '').trim();
+  type    = type === 'Donor' ? 'Donor' : 'Regular';
+  if (!name) return { ok: false, error: 'Member add karne ke liye naam zaroori hai.' };
+  if (STATE.allMembers.some(m => nameMatch(m.name, name)))
+    return { ok: false, error: `Is naam se milta-julta member ("${name}") already Members List mein hai. Alag naam istemal karein ya us purane member ko dhundh kar edit karein.` };
+  const preview = `<b>${name}</b>${mobile ? '<br>📞 ' + mobile : ''}${address ? '<br>🏠 ' + address : ''}<br>Type: ${type}<br>Session: ${STATE.currentSession?.label || ''}`;
+  return { ok: true, preview, args: { name, mobile, address, type } };
+}
+
+async function _aiCommitAddMember({ name, mobile, address, type }) {
+  if (!await _ensureWriteAccess()) return { ok: false, error: 'Google sign-in/sync zaroori hai.' };
+  try {
+    const nextId       = STATE.allMembers.length + 1;
+    const doj           = todayDate();
+    const joinSession   = STATE.currentSession?.label || '';
+    await sheetsAppend('Members List', [[nextId, name, mobile, doj, address, 'No', 'Active', '', type, joinSession]]);
+
+    const months = STATE.allPayments.length > 0 ? Object.keys(STATE.allPayments[0].months) : [];
+    if (months.length > 0 && STATE.currentSession?.sheet) {
+      const payId     = STATE.allPayments.length + 1;
+      const newPayRow = STATE.allPayments.length > 0 ? Math.max(...STATE.allPayments.map(p => p.row)) + 1 : 2;
+      await sheetsInsertRow(STATE.currentSession.sheet, newPayRow);
+      const lastMonthCol = colLetter(2 + months.length);
+      const totalCol     = colLetter(2 + months.length + 1);
+      const totalFormula = `=COUNTIF(D${newPayRow}:${lastMonthCol}${newPayRow},"Paid")*C${newPayRow}`;
+      await sheetsPut(`${STATE.currentSession.sheet}!A${newPayRow}:${totalCol}${newPayRow}`,
+        [[payId, name, FEE, ...months.map(() => ''), totalFormula]]);
+      const emptyMonths = {};
+      months.forEach(mo => { emptyMonths[mo] = ''; });
+      STATE.allPayments.push({ row: newPayRow, name, amount: String(FEE), months: emptyMonths, total: '0' });
+    }
+
+    const newRow = STATE.allMembers.length > 0 ? Math.max(...STATE.allMembers.map(m => m.row)) + 1 : 2;
+    STATE.allMembers.push({ row: newRow, id: String(nextId), name, mobile, doj, address, aadhar: 'No', status: 'Active', doe: '', type, session: joinSession });
+    saveCache(STATE.currentSession.label);
+    _trackHistory('Member Added', name, true);
+    fetch(CONFIG.WORKER_URL + '/api/push/notify', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: 'Naya Member Add Hua!', body: `${name} Tanzeem mein shamil ho gaye ✅ (AI se)` })
+    }).catch(() => {});
+    renderMembers();
+    return { ok: true, message: `✅ **${name}** Tanzeem mein add ho gaye!${mobile ? ' 📞 ' + mobile : ''}${address ? ' — ' + address : ''} (Type: ${type})` };
+  } catch (e) {
+    return { ok: false, error: e.message === 'AUTH_EXPIRED' ? 'Session expired — sync karein.' : 'Error: ' + e.message };
+  }
+}
+
+function _aiValidateEditMember({ name, newStatus, newType }) {
+  if (!_isActiveSession()) return { ok: false, error: _sessionLockedMsg('Member edit karne') };
+  const matches = _aiResolveMember(name);
+  if (matches.length === 0) return { ok: false, error: `"${name}" naam ka koi member nahi mila.` };
+  if (matches.length > 1) return { ok: false, error: `"${name}" se milte-julte ${matches.length} members hain: ${matches.map(x => x.name).join(', ')}. Pura naam batayein.` };
+  const m   = matches[0];
+  const idx = STATE.allMembers.indexOf(m);
+
+  const wantStatus = newStatus ? (/inactive/i.test(newStatus) ? 'In Active' : 'Active') : null;
+  const wantType   = newType   ? (/donor/i.test(newType) ? 'Donor' : 'Regular') : null;
+  if (!wantStatus && !wantType) return { ok: false, error: 'Kya change karna hai — Status (Active/Inactive) ya Type (Regular/Donor)? Batayein.' };
+
+  const statusChanging = wantStatus && wantStatus !== m.status;
+  const typeChanging   = wantType   && wantType   !== (m.type || 'Regular');
+  if (!statusChanging && !typeChanging)
+    return { ok: false, error: `${m.name} already ${wantStatus || m.status}${wantType ? ' aur ' + wantType : ''} hain — koi change nahi hai.` };
+
+  if (statusChanging && wantStatus !== 'Active' && _memberHasSessionPayment(m))
+    return { ok: false, error: `${m.name} ko Inactive nahi kar sakte — isne is session mein payment ki hai. Ye Inactive agle session ke liye ho sakta hai.` };
+
+  if (typeChanging && wantType === 'Donor' && _memberHasSessionPayment(m))
+    return { ok: false, error: `${m.name} ko Donor nahi bana sakte — isne payment ki hai. Pehle wo payment Donation mein add karke payment sheet se hatayein, tabhi Donor bana sakte hain.` };
+
+  const finalStatus = wantStatus || m.status;
+  const finalType   = wantType   || (m.type || 'Regular');
+  let newDoe = m.doe || '';
+  if (statusChanging) newDoe = finalStatus === 'Active' ? '' : todayDate();
+
+  const changes = [];
+  if (statusChanging) changes.push(`Status: <b>${m.status}</b> → <b>${finalStatus}</b>`);
+  if (typeChanging)   changes.push(`Type: <b>${m.type || 'Regular'}</b> → <b>${finalType}</b>`);
+  if (statusChanging && finalStatus !== 'Active') changes.push(`DOE: <b>${m.doe || '—'}</b> → <b>${newDoe}</b>`);
+
+  return {
+    ok: true,
+    preview: `<b>${m.name}</b><br>${changes.join('<br>')}<br>Session: ${STATE.currentSession?.label || ''}`,
+    args: { idx, finalStatus, finalType, newDoe, prevStatus: m.status },
+  };
+}
+
+async function _aiCommitEditMember({ idx, finalStatus, finalType, newDoe, prevStatus }) {
+  const m = STATE.allMembers[idx];
+  if (!m) return { ok: false, error: 'Member record mil nahi raha — dobara try karein.' };
+  if (!await _ensureWriteAccess()) return { ok: false, error: 'Google sign-in/sync zaroori hai.' };
+  try {
+    if (finalStatus !== m.status)              await sheetsPut(`Members List!G${m.row}`, [[finalStatus]]);
+    if (newDoe      !== (m.doe || ''))         await sheetsPut(`Members List!H${m.row}`, [[newDoe]]);
+    if (finalType   !== (m.type || 'Regular')) await sheetsPut(`Members List!I${m.row}`, [[finalType]]);
+
+    // Reactivated (Inactive → Active): add to this session's payment sheet
+    // if missing — same rule as saveEditMember().
+    let _reactivateNote = '';
+    if (finalStatus === 'Active' && prevStatus !== 'Active') {
+      const existingMatch = STATE.allPayments.find(p => nameMatch(p.name, m.name));
+      if (existingMatch) {
+        _reactivateNote = ' (session sheet mein already row maujood thi)';
+      } else {
+        const months = STATE.allPayments.length > 0 ? Object.keys(STATE.allPayments[0].months) : [];
+        if (months.length > 0 && STATE.currentSession?.sheet) {
+          const payId     = STATE.allPayments.length + 1;
+          const newPayRow = STATE.allPayments.length > 0 ? Math.max(...STATE.allPayments.map(p => p.row)) + 1 : 2;
+          await sheetsInsertRow(STATE.currentSession.sheet, newPayRow);
+          const lastMonthCol = colLetter(2 + months.length);
+          const totalCol     = colLetter(2 + months.length + 1);
+          const totalFormula = `=COUNTIF(D${newPayRow}:${lastMonthCol}${newPayRow},"Paid")*C${newPayRow}`;
+          await sheetsPut(`${STATE.currentSession.sheet}!A${newPayRow}:${totalCol}${newPayRow}`,
+            [[payId, m.name, FEE, ...months.map(() => ''), totalFormula]]);
+          const emptyMonths = {};
+          months.forEach(mo => { emptyMonths[mo] = ''; });
+          STATE.allPayments.push({ row: newPayRow, name: m.name, amount: String(FEE), months: emptyMonths, total: '0' });
+          _reactivateNote = ' (session sheet mein nayi row add ho gayi)';
+        }
+      }
+    }
+
+    STATE.allMembers[idx].status = finalStatus;
+    STATE.allMembers[idx].type   = finalType;
+    STATE.allMembers[idx].doe    = newDoe;
+    saveCache(STATE.currentSession.label);
+    _trackHistory('Member Updated', `${m.name} — Status: ${finalStatus}, Type: ${finalType}`, true);
+    _pushNotify('Member Update! ✏️', `${m.name} ki profile AI se update hui`);
+    renderMembers();
+    return { ok: true, message: `✅ **${m.name}** update ho gaye — Status: ${finalStatus}, Type: ${finalType}.${_reactivateNote}` };
+  } catch (e) {
+    return { ok: false, error: e.message === 'AUTH_EXPIRED' ? 'Session expired — sync karein.' : 'Error: ' + e.message };
+  }
+}

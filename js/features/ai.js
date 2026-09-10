@@ -4,6 +4,149 @@ const _chatHistory = [];
 const _promptCache = new Map();
 let   _promptDataKey = '';
 
+// ── Gemini function-calling tools ──────────────────────────────
+// The model only ever *proposes* a call with structured args — the actual
+// validation and write happens in JS (_aiValidate*/_aiCommit* in
+// members.js/payments.js), gated behind the same showConfirm() sheet every
+// other write in the app uses. Nothing is written without that confirm.
+const AI_TOOLS = [{
+  functionDeclarations: [
+    {
+      name: 'add_member',
+      description: 'Naya member Tanzeem mein add karta hai.',
+      parameters: {
+        type: 'OBJECT',
+        properties: {
+          name:    { type: 'STRING', description: 'Member ka pura naam' },
+          mobile:  { type: 'STRING', description: 'Mobile number — user ne na diya ho to khali string' },
+          address: { type: 'STRING', description: 'Address — user ne na diya ho to khali string' },
+          type:    { type: 'STRING', enum: ['Regular', 'Donor'], description: 'Member Regular hai ya Donor' },
+        },
+        required: ['name', 'mobile', 'address', 'type'],
+      },
+    },
+    {
+      name: 'edit_member',
+      description: 'Kisi existing member ka Status (Active/Inactive) ya Type (Regular/Donor) badalta hai.',
+      parameters: {
+        type: 'OBJECT',
+        properties: {
+          name:      { type: 'STRING', description: 'Existing member ka naam' },
+          newStatus: { type: 'STRING', enum: ['Active', 'Inactive'], description: 'Naya status, agar status change karna ho' },
+          newType:   { type: 'STRING', enum: ['Regular', 'Donor'], description: 'Naya type, agar type change karna ho' },
+        },
+        required: ['name'],
+      },
+    },
+    {
+      name: 'mark_payment',
+      description: 'Kisi member ke kisi mahine ka payment mark (paid) ya unmark (unpaid) karta hai.',
+      parameters: {
+        type: 'OBJECT',
+        properties: {
+          name:   { type: 'STRING', description: 'Member ka naam' },
+          month:  { type: 'STRING', description: 'Mahine ka naam, jaisa is session mein hai (jaise September)' },
+          action: { type: 'STRING', enum: ['mark', 'unmark'], description: '"mark" = paid karna, "unmark" = unpaid karna' },
+        },
+        required: ['name', 'month', 'action'],
+      },
+    },
+    {
+      name: 'add_donation',
+      description: 'Ek nayi donation add karta hai.',
+      parameters: {
+        type: 'OBJECT',
+        properties: {
+          donor:  { type: 'STRING', description: 'Donor ka naam' },
+          amount: { type: 'STRING', description: 'Amount (Rs.), sirf number' },
+          date:   { type: 'STRING', description: 'Tarikh (yyyy-mm-dd), na di ho to khali string' },
+          note:   { type: 'STRING', description: 'Note/wajah, na di ho to khali string' },
+        },
+        required: ['donor', 'amount', 'date', 'note'],
+      },
+    },
+    {
+      name: 'add_expense',
+      description: 'Ek naya kharcha (expense) add karta hai.',
+      parameters: {
+        type: 'OBJECT',
+        properties: {
+          desc:   { type: 'STRING', description: 'Kharche ki wajah / kisko diya gaya' },
+          amount: { type: 'STRING', description: 'Amount (Rs.), sirf number' },
+          date:   { type: 'STRING', description: 'Tarikh (yyyy-mm-dd), na di ho to khali string' },
+        },
+        required: ['desc', 'amount', 'date'],
+      },
+    },
+    {
+      name: 'edit_donation',
+      description: 'Ek existing donation ka amount, date, note, ya donor ka naam badalta hai.',
+      parameters: {
+        type: 'OBJECT',
+        properties: {
+          donor:       { type: 'STRING', description: 'Jis donor ki donation dhundhni hai' },
+          matchAmount: { type: 'STRING', description: 'Agar isi donor ki 2+ donations hain to purani amount batakar specify karein — warna khali string' },
+          newDonor:    { type: 'STRING', description: 'Naya naam, agar change karna ho — warna khali string' },
+          newAmount:   { type: 'STRING', description: 'Naya amount, agar change karna ho — warna khali string' },
+          newDate:     { type: 'STRING', description: 'Nayi tarikh, agar change karni ho — warna khali string' },
+          newNote:     { type: 'STRING', description: 'Naya note, agar change karna ho — warna khali string' },
+        },
+        required: ['donor'],
+      },
+    },
+    {
+      name: 'edit_expense',
+      description: 'Ek existing expense ka amount, date, ya wajah/description badalta hai.',
+      parameters: {
+        type: 'OBJECT',
+        properties: {
+          desc:        { type: 'STRING', description: 'Jis expense ki wajah/description se dhundhna hai' },
+          matchAmount: { type: 'STRING', description: 'Agar isi wajah ke 2+ expenses hain to purani amount batakar specify karein — warna khali string' },
+          newDesc:     { type: 'STRING', description: 'Nayi wajah/description, agar change karni ho — warna khali string' },
+          newAmount:   { type: 'STRING', description: 'Naya amount, agar change karna ho — warna khali string' },
+          newDate:     { type: 'STRING', description: 'Nayi tarikh, agar change karni ho — warna khali string' },
+        },
+        required: ['desc'],
+      },
+    },
+  ],
+}];
+
+// name → { validate, commit, title } — validate/commit live in members.js/payments.js/finance.js
+const _AI_ACTION_HANDLERS = {
+  add_member:    { validate: (a) => _aiValidateAddMember(a),    commit: (a) => _aiCommitAddMember(a),    title: 'Naya Member Add Karein?' },
+  edit_member:   { validate: (a) => _aiValidateEditMember(a),   commit: (a) => _aiCommitEditMember(a),   title: 'Member Update Karein?' },
+  mark_payment:  { validate: (a) => _aiValidateMarkPayment(a),  commit: (a) => _aiCommitMarkPayment(a),  title: 'Payment Update Karein?' },
+  add_donation:  { validate: (a) => _aiValidateAddDonation(a),  commit: (a) => _aiCommitAddDonation(a),  title: 'Donation Add Karein?' },
+  add_expense:   { validate: (a) => _aiValidateAddExpense(a),   commit: (a) => _aiCommitAddExpense(a),   title: 'Kharcha Add Karein?' },
+  edit_donation: { validate: (a) => _aiValidateEditDonation(a), commit: (a) => _aiCommitEditDonation(a), title: 'Donation Update Karein?' },
+  edit_expense:  { validate: (a) => _aiValidateEditExpense(a),  commit: (a) => _aiCommitEditExpense(a),  title: 'Kharcha Update Karein?' },
+};
+
+// Called when Gemini's response is a functionCall instead of text.
+async function _handleAiFunctionCall(fnCall) {
+  const handler = _AI_ACTION_HANDLERS[fnCall.name];
+  if (!handler) {
+    updateLastAiMessage('⚠️ Yeh action abhi supported nahi hai.');
+    return;
+  }
+  const result = handler.validate(fnCall.args || {});
+  if (!result.ok) {
+    updateLastAiMessage(result.error);
+    _chatHistory.push({ role: 'model', parts: [{ text: result.error }] });
+    return;
+  }
+  const previewPlain = result.preview.replace(/<br>/g, '\n').replace(/<\/?b>/g, '**');
+  updateLastAiMessage(`Confirm karne ke liye popup dekhein 👇\n\n${previewPlain}`);
+  _chatHistory.push({ role: 'model', parts: [{ text: `[Confirmation popup dikhaya gaya] ${previewPlain.replace(/\n/g, ' | ')}` }] });
+  showConfirm(handler.title, result.preview, async () => {
+    const commitResult = await handler.commit(result.args);
+    const finalText = commitResult.ok ? commitResult.message : `⚠️ ${commitResult.error}`;
+    appendMessage('ai', finalText);
+    _chatHistory.push({ role: 'model', parts: [{ text: finalText }] });
+  });
+}
+
 function _getDataKey() {
   return [
     STATE.currentSession?.label,
@@ -131,6 +274,29 @@ ${rows || '  No data'}
 NOTE: "Total members" / "kitne members hain" hamesha SAB members ka count hai (${STATE.allMembers.length}), chahe kisi bhi session mein active ho ya jo bhi session abhi active ho — Join-Session field sirf yeh batati hai ke woh member kis session mein add hua tha, ispar total ko filter mat karo jab tak user khud kisi specific session ke members maange.`;
 }
 
+// Reads the TrackHistory sheet directly (not cached anywhere else) so "last
+// member kaun add hua", "kisne kiya", "kab kiya" can be answered from the
+// actual audit trail instead of guessed from member/payment data. Filtered
+// to the current active session, matching how Settings/Dashboard show it.
+// Never cached in _promptCache — history changes with every action.
+async function _pTrackHistory() {
+  const sessionLabel = STATE.currentSession?.label || '';
+  if (!STATE.accessToken) return `=== RECENT ACTIVITY HISTORY ===\n  Sync karke dekhein — abhi TrackHistory read nahi ho sakti.`;
+  try {
+    const rows = (await sheetsGet('TrackHistory!A1:E1000'))
+      .filter(r => r.length >= 2 && r[3] === sessionLabel);
+    const recent = rows.slice(-40).reverse(); // newest first, last 40 of this session
+    const lines = recent.map(([ts, action, details, , admin]) =>
+      `  [${ts}] ${action}: ${details || ''} — by ${admin || 'Unknown'}`
+    ).join('\n');
+    return `=== RECENT ACTIVITY HISTORY (session: ${sessionLabel}, sabse naya sabse upar, [ts] format dd/mm/yyyy hh:mm AM/PM) ===
+${lines || '  Is session mein abhi tak koi activity record nahi hai'}
+Is list se "kaun/kisne", "kab", "last kaun", "pichle N din mein kya hua", "Tanzeem mein kya chal raha hai" type sawalon ka seedha jawab do — jo yahan hai wahi sach hai, mat guess karo. "Last N din" ya "date wise" poochein to entries ko date ke hisaab se group karke, har din ka summary (kya hua, kisne kiya) batayein — sirf date [ts] ke sahi hisaab se filter karein.`;
+  } catch (e) {
+    return `=== RECENT ACTIVITY HISTORY ===\n  History load nahi ho payi: ${e.message}`;
+  }
+}
+
 // Multi-turn conversational rules for "who am I" self-lookup and for names
 // that don't match any real member — relies on _chatHistory (last 8 turns)
 // so a bare name reply is understood as the answer to the AI's own question.
@@ -139,6 +305,15 @@ function _pPersonaFlow() {
 Agar koi pooche "main kaun hoon", "meri details batao", "who am i", ya apna record maange, aur unka naam pata na ho: pehle unka naam poochein. Naam milte hi MEMBER PROFILES se unki puri detail do — DOJ (kab add hue), Address (kaha ke hain), Status (Active/Inactive), aur agar Inactive hain to DOE (kab Inactive hue) aur Join-Session. Uske baad poochein: "Aapko apni payment/subscription ke baare mein jaanna hai kya?" — haan kahein to unki payment status (paid/unpaid months, total) batao.
 
 Yeh "not found" sirf tab bolein jab naam MEMBER PROFILES/disambiguation ki poori list (sab sessions ke members) mein kahin bhi match na ho — kisi member ka Join-Session purana hone se woh "not found" nahi ban jata, woh ab bhi member hai. Agar diya gaya naam kisi bhi member se sach mein match nahi hota: unhe seedha bataye ke woh Tanzeem ke member nahi hain. Fir Tanzeem Abd-e-Mustafa ke baare mein thodi jaankari dete hue (maqsad: gareebo ki madad, masjid/madrasa, langar, deen ki khidmat) unhe member banne ki garmjoshi se dawat dein. Phir poochein: "Kya aap Tanzeem ka member banna chahte hain?" — haan kahein to unhe bataye ke aap unki basic details (naam, mobile number, address) le kar aage guide kar denge, aur wahi maangna shuru kar dein.`;
+}
+
+// Tells the model what it's allowed to *do* (as opposed to just answer).
+// The actual gating/validation happens in JS (see _aiValidate*/_aiCommit*
+// in members.js/payments.js) — this just steers when to call the tools.
+function _pActions() {
+  return `=== ACTIONS (AI khud kaam kar sakta hai) ===
+Aap add_member, edit_member, mark_payment, add_donation, edit_donation, add_expense, aur edit_expense functions call kar sakte hain jab user seedha aisa kahe (jaise "naya member add karo", "Bilal ko Inactive karo", "Hasnain ka September payment mark karo", "Rs.500 ki donation add karo", "Bilal ki donation ka amount 700 kar do", "langar ka kharcha add karo", "us kharche ki date badlo"). Function call karne se PEHLE us function ke saare zaroori fields conversation mein poochein — jab tak sab clear na ho jaye, function mat call karein (agar user koi optional field dena na chahe jaise mobile/address/date/note, to khali string bhej sakte hain, lekin poochna zaroor). Edit karte waqt sirf wahi fields bhejein jo change karni hain — baaki khali chhod dein. Ek baar mein sirf ek action. Yeh saare actions hamesha CURRENT ACTIVE SESSION ki sheet mein hote hain.
+Function call karne ke baad app khud validation karke ek confirmation popup dikhayega aur result bata dega — aapko sirf details gather karke function call karna hai, result ke baare mein khud kuch mat kahna.`;
 }
 
 function _pDonations() {
@@ -158,8 +333,11 @@ function _pExpenses() {
 // ── Question classifier → picks minimal prompt sections ───────
 function _classifyQuestion(q) {
   const ql = q.toLowerCase();
+  // Activity/audit-trail questions — who did what and when (TrackHistory sheet)
+  if (/last member|kaun.*add hua|kisne.*add|kisne.*kiya|kisne.*mark|kisne.*update|kab.*add hua|kab.*inactive|kaun.*inactive hua|kab.*mark|recent activity|last activity|activity history|track history|last \d+ din|pichle \d+ din|kya hua|kya chal raha|tanzeem mein kya/.test(ql))
+    return 'history';
   // Tanzeem / app info
-  if (/tanzeem kya|kisne banaya|developer|creator|history|founding|maqsad|kab shuru|about tanzeem/.test(ql))
+  if (/tanzeem kya|kisne banaya|developer|creator|founding|maqsad|kab shuru|about tanzeem/.test(ql))
     return 'tanzeem';
   // Donations or expenses
   if (/donation|expense|kharcha|chanda|kharch/.test(ql))
@@ -295,7 +473,17 @@ function _tryLocalAnswer(q) {
 }
 
 // ── Build context prompt (cached per type + data state) ───────
-function buildDataContext(type = 'full', includeInactiveDetail = false) {
+async function buildDataContext(type = 'full', includeInactiveDetail = false) {
+  const d = _buildShared();
+
+  // History queries read TrackHistory live — never cached, since it changes
+  // with every single action and staleness here means a wrong "kisne kiya".
+  if (type === 'history') {
+    const parts = [_pBase(), _pSession(d), await _pTrackHistory(), _pMemberProfiles()];
+    parts.push('\nJawab Hinglish mein do. Friendly aur concise raho.');
+    return parts.join('\n\n');
+  }
+
   const dataKey = _getDataKey();
   if (dataKey !== _promptDataKey) {
     _promptCache.clear();       // data changed → all cached prompts stale
@@ -304,7 +492,6 @@ function buildDataContext(type = 'full', includeInactiveDetail = false) {
   const cacheKey = type + '|' + includeInactiveDetail;
   if (_promptCache.has(cacheKey)) return _promptCache.get(cacheKey);
 
-  const d     = _buildShared();
   const parts = [_pBase()];
 
   switch (type) {
@@ -312,17 +499,17 @@ function buildDataContext(type = 'full', includeInactiveDetail = false) {
       parts.push(_pAppInfo(d));
       break;
     case 'finance':
-      parts.push(_pSession(d), _pFinancials(d), _pDonations(), _pExpenses());
+      parts.push(_pSession(d), _pFinancials(d), _pDonations(), _pExpenses(), _pActions());
       break;
     case 'payments':
-      parts.push(_pDisambiguation(d), _pSession(d), _pFinancials(d), _pMonthly(d), _pMembers(d, false), _pMemberProfiles());
+      parts.push(_pDisambiguation(d), _pSession(d), _pFinancials(d), _pMonthly(d), _pMembers(d, false), _pMemberProfiles(), _pActions());
       break;
     case 'member':
-      parts.push(_pDisambiguation(d), _pSession(d), _pFinancials(d), _pMonthly(d), _pMembers(d, includeInactiveDetail), _pMemberProfiles(), _pPersonaFlow());
+      parts.push(_pDisambiguation(d), _pSession(d), _pFinancials(d), _pMonthly(d), _pMembers(d, includeInactiveDetail), _pMemberProfiles(), _pPersonaFlow(), _pActions());
       break;
     default: // 'full'
       parts.push(_pAppInfo(d), _pDisambiguation(d), _pSession(d), _pFinancials(d),
-                 _pMonthly(d), _pMembers(d, includeInactiveDetail), _pMemberProfiles(), _pDonations(), _pExpenses(), _pPersonaFlow());
+                 _pMonthly(d), _pMembers(d, includeInactiveDetail), _pMemberProfiles(), _pDonations(), _pExpenses(), _pPersonaFlow(), _pActions());
   }
 
   parts.push('\nJawab Hinglish mein do. Friendly aur concise raho.');
@@ -386,12 +573,14 @@ async function sendChat() {
   const qType           = _classifyQuestion(q);
 
   try {
+    const systemText = await buildDataContext(qType, includeInactive);
     const res = await fetch(CONFIG.WORKER_URL + '/api/ai', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        systemInstruction: { parts: [{ text: buildDataContext(qType, includeInactive) }] },
+        systemInstruction: { parts: [{ text: systemText }] },
         contents: _chatHistory.slice(-8),
+        tools: AI_TOOLS,
         generationConfig: { temperature: 0.7, maxOutputTokens: 1024 },
       })
     });
@@ -402,9 +591,15 @@ async function sendChat() {
     const data = await res.json();
     if (data.error) throw new Error('API_' + (data.error.code || 500));
 
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Koi response nahi mila.';
-    updateLastAiMessage(text);
-    _chatHistory.push({ role: 'model', parts: [{ text }] });
+    const parts    = data.candidates?.[0]?.content?.parts || [];
+    const fnCallPart = parts.find(p => p.functionCall);
+    if (fnCallPart) {
+      await _handleAiFunctionCall(fnCallPart.functionCall);
+    } else {
+      const text = parts.map(p => p.text || '').join('') || 'Koi response nahi mila.';
+      updateLastAiMessage(text);
+      _chatHistory.push({ role: 'model', parts: [{ text }] });
+    }
   } catch (e) {
     const msg = e.message === '503' || e.message.includes('503')
       ? '⚠️ Server thoda busy hai. Please kuch seconds baad dobara try karein. 🙏'

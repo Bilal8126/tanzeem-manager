@@ -225,8 +225,8 @@ async function _ensureWriteAccess() {
 }
 
 // ── Activity history tracker ──────────────────────────────
-function _trackHistory(action, details) {
-  const admin   = localStorage.getItem('tanzeem_user_display') || STATE.loggedInEmail || localStorage.getItem('tanzeem_logged_email') || 'Unknown';
+function _trackHistory(action, details, viaAI = false) {
+  const admin   = (localStorage.getItem('tanzeem_user_display') || STATE.loggedInEmail || localStorage.getItem('tanzeem_logged_email') || 'Unknown') + (viaAI ? ' (via AI)' : '');
   const session = STATE.currentSession?.label || '';
   // Convert to IST manually for reliable AM/PM across all browsers
   const ist  = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
