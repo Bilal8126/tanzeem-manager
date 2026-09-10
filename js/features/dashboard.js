@@ -118,6 +118,10 @@ function renderDashboard() {
         <div class="qa-icon purple"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><polyline points="8 15 10 17 14 13"/></svg></div>
         <div class="qa-label">Mark Payment</div>
       </div>
+      <div class="qa-btn" onclick="openProofUpload()">
+        <div class="qa-icon purple"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
+        <div class="qa-label">Payment Proofs</div>
+      </div>
     </div>
 
     <div class="card">
@@ -140,30 +144,30 @@ function renderDashboard() {
 
     <div class="card">
       <div class="card-title">Member Overview</div>
-      <div class="stat-row">
+      <div class="stat-row" onclick="_goToMembersFilter('Regular')" style="cursor:pointer">
         <span style="display:flex;align-items:center;gap:7px;font-weight:600;color:var(--muted)">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><circle cx="12" cy="8" r="4"/><path d="M4 20v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>Regular
         </span>
-        <span style="font-weight:700">${regular.length}</span>
+        <span style="display:flex;align-items:center;gap:4px;font-weight:700">${regular.length}<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:.4"><polyline points="9 18 15 12 9 6"/></svg></span>
       </div>
-      
-      <div class="stat-row">
+
+      <div class="stat-row" onclick="_goToMembersFilter('Active')" style="cursor:pointer">
         <span style="display:flex;align-items:center;gap:7px;font-weight:600;color:var(--muted)">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1a6b3c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>Active
         </span>
-        <span style="color:#1a6b3c;font-weight:600">${regularActive}</span>
+        <span style="display:flex;align-items:center;gap:4px;color:#1a6b3c;font-weight:600">${regularActive}<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#1a6b3c" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:.5"><polyline points="9 18 15 12 9 6"/></svg></span>
       </div>
-      <div class="stat-row">
+      <div class="stat-row" onclick="_goToMembersFilter('Inactive')" style="cursor:pointer">
         <span style="display:flex;align-items:center;gap:7px;font-weight:600;color:var(--muted)">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#e53e3e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>In Active
         </span>
-        <span style="color:#e53e3e;font-weight:600">${regularInactive}</span>
+        <span style="display:flex;align-items:center;gap:4px;color:#e53e3e;font-weight:600">${regularInactive}<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#e53e3e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:.5"><polyline points="9 18 15 12 9 6"/></svg></span>
       </div>
-      <div class="stat-row">
+      <div class="stat-row" onclick="_goToMembersFilter('Donor')" style="cursor:pointer">
         <span style="display:flex;align-items:center;gap:7px;font-weight:600;color:var(--muted)">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>Donors
         </span>
-        <span style="color:#1d4ed8;font-weight:700">${donors.length}</span>
+        <span style="display:flex;align-items:center;gap:4px;color:#1d4ed8;font-weight:700">${donors.length}<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#1d4ed8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:.5"><polyline points="9 18 15 12 9 6"/></svg></span>
       </div>
       <div class="stat-row" onclick="_goToMembersSession('${STATE.currentSession?.label || ''}')" style="cursor:pointer">
         <span style="display:flex;align-items:center;gap:7px;font-weight:600;color:var(--muted)">
@@ -171,21 +175,26 @@ function renderDashboard() {
         </span>
         <span style="display:flex;align-items:center;gap:4px;color:#6d28d9;font-weight:700">${addedThisSession}<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6d28d9" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>
       </div>
-      <div class="stat-row total-row"><span>Total Members</span><span>${STATE.allMembers.length}</span></div>
+      <div class="stat-row total-row" onclick="_goToMembersFilter('all')" style="cursor:pointer">
+        <span>Total Members</span>
+        <span style="display:flex;align-items:center;gap:4px">${STATE.allMembers.length}<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:.5"><polyline points="9 18 15 12 9 6"/></svg></span>
+      </div>
     </div>`;
 
   setTimeout(() => buildDashChart(months, monthlyTotals), 80);
   _loadRecentActivity();
 }
 
-function _goToMembersSession(label) {
-  STATE.memberFilter = 'all';
-  STATE.memberSessionFilter = label || 'all';
+function _goToMembers(filter, sessionLabel) {
+  STATE.memberFilter = filter || 'all';
+  STATE.memberSessionFilter = sessionLabel || 'all';
   document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
-  document.querySelector(`.filter-tab[onclick*="setMemberFilter('all'"]`)?.classList.add('active');
-  const navBtn = document.querySelector(`.nav-item[onclick*="showScreen('members'"]`);
-  showScreen('members', navBtn);
+  document.querySelector(`.filter-tab[onclick*="setMemberFilter('${STATE.memberFilter}'"]`)?.classList.add('active');
+  showScreen('members', document.getElementById('navMembers'));
 }
+
+function _goToMembersSession(label) { _goToMembers('all', label); }
+function _goToMembersFilter(filter) { _goToMembers(filter); }
 
 function buildDashChart(months, data) {
   const ctx = document.getElementById('dashChart');
@@ -263,6 +272,10 @@ const _STORY_META = {
     icon: '<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>' },
   'Expense Deleted':  { grad: 'linear-gradient(145deg,#831843 0%,#be185d 55%,#ec4899 120%)', label: 'Expense Del',
     icon: '<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>' },
+  'Proof Uploaded':   { grad: 'linear-gradient(145deg,#4c1d95 0%,#7c3aed 55%,#a78bfa 120%)', label: 'Proof',
+    icon: '<path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>' },
+  'Proof Deleted':    { grad: 'linear-gradient(145deg,#7f1d1d 0%,#b91c1c 55%,#ef4444 120%)', label: 'Proof Del',
+    icon: '<path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/><line x1="4" y1="4" x2="20" y2="20"/>' },
   _default: { grad: 'linear-gradient(145deg,#334155 0%,#475569 60%,#64748b 120%)', label: 'Activity',
     icon: '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>' },
 };
@@ -328,6 +341,14 @@ function _activitySentence(action, details) {
       const [desc, amount] = splitDash(d);
       const verb = action === 'Expense Added' ? 'add kiya' : action === 'Expense Updated' ? 'update kiya' : 'delete kiya';
       return `${desc || d} ke liye ${amount || ''} ka kharcha ${verb}`;
+    }
+    case 'Proof Uploaded': {
+      const [name, type, months] = splitDash(d);
+      return `${name || d} ka ${type || 'payment'} proof — screenshot/image upload kiya${months ? ' (' + months + ' ke liye)' : ''}`;
+    }
+    case 'Proof Deleted': {
+      const [name, type] = splitDash(d);
+      return `${name || d} ka ${type || ''} proof — screenshot/image delete kiya`;
     }
     default:
       return d;

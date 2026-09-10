@@ -172,7 +172,11 @@ const _HISTORY_COLORS = {
   'Expense Added':    { bg:'#fee2e2', color:'#991b1b' },
   'Expense Updated':  { bg:'#fef9c3', color:'#854d0e' },
   'Expense Deleted':  { bg:'#fce7f3', color:'#9d174d' },
+  'Proof Uploaded':   { bg:'#ede9fe', color:'#6d28d9' },
+  'Proof Deleted':    { bg:'#fee2e2', color:'#991b1b' },
 };
+
+const _PROOF_ICON = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:3px"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>';
 
 let _historyRows  = [];
 let _historyShown = 10;
@@ -208,10 +212,11 @@ function _renderHistoryRows() {
   const hasMore  = _historyRows.length > _historyShown;
   const rowsHtml = visible.map(([ts, action, details, session, admin], i) => {
     const ac = _HISTORY_COLORS[action] || { bg:'#f1f5f9', color:'#475569' };
+    const isProof = action === 'Proof Uploaded' || action === 'Proof Deleted';
     return `
       <div style="padding:10px 0;${i < visible.length-1 ? 'border-bottom:1px solid var(--border);' : ''}">
         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px">
-          <span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;white-space:nowrap;background:${ac.bg};color:${ac.color}">${action || ''}</span>
+          <span style="display:inline-flex;align-items:center;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;white-space:nowrap;background:${ac.bg};color:${ac.color}">${isProof ? _PROOF_ICON : ''}${action || ''}</span>
           <span style="font-size:13px;font-weight:600;color:var(--text)">${details || ''}</span>
         </div>
         <div style="font-size:11px;color:var(--muted);display:flex;gap:6px;flex-wrap:wrap;align-items:center">

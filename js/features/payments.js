@@ -153,6 +153,7 @@ function selectPaymentMonth(month) {
 
 function renderPayments() {
   const _savedScroll = window.scrollY;
+  _ensureProofsForIcons(() => { if (STATE.currentScreen === 'payments') renderPayments(); });
 
   if (STATE.allPayments.length === 0) {
     document.getElementById('paymentsContent').innerHTML =
@@ -272,13 +273,6 @@ function renderPayments() {
       style="justify-content:center;gap:10px;font-size:14px">
       ${WA_SVG} WhatsApp Share — ${sel}
     </button>` : ''}
-
-    <!-- Payment Proofs (view works for any session; upload only when active) -->
-    <button class="btn btn-secondary" onclick="openProofUpload()"
-      style="width:100%;margin-top:10px;display:flex;align-items:center;justify-content:center;gap:8px">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-      Payment Proofs
-    </button>
 
     ${isCurrentSession ? `<!-- Overdue Threshold Picker -->
     <div class="card" style="padding:10px 14px">
@@ -410,6 +404,7 @@ function renderPayments() {
                   })()}</div>
                 </div>
                 <div class="pay-amount" style="color:${C_GREEN}">+${formatCurrency(FEE)}</div>
+                ${_proofStatusIconHtml(m.name, sel)}
                 <button onclick="waMemberPaidPopup('${m.name.replace(/\(.*?\)/g,'').trim()}')" title="Receipt / WhatsApp" style="background:none;border:none;cursor:pointer;color:#0369a1;padding:2px 6px;flex-shrink:0;line-height:1"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></button>
               </div>`).join('')}
       </div>` : ''}

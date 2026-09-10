@@ -158,6 +158,7 @@ function filterMembers() { renderMembers(); }
 function openMemberProfile(idx) {
   const member = STATE.allMembers[idx];
   if (!member) return;
+  _ensureProofsForIcons(() => { if (document.getElementById('memberProfileOverlay')?.classList.contains('open')) openMemberProfile(idx); });
 
   const payIdx     = STATE.allPayments.findIndex(p => nameMatch(p.name, member.name));
   const payRec     = payIdx !== -1 ? STATE.allPayments[payIdx] : null;
@@ -219,6 +220,7 @@ function openMemberProfile(idx) {
           <span class="txn-month">${mo}</span>
           ${chip}
           ${amt}
+          ${paid ? _proofStatusIconHtml(member.name, mo) : ''}
           ${rowIcon}
         </div>`;
     });
@@ -297,6 +299,13 @@ function openMemberProfile(idx) {
     <div class="txn-list">
       ${monthRows || `<div style="text-align:center;padding:24px;color:#94a3b8;font-size:13px">No session data available</div>`}
     </div>
+
+    ${monthKeys.length > 0 ? `
+    <button onclick="openProofUpload('${member.name.replace(/'/g, "\\'")}')"
+      style="width:100%;margin-top:14px;display:flex;align-items:center;justify-content:center;gap:8px;border:none;border-radius:14px;padding:12px 20px;font-size:14px;font-weight:700;cursor:pointer;color:#fff;background:linear-gradient(135deg,#4c1d95 0%,#7c3aed 55%,#a78bfa 120%);box-shadow:0 4px 14px rgba(124,58,237,.32)">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+      Is Member Ke Payment Proofs
+    </button>` : ''}
 
     ${monthKeys.length > 0 ? `
     <button class="whatsapp-btn" style="margin-top:16px" onclick="shareWhatsAppMember(${idx})">
