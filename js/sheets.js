@@ -112,6 +112,25 @@ async function sheetsAppend(sheetTab, values) {
 // ── Local cache (per session) ─────────────────────────
 function _cacheKey(label) { return 'tanzeem_v1_' + label; }
 
+// Members List is a single global sheet shared by every session — it must NOT
+// be cached per-session, otherwise switching into an old/rarely-opened session
+// shows whatever stale member snapshot was last saved for that session's cache
+// (missing recent adds/edits, or the session-join column). Keep one shared copy.
+const _MEMBERS_CACHE_KEY = 'tanzeem_v1_members_global';
+
+function saveMembersCache() {
+  try {
+    localStorage.setItem(_MEMBERS_CACHE_KEY, JSON.stringify({ ts: Date.now(), members: STATE.allMembers }));
+  } catch(e) {}
+}
+
+function loadMembersCache() {
+  try {
+    const raw = localStorage.getItem(_MEMBERS_CACHE_KEY);
+    return raw ? JSON.parse(raw).members : null;
+  } catch(e) { return null; }
+}
+
 function saveCache(label) {
   try {
     localStorage.setItem(_cacheKey(label), JSON.stringify({
@@ -123,6 +142,7 @@ function saveCache(label) {
       summary:  { ...STATE.sessionSummary }
     }));
   } catch(e) {}
+  saveMembersCache();
 }
 
 function loadFromCache(label) {
@@ -141,7 +161,7 @@ async function loadAllData(forceRefresh = false) {
   if (!forceRefresh) {
     const cached = loadFromCache(session.label);
     if (cached) {
-      STATE.allMembers      = cached.members;
+      STATE.allMembers      = loadMembersCache() || cached.members;
       STATE.allPayments     = cached.payments;
       STATE.allDonations    = cached.donations;
       STATE.allExpenses     = cached.expenses;

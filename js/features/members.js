@@ -84,6 +84,18 @@ function renderMembers() {
       }).join('');
 }
 
+// Nav-bar "Members" tab click — always reset to the unfiltered view so a
+// filter left applied from a previous visit doesn't silently hide members.
+function goToMembersTab(el) {
+  STATE.memberFilter = 'all';
+  STATE.memberSessionFilter = 'all';
+  const search = document.getElementById('memberSearch');
+  if (search) search.value = '';
+  document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+  document.querySelector(`.filter-tab[onclick*="setMemberFilter('all'"]`)?.classList.add('active');
+  showScreen('members', el);
+}
+
 function setMemberFilter(f, el) {
   STATE.memberFilter = f;
   document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
