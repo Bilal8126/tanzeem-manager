@@ -605,7 +605,7 @@ function _renderAllProofsBrowse() {
   const monthOptions = months.map(m =>
     `<option value="${m}"${m === _apFilters.month ? ' selected' : ''}>${m}</option>`
   ).join('');
-  const typeOptions = ['Payment', 'Advance', 'Donation', 'Expense'].map(t =>
+  const typeOptions = ['Payment', 'Donation', 'Expense'].map(t =>
     `<option value="${t}"${t === _apFilters.type ? ' selected' : ''}>${t}</option>`
   ).join('');
   const list = _apFilteredRows();
