@@ -8,7 +8,7 @@ let _proofRows   = [];
 let _proofLoaded = false;
 let _pfAdvance   = false;
 let _pfSelectedMonths = new Set();
-let _pfPickedFile   = null; // file chosen via Gallery/Camera for the main upload form
+let _pfPickedFiles  = []; // files chosen via Gallery/Camera for the main upload form (gallery allows multi-select)
 let _qpContext      = null; // { type, name } — set right before opening the Gallery/Camera picker for quick-upload
 let _proofBrowseCtx = null; // { type, name } — set when a browse grid was opened with an "add more" option
 let _proofBusy      = false; // true while an upload/download/delete network op is in flight
@@ -108,7 +108,6 @@ async function openProofUpload(prefillName) {
 
 function _renderProofEntry(prefillName) {
   const active  = _isActiveSession();
-  const months  = STATE.allPayments.length > 0 ? Object.keys(STATE.allPayments[0].months) : [];
   const sortedNames = [...STATE.allMembers].map(m => m.name).sort((a, b) => a.localeCompare(b));
   const memberOptions = sortedNames.map(n =>
     `<option value="${n.replace(/"/g, '&quot;')}"${n === prefillName ? ' selected' : ''}>${n}</option>`
@@ -129,12 +128,11 @@ function _renderProofEntry(prefillName) {
     ${active ? `
     <div class="form-group">
       <label>Month(s)</label>
-      <div class="month-pills" id="pf_months">
-        ${months.map(m => `<button type="button" class="month-pill" data-month="${m}" onclick="_togglePfMonth(this)">${m}</button>`).join('')}
-      </div>
+      <div class="month-pills" id="pf_months"></div>
+      <div id="pf_monthsNote" style="font-size:11px;color:var(--muted);margin-top:6px"></div>
     </div>
     <div class="form-group">
-      <label><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Screenshot</label>
+      <label><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Screenshot (Gallery se multiple select kar sakte hain)</label>
       ${_proofSourceButtonsHtml()}
       <div id="pf_fileName" style="font-size:11px;color:var(--muted);margin-top:6px"></div>
     </div>
@@ -144,19 +142,52 @@ function _renderProofEntry(prefillName) {
   `;
   _pfAdvance = false;
   _pfSelectedMonths = new Set();
-  _pfPickedFile = null;
+  _pfPickedFiles = [];
   _qpContext = null; // main-form mode — quick-upload's shared file inputs must route back here, not to a quick target
-  if (prefillName) _pfMemberChanged();
+  _pfMemberChanged(); // populates existing-proofs box + month pills (prefilled member or the "select member" placeholder)
 }
 
 function _pfMemberChanged() {
   const name = (document.getElementById('pf_member')?.value || '').trim();
   const box  = document.getElementById('pf_existing');
-  if (!box) return;
-  if (!name) { box.innerHTML = ''; return; }
-  const sessionLabel = STATE.currentSession?.label || '';
-  const list = _proofRows.filter(p => p.session === sessionLabel && nameMatch(p.name, name));
-  box.innerHTML = `<div class="card-title" style="margin-bottom:8px">Existing Proofs (${list.length})</div>${_proofGridHtml(list)}`;
+  if (box) {
+    if (!name) box.innerHTML = '';
+    else {
+      const sessionLabel = STATE.currentSession?.label || '';
+      const list = _proofRows.filter(p => p.session === sessionLabel && nameMatch(p.name, name));
+      box.innerHTML = `<div class="card-title" style="margin-bottom:8px">Existing Proofs (${list.length})</div>${_proofGridHtml(list)}`;
+    }
+  }
+  _pfRenderMonths(name);
+}
+
+// Only months where THIS member's payment is already marked "Paid" get a pill —
+// a proof can never be uploaded for a month before the payment itself is marked.
+function _paidMonthsOf(name) {
+  if (!name) return [];
+  const rec = STATE.allPayments.find(p => nameMatch(p.name, name));
+  if (!rec) return [];
+  return Object.keys(rec.months).filter(m => isPaid(rec.months[m]));
+}
+
+function _pfRenderMonths(name) {
+  const wrap = document.getElementById('pf_months');
+  if (!wrap) return; // old-session view has no upload form / month picker at all
+  const note = document.getElementById('pf_monthsNote');
+  _pfSelectedMonths = new Set(); // month selection doesn't carry over between members
+  if (!name) {
+    wrap.innerHTML = '';
+    if (note) note.textContent = 'Pehle member select karein.';
+    return;
+  }
+  const paidMonths = _paidMonthsOf(name);
+  if (!paidMonths.length) {
+    wrap.innerHTML = '';
+    if (note) note.textContent = `${name} ka is session mein koi payment "Paid" mark nahi hai — pehle payment mark karein, uske baad hi proof upload ho sakta hai.`;
+    return;
+  }
+  if (note) note.textContent = '';
+  wrap.innerHTML = paidMonths.map(m => `<button type="button" class="month-pill" data-month="${m}" onclick="_togglePfMonth(this)">${m}</button>`).join('');
 }
 
 function _setPfAdvance(v) {
@@ -174,22 +205,31 @@ function _togglePfMonth(el) {
 async function _submitProofUpload(btn) {
   if (_proofBusy) return;
   if (!_isActiveSession()) { showAlert('Edit Nahi Ho Sakta', _sessionLockedMsg('Proof upload karne')); return; }
-  const name = (document.getElementById('pf_member')?.value || '').trim();
-  const file = _pfPickedFile;
+  const name  = (document.getElementById('pf_member')?.value || '').trim();
+  const files = _pfPickedFiles;
   if (!name) { showAlert('Naam Zaroori Hai', 'Member ka naam likhein.'); return; }
-  if (!file) { showAlert('Screenshot Zaroori Hai', 'Gallery ya Camera se payment screenshot chunein.'); return; }
+  if (!files.length) { showAlert('Screenshot Zaroori Hai', 'Gallery ya Camera se payment screenshot chunein.'); return; }
+  if (!_paidMonthsOf(name).length) { showAlert('Payment Pehle Mark Karein', `${name} ka is session mein koi payment "Paid" mark nahi hai. Proof upload karne se pehle payment mark karein.`); return; }
   if (!_pfSelectedMonths.size) { showAlert('Month Chunein', 'Kam se kam ek month select karein.'); return; }
 
   const months = [..._pfSelectedMonths].join(', ');
   const type   = _pfAdvance ? 'Advance' : 'Payment';
 
-  _setProofBusy(true, 'Screenshot upload ho raha hai...');
-  const result = await _uploadProofFile(file, { type, name, months });
+  let uploaded = 0;
+  for (const file of files) {
+    _setProofBusy(true, files.length > 1 ? `Photo ${uploaded + 1}/${files.length} upload ho raha hai...` : 'Screenshot upload ho raha hai...');
+    const result = await _uploadProofFile(file, { type, name, months });
+    if (!result.ok) {
+      _setProofBusy(false);
+      showAlert('Upload Error', uploaded > 0 ? `${uploaded} photo(s) upload ho gaye. Phir error aaya: ${result.error}` : result.error);
+      _renderProofEntry(name);
+      return;
+    }
+    uploaded++;
+  }
   _setProofBusy(false);
-
-  if (!result.ok) { showAlert('Upload Error', result.error); _renderProofEntry(name); return; }
-  showAlert('Proof Upload Ho Gaya', `${name} — ${type} (${months}) ka proof upload ho gaya! ✅`);
-  _renderProofEntry(name); // rebuild form fresh — new proof shows immediately in Existing Proofs, no resync needed
+  showAlert('Proof Upload Ho Gaya', `${name} — ${type} (${months}) ke ${uploaded > 1 ? uploaded + ' proofs' : 'proof'} upload ho gaye! ✅`);
+  _renderProofEntry(name); // rebuild form fresh — new proofs show immediately in Existing Proofs, no resync needed
 }
 
 // ── Entry point 2 & 3: Donation/Expense row icon — direct attach ────
@@ -307,18 +347,27 @@ async function _openMonthProof(memberName, month) {
 // the quick-upload flow (when _qpContext is set) and by the main form (stores
 // the file for _submitProofUpload to pick up).
 async function _proofFileChosen(input) {
-  const file = input.files?.[0];
+  const files = Array.from(input.files || []);
   input.value = '';
-  if (!file) return;
+  if (!files.length) return;
   if (_qpContext) {
     const { type, name, month } = _qpContext;
     _qpContext = null;
-    // Persistent in-overlay loader (not just a toast) until the upload settles
     const label = month ? `${name} — ${month}` : `${name} — Proof`;
-    _setProofBusy(true, 'Screenshot upload ho raha hai...');
-    const result = await _uploadProofFile(file, { type, name, months: month || '' });
+    let uploaded = 0;
+    for (const file of files) {
+      // Persistent in-overlay loader (not just a toast) until the upload settles
+      _setProofBusy(true, files.length > 1 ? `Photo ${uploaded + 1}/${files.length} upload ho raha hai...` : 'Screenshot upload ho raha hai...');
+      const result = await _uploadProofFile(file, { type, name, months: month || '' });
+      if (!result.ok) {
+        _setProofBusy(false);
+        showAlert('Upload Error', uploaded > 0 ? `${uploaded} photo(s) upload ho gaye. Phir error aaya: ${result.error}` : result.error);
+        closeProofOverlay();
+        return;
+      }
+      uploaded++;
+    }
     _setProofBusy(false);
-    if (!result.ok) { showAlert('Upload Error', result.error); closeProofOverlay(); return; }
     // Show the result immediately — no need to close and reopen to see it
     const sessionLabel = STATE.currentSession?.label || '';
     const list = _proofRows.filter(p =>
@@ -326,11 +375,11 @@ async function _proofFileChosen(input) {
       (month ? _monthsListOf(p).includes(month) : true)
     );
     _openProofBrowseModal(list, label, { type, name, month });
-    showToast('Proof upload ho gaya! ✅');
+    showToast(uploaded > 1 ? `${uploaded} proofs upload ho gaye! ✅` : 'Proof upload ho gaya! ✅');
   } else {
-    _pfPickedFile = file;
+    _pfPickedFiles = files;
     const el = document.getElementById('pf_fileName');
-    if (el) el.textContent = file.name;
+    if (el) el.textContent = files.length > 1 ? `${files.length} files selected` : files[0].name;
   }
 }
 
@@ -379,8 +428,14 @@ function _openProofLightbox(driveId) {
       <div class="modal-title">${p.name}</div>
       <button class="close-btn" onclick="closeProofOverlay()">×</button>
     </div>
-    <div style="text-align:center;margin-bottom:12px">
-      <img src="${_thumbUrlProof(p.driveId, 1200)}" style="max-width:100%;border-radius:12px" alt="">
+    <div style="text-align:center;margin-bottom:12px;min-height:160px;position:relative">
+      <div id="proofLightboxLoader" style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:40px 0">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="animation:spin .8s linear infinite"><path d="M21 12a9 9 0 1 1-9-9"/></svg>
+        <div style="font-size:12px;color:var(--muted)">Image load ho raha hai...</div>
+      </div>
+      <img src="${_thumbUrlProof(p.driveId, 1200)}" style="max-width:100%;border-radius:12px;display:none" alt=""
+           onload="this.style.display='block';var l=document.getElementById('proofLightboxLoader');if(l)l.style.display='none';"
+           onerror="var l=document.getElementById('proofLightboxLoader');if(l)l.innerHTML='<div style=color:var(--red);font-size:12px>Image load nahi ho payi.</div>';">
     </div>
     <div style="font-size:12px;color:var(--muted);margin-bottom:14px;text-align:center">
       ${p.type}${p.months ? ' · ' + p.months : ''} · ${p.date || ''} · by ${p.uploadedBy || 'Unknown'}
