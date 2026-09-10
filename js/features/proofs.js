@@ -122,10 +122,6 @@ function _renderProofEntry(prefillName) {
       <div class="modal-title">Payment Proofs — ${STATE.currentSession?.label || ''}</div>
       <button class="close-btn" onclick="closeProofOverlay()">×</button>
     </div>
-    <button type="button" onclick="openAllProofsBrowse()" style="width:100%;margin-bottom:16px;display:flex;align-items:center;justify-content:center;gap:7px;padding:10px;background:#f5f3ff;color:#6d28d9;border:none;border-radius:12px;font-weight:700;font-size:12.5px;cursor:pointer">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-      All Proofs Dekhein — Session/Member/Month Wise
-    </button>
     <div class="form-group">
       <label><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>Member Ka Naam</label>
       <select id="pf_member" onchange="_pfMemberChanged()">
@@ -462,7 +458,7 @@ function _openProofLightbox(driveId) {
            onerror="var l=document.getElementById('proofLightboxLoader');if(l)l.innerHTML='<div style=color:var(--red);font-size:12px>Image load nahi ho payi.</div>';">
     </div>
     <div style="font-size:12px;color:var(--muted);margin-bottom:14px;text-align:center">
-      ${p.type}${p.months ? ' · ' + p.months : ''} · ${p.date || ''} · by ${p.uploadedBy || 'Unknown'}
+      ${p.type}${p.months ? ' · ' + p.months : ''} · ${_toDisplayDate(p.date)} · by ${p.uploadedBy || 'Unknown'}
     </div>
     <div style="display:flex;gap:8px">
       <button class="btn btn-secondary" style="flex:1" onclick="_downloadProof('${p.driveId}','${(p.name || 'proof').replace(/'/g, '')}')">Download</button>
@@ -599,7 +595,7 @@ function _apFilteredRows() {
     (!_apFilters.member  || p.name === _apFilters.member) &&
     (!_apFilters.type    || p.type === _apFilters.type) &&
     (!_apFilters.month   || _monthsListOf(p).includes(_apFilters.month))
-  ).sort((a, b) => (b.date || '').localeCompare(a.date || '')); // newest first
+  ).sort((a, b) => (_toISODate(b.date) || '').localeCompare(_toISODate(a.date) || '')); // newest first
 }
 
 // Same grid as everywhere else, but the badge also carries the member name —

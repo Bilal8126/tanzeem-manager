@@ -11,6 +11,17 @@ function _toISODate(str) {
     const mo = months[m[2]];
     if (mo) return `${m[3]}-${mo}-${m[1].padStart(2,'0')}`;
   }
+  // Google Sheets serial date number (days since 1899-12-30) — happens when a
+  // USER_ENTERED date string lands in a column that isn't formatted as Date,
+  // so Sheets stores/returns it as a plain serial number instead of text.
+  m = String(str).match(/^\d+(\.\d+)?$/);
+  if (m) {
+    const serial = parseFloat(str);
+    if (serial > 20000 && serial < 80000) { // sane range (~1954-2119) so unrelated numbers aren't misread as dates
+      const d = new Date(Date.UTC(1899, 11, 30) + Math.round(serial) * 86400000);
+      return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
+    }
+  }
   return '';
 }
 
