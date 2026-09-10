@@ -120,7 +120,7 @@ function _renderProofEntry(prefillName) {
     </div>
     <button type="button" onclick="openAllProofsBrowse()" style="width:100%;margin-bottom:16px;display:flex;align-items:center;justify-content:center;gap:7px;padding:10px;background:#f5f3ff;color:#6d28d9;border:none;border-radius:12px;font-weight:700;font-size:12.5px;cursor:pointer">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-      Sabhi Proofs Dekhein — Session/Member/Month Wise
+      All Proofs Dekhein — Session/Member/Month Wise
     </button>
     <div class="form-group">
       <label><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>Member Ka Naam</label>
@@ -534,7 +534,7 @@ async function _deleteProof(p) {
   }
 }
 
-// ── "Sabhi Proofs" — one master list of every uploaded proof, filterable
+// ── "All Proofs" — one master list of every uploaded proof, filterable
 // by Session / Member / Month / Type all in one place (photo + name + months).
 
 let _apFilters = { session: '', member: '', month: '', type: '' };
@@ -612,7 +612,7 @@ function _renderAllProofsBrowse() {
 
   document.getElementById('proofOverlayContent').innerHTML = `
     <div class="modal-header">
-      <div class="modal-title">Sabhi Proofs</div>
+      <div class="modal-title">All Proofs</div>
       <button class="close-btn" onclick="closeProofOverlay()">×</button>
     </div>
     <div class="form-group">
@@ -622,7 +622,7 @@ function _renderAllProofsBrowse() {
     <div class="form-group">
       <label>Member</label>
       <select onchange="_apSetFilter('member', this.value)">
-        <option value="">Sabhi Members${members.length ? ' (' + members.length + ')' : ''}</option>
+        <option value="">All Members${members.length ? ' (' + members.length + ')' : ''}</option>
         ${memberOptions}
       </select>
     </div>
@@ -630,14 +630,14 @@ function _renderAllProofsBrowse() {
       <div class="form-group" style="flex:1">
         <label>Month</label>
         <select onchange="_apSetFilter('month', this.value)">
-          <option value="">Sabhi Months</option>
+          <option value="">All Months</option>
           ${monthOptions}
         </select>
       </div>
       <div class="form-group" style="flex:1">
         <label>Type</label>
         <select onchange="_apSetFilter('type', this.value)">
-          <option value="">Sabhi Types</option>
+          <option value="">All Types</option>
           ${typeOptions}
         </select>
       </div>
