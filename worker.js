@@ -168,9 +168,9 @@ async function getAdminToken(env) {
   return d.access_token;
 }
 
-// ── Find or create "Tanzeem Gallery" folder ───────────────────
-async function getGalleryFolder(token) {
-  const q = `name='Tanzeem Gallery' and mimeType='application/vnd.google-apps.folder' and trashed=false`;
+// ── Find or create a named Drive folder (defaults to "Tanzeem Gallery") ──
+async function getGalleryFolder(token, folderName = 'Tanzeem Gallery') {
+  const q = `name='${folderName}' and mimeType='application/vnd.google-apps.folder' and trashed=false`;
   const res = await fetch(
     `${DRIVE_BASE}/files?q=${encodeURIComponent(q)}&fields=files(id)&spaces=drive`,
     { headers: { Authorization: 'Bearer ' + token } }
@@ -181,7 +181,7 @@ async function getGalleryFolder(token) {
   const cr = await fetch(`${DRIVE_BASE}/files`, {
     method: 'POST',
     headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name: 'Tanzeem Gallery', mimeType: 'application/vnd.google-apps.folder' }),
+    body: JSON.stringify({ name: folderName, mimeType: 'application/vnd.google-apps.folder' }),
   });
   const folder = await cr.json();
   return folder.id;
@@ -277,6 +277,63 @@ async function handleGalleryDownload(url, env, origin) {
   });
 }
 
+// ── Payment Proofs — same Drive mechanics as Gallery, separate folder.
+// Metadata (member/session/month/type) lives in the app's PaymentProofs
+// sheet, not the Drive file description, so upload here is just the file.
+
+// ── Route: POST /api/proofs/upload ────────────────────────────
+async function handleProofUpload(request, env, origin) {
+  const token    = await getAdminToken(env);
+  const folderId = await getGalleryFolder(token, 'Tanzeem Payment Proofs');
+
+  const form = await request.formData();
+  const file = form.get('file');
+
+  const driveMeta = JSON.stringify({ name: file.name, parents: [folderId] });
+  const driveForm = new FormData();
+  driveForm.append('metadata', new Blob([driveMeta], { type: 'application/json' }));
+  driveForm.append('file', file);
+
+  const res = await fetch(
+    `${DRIVE_UPL}/files?uploadType=multipart&fields=id,name,createdTime`,
+    { method: 'POST', headers: { Authorization: 'Bearer ' + token }, body: driveForm }
+  );
+  const uploaded = await res.json();
+  if (uploaded.id) await makePublic(uploaded.id, token);
+  return json(uploaded, res.status, origin);
+}
+
+// ── Route: DELETE /api/proofs/delete?id=X ─────────────────────
+async function handleProofDelete(url, env, origin) {
+  const fileId = url.searchParams.get('id');
+  if (!fileId) return json({ error: 'Missing id' }, 400, origin);
+  const token = await getAdminToken(env);
+  const res = await fetch(`${DRIVE_BASE}/files/${fileId}`, {
+    method: 'DELETE',
+    headers: { Authorization: 'Bearer ' + token },
+  });
+  return new Response(null, { status: res.status === 204 ? 204 : res.status, headers: corsHeaders(origin) });
+}
+
+// ── Route: GET /api/proofs/download?id=X&name=Y ───────────────
+async function handleProofDownload(url, env, origin) {
+  const fileId = url.searchParams.get('id');
+  const name   = url.searchParams.get('name') || 'proof.jpg';
+  if (!fileId) return json({ error: 'Missing id' }, 400, origin);
+  const token = await getAdminToken(env);
+  const res = await fetch(`${DRIVE_BASE}/files/${fileId}?alt=media`, {
+    headers: { Authorization: 'Bearer ' + token },
+  });
+  return new Response(res.body, {
+    status: res.status,
+    headers: {
+      ...corsHeaders(origin),
+      'Content-Type':        res.headers.get('Content-Type') || 'image/jpeg',
+      'Content-Disposition': `attachment; filename="${name}"`,
+    },
+  });
+}
+
 // ── Route: POST /api/ai ───────────────────────────────────────
 async function handleAI(request, env, origin) {
   const body = await request.json();
@@ -348,6 +405,15 @@ export default {
       }
       if (url.pathname === '/api/gallery/download' && request.method === 'GET') {
         return await handleGalleryDownload(url, env, origin);
+      }
+      if (url.pathname === '/api/proofs/upload' && request.method === 'POST') {
+        return await handleProofUpload(request, env, origin);
+      }
+      if (url.pathname === '/api/proofs/delete' && request.method === 'DELETE') {
+        return await handleProofDelete(url, env, origin);
+      }
+      if (url.pathname === '/api/proofs/download' && request.method === 'GET') {
+        return await handleProofDownload(url, env, origin);
       }
     } catch (e) {
       return json({ error: e.message }, 500, origin);

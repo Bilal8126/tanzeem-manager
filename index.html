@@ -342,6 +342,15 @@
   </div>
 </div>
 
+<!-- Payment Proofs (upload form / browse grid / lightbox — content swapped by proofs.js) -->
+<div id="proofOverlay" class="modal-overlay" onclick="closeProofOverlay()">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div id="proofOverlayContent"></div>
+  </div>
+</div>
+<input type="file" id="proofQuickFileInput" accept="image/*" style="display:none" onchange="_quickProofFileChosen(this)">
+
 <!-- Finance FAB -->
 <button id="financeFab" class="fab" onclick="openFinanceForm(STATE.currentFinanceTab==='donations'?'donation':'expense',null)" style="display:none" title="Add">+</button>
 
@@ -492,6 +501,7 @@
 <script src="js/features/payments.js"></script>
 <script src="js/features/finance.js"></script>
 <script src="js/features/gallery.js"></script>
+<script src="js/features/proofs.js"></script>
 <script src="js/features/ai.js"></script>
 <script src="js/features/sessions.js"></script>
 <script src="js/features/settings.js"></script>
