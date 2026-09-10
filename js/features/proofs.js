@@ -11,6 +11,18 @@ let _pfSelectedMonths = new Set();
 let _pfPickedFile   = null; // file chosen via Gallery/Camera for the main upload form
 let _qpContext      = null; // { type, name } — set right before opening the Gallery/Camera picker for quick-upload
 let _proofBrowseCtx = null; // { type, name } — set when a browse grid was opened with an "add more" option
+let _proofBusy      = false; // true while an upload/download/delete network op is in flight
+
+// Blocks the ENTIRE proof overlay (like the app's sync loader) for the
+// duration of an upload/download/delete — swaps the content for a spinner
+// so nothing (member picker, month pills, close button, backdrop) is
+// clickable until the operation settles.
+function _setProofBusy(on, label) {
+  _proofBusy = on;
+  if (on) {
+    document.getElementById('proofOverlayContent').innerHTML = _proofLoadingHtml('Please Wait', label || 'Processing...');
+  }
+}
 
 // Shared Gallery/Camera source-picker buttons (same UX as the Gallery feature's own upload picker)
 function _proofSourceButtonsHtml() {
@@ -59,6 +71,7 @@ function _proofGridHtml(list) {
 }
 
 function closeProofOverlay() {
+  if (_proofBusy) return; // upload/download/delete in progress — block header X and backdrop-tap close
   _histBack();
   document.getElementById('proofOverlay')?.classList.remove('open');
 }
@@ -115,13 +128,6 @@ function _renderProofEntry(prefillName) {
     </div>
     ${active ? `
     <div class="form-group">
-      <label>Advance Payment?</label>
-      <div style="display:flex;gap:8px">
-        <button id="pfAdvNo"  class="btn btn-primary"   style="flex:1;padding:10px" onclick="_setPfAdvance(false)">Nahi</button>
-        <button id="pfAdvYes" class="btn btn-secondary" style="flex:1;padding:10px" onclick="_setPfAdvance(true)">Haan, Advance</button>
-      </div>
-    </div>
-    <div class="form-group">
       <label>Month(s)</label>
       <div class="month-pills" id="pf_months">
         ${months.map(m => `<button type="button" class="month-pill" data-month="${m}" onclick="_togglePfMonth(this)">${m}</button>`).join('')}
@@ -166,7 +172,7 @@ function _togglePfMonth(el) {
 }
 
 async function _submitProofUpload(btn) {
-  if (btn?.disabled) return;
+  if (_proofBusy) return;
   if (!_isActiveSession()) { showAlert('Edit Nahi Ho Sakta', _sessionLockedMsg('Proof upload karne')); return; }
   const name = (document.getElementById('pf_member')?.value || '').trim();
   const file = _pfPickedFile;
@@ -177,17 +183,13 @@ async function _submitProofUpload(btn) {
   const months = [..._pfSelectedMonths].join(', ');
   const type   = _pfAdvance ? 'Advance' : 'Payment';
 
-  let orig;
-  if (btn) { orig = btn.innerHTML; btn.disabled = true; btn.innerHTML = `${_SVG.spinner} Upload ho raha hai...`; }
+  _setProofBusy(true, 'Screenshot upload ho raha hai...');
   const result = await _uploadProofFile(file, { type, name, months });
-  if (btn) { btn.disabled = false; btn.innerHTML = orig; }
+  _setProofBusy(false);
 
-  if (!result.ok) { showAlert('Upload Error', result.error); return; }
+  if (!result.ok) { showAlert('Upload Error', result.error); _renderProofEntry(name); return; }
   showAlert('Proof Upload Ho Gaya', `${name} — ${type} (${months}) ka proof upload ho gaya! ✅`);
-  _pfPickedFile = null;
-  const fnEl = document.getElementById('pf_fileName');
-  if (fnEl) fnEl.textContent = '';
-  _pfMemberChanged();
+  _renderProofEntry(name); // rebuild form fresh — new proof shows immediately in Existing Proofs, no resync needed
 }
 
 // ── Entry point 2 & 3: Donation/Expense row icon — direct attach ────
@@ -209,6 +211,21 @@ async function _quickProofUpload(type, idx) {
   }
 }
 
+function _recordHasProof(type, name) {
+  const sessionLabel = STATE.currentSession?.label || '';
+  return _proofRows.some(p => p.session === sessionLabel && p.type === type && p.name === name);
+}
+
+// Same green/red camera icon as the member+month one, but for a Donation/Expense
+// row — green if that record already has an attached proof, red if missing.
+function _proofRecordIconHtml(type, idx, name) {
+  const hasProof = _proofLoaded && _recordHasProof(type, name);
+  const color    = !_proofLoaded ? '#cbd5e1' : (hasProof ? '#16a34a' : '#dc2626');
+  return `<button class="proof-status-icon" data-proof-record-type="${type}" data-proof-record-name="${name.replace(/"/g, '&quot;')}" onclick="_quickProofUpload('${type}',${idx})" title="${hasProof ? 'Proof uploaded' : 'Proof missing'}" style="background:none;border:none;cursor:pointer;padding:5px 6px;border-radius:8px;display:flex;align-items:center">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+  </button>`;
+}
+
 // ── Entry point 4: green/red per-member-per-month status icon ───────
 // Shown next to a paid member (Members/Payments/Member Profile screens).
 // Green = a Payment/Advance proof already covers this exact month; red = missing.
@@ -225,16 +242,40 @@ function _memberHasProofForMonth(name, month) {
   );
 }
 
-// Small clickable dot — green (proof exists) or red (missing) — for one member+month.
+// Small clickable camera icon — green (proof exists) or red (missing) — for one member+month.
 function _proofStatusIconHtml(memberName, month) {
   const clean    = memberName.replace(/\(.*?\)/g, '').trim();
   const hasProof = _proofLoaded && _memberHasProofForMonth(clean, month);
   const color    = !_proofLoaded ? '#cbd5e1' : (hasProof ? '#16a34a' : '#dc2626');
   const safeName = clean.replace(/'/g, "\\'");
   const safeMon  = month.replace(/'/g, "\\'");
-  return `<button onclick="event.stopPropagation();_openMonthProof('${safeName}','${safeMon}')" title="${hasProof ? 'Payment proof uploaded' : 'Payment proof missing'}" style="background:none;border:none;cursor:pointer;padding:3px;display:flex;align-items:center;flex-shrink:0">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="${color}" stroke="${color}" stroke-width="1.5"><circle cx="12" cy="12" r="7"/></svg>
+  return `<button class="proof-status-icon" data-proof-name="${clean.replace(/"/g, '&quot;')}" data-proof-month="${month.replace(/"/g, '&quot;')}" onclick="event.stopPropagation();_openMonthProof('${safeName}','${safeMon}')" title="${hasProof ? 'Payment proof uploaded' : 'Payment proof missing'}" style="background:none;border:none;cursor:pointer;padding:3px;display:flex;align-items:center;flex-shrink:0">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
   </button>`;
+}
+
+// Re-colors every already-rendered status icon in place (Members/Payments/Member
+// Profile screens sit *behind* the proof overlay, so their DOM isn't rebuilt when
+// an upload/delete happens on top of them — this keeps them in sync without a resync).
+function _refreshProofStatusIcons() {
+  document.querySelectorAll('.proof-status-icon').forEach(btn => {
+    let hasProof, onLabel, offLabel;
+    if (btn.dataset.proofName) {
+      const name = btn.dataset.proofName, month = btn.dataset.proofMonth;
+      if (!name || !month) return;
+      hasProof = _proofLoaded && _memberHasProofForMonth(name, month);
+      onLabel = 'Payment proof uploaded'; offLabel = 'Payment proof missing';
+    } else if (btn.dataset.proofRecordType) {
+      const type = btn.dataset.proofRecordType, name = btn.dataset.proofRecordName;
+      if (!name) return;
+      hasProof = _proofLoaded && _recordHasProof(type, name);
+      onLabel = 'Proof uploaded'; offLabel = 'Proof missing';
+    } else return;
+    const color = !_proofLoaded ? '#cbd5e1' : (hasProof ? '#16a34a' : '#dc2626');
+    const svg = btn.querySelector('svg');
+    if (svg) svg.setAttribute('stroke', color);
+    btn.title = hasProof ? onLabel : offLabel;
+  });
 }
 
 // Call once per screen render (before building status icons) — kicks off a
@@ -274,8 +315,9 @@ async function _proofFileChosen(input) {
     _qpContext = null;
     // Persistent in-overlay loader (not just a toast) until the upload settles
     const label = month ? `${name} — ${month}` : `${name} — Proof`;
-    document.getElementById('proofOverlayContent').innerHTML = _proofLoadingHtml(label, 'Screenshot upload ho raha hai...');
+    _setProofBusy(true, 'Screenshot upload ho raha hai...');
     const result = await _uploadProofFile(file, { type, name, months: month || '' });
+    _setProofBusy(false);
     if (!result.ok) { showAlert('Upload Error', result.error); closeProofOverlay(); return; }
     // Show the result immediately — no need to close and reopen to see it
     const sessionLabel = STATE.currentSession?.label || '';
@@ -351,8 +393,9 @@ function _openProofLightbox(driveId) {
 }
 
 async function _downloadProof(driveId, name) {
+  if (_proofBusy) return; // guard against double-tap firing two downloads
+  _setProofBusy(true, 'Download ho raha hai...');
   try {
-    showToast('Download ho raha hai...');
     const url = `${CONFIG.WORKER_URL}/api/proofs/download?id=${driveId}&name=${encodeURIComponent(name + '.jpg')}`;
     const res = await fetch(url);
     if (!res.ok) throw new Error('Download failed');
@@ -362,7 +405,9 @@ async function _downloadProof(driveId, name) {
     a.href = blobUrl; a.download = name + '.jpg';
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     setTimeout(() => URL.revokeObjectURL(blobUrl), 8000);
+    showToast('Download ho gaya! ✅');
   } catch (e) { showToast('Download error: ' + e.message, 'error'); }
+  finally { _setProofBusy(false); _openProofLightbox(driveId); }
 }
 
 function _deleteProofPrompt(driveId) {
@@ -376,6 +421,9 @@ function _deleteProofPrompt(driveId) {
 }
 
 // ── Shared upload/delete core ─────────────────────────────────────
+// Callers wrap every entry point with _setProofBusy(true/false), which both
+// blocks the overlay UI and swaps the busy flag — so by the time this runs
+// there's no interactive element left in the DOM to double-tap.
 
 async function _uploadProofFile(file, { type, name, months }) {
   if (!_isActiveSession()) return { ok: false, error: _sessionLockedMsg('Proof upload karne') };
@@ -398,6 +446,7 @@ async function _uploadProofFile(file, { type, name, months }) {
     await sheetsAppend('PaymentProofs', [[nextId, session, name, months || '', type, uploaded.id, admin, dateStr]]);
     const newRow = { row: newRowNum, id: String(nextId), session, name, months: months || '', type, driveId: uploaded.id, uploadedBy: admin, date: dateStr };
     _proofRows.push(newRow);
+    _refreshProofStatusIcons(); // turn the relevant member+month icon green immediately, no resync needed
     _trackHistory('Proof Uploaded', `${name} - ${type}${months ? ' - ' + months : ''}`, false);
     return { ok: true, row: newRow };
   } catch (e) {
@@ -406,15 +455,22 @@ async function _uploadProofFile(file, { type, name, months }) {
 }
 
 async function _deleteProof(p) {
+  if (_proofBusy) return false; // guard against double-tap firing two deletes
   if (!_isActiveSession()) return false;
   if (!await _ensureWriteAccess()) return false;
+  _proofBusy = true; // block the overlay for the duration, same as upload/download
   try {
     await fetch(CONFIG.WORKER_URL + '/api/proofs/delete?id=' + p.driveId, { method: 'DELETE' });
     await sheetsDeleteRow('PaymentProofs', p.row);
     const deletedRow = p.row;
     _proofRows = _proofRows.filter(x => x !== p);
     _proofRows.forEach(x => { if (x.row > deletedRow) x.row--; });
+    _refreshProofStatusIcons(); // turn the relevant member+month icon red immediately, no resync needed
     _trackHistory('Proof Deleted', `${p.name} - ${p.type}${p.months ? ' - ' + p.months : ''}`, false);
     return true;
-  } catch (e) { return false; }
+  } catch (e) {
+    return false;
+  } finally {
+    _proofBusy = false;
+  }
 }
