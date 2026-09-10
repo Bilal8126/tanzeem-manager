@@ -12,6 +12,9 @@ let _pfPickedFiles  = []; // files chosen via Gallery/Camera for the main upload
 let _qpContext      = null; // { type, name } — set right before opening the Gallery/Camera picker for quick-upload
 let _proofBrowseCtx = null; // { type, name } — set when a browse grid was opened with an "add more" option
 let _proofBusy      = false; // true while an upload/download/delete network op is in flight
+let _proofListRender = null; // re-renders whatever list/grid is currently under the lightbox — set by every
+// grid-producing function right as it renders, so a successful delete can return to that same list
+// (refreshed) instead of always closing the entire overlay back out to whatever screen opened it.
 
 // Blocks the ENTIRE proof overlay (like the app's sync loader) for the
 // duration of an upload/download/delete — swaps the content for a spinner
@@ -72,6 +75,7 @@ function _proofGridHtml(list) {
 
 function closeProofOverlay() {
   if (_proofBusy) return; // upload/download/delete in progress — block header X and backdrop-tap close
+  _proofListRender = null;
   _histBack();
   document.getElementById('proofOverlay')?.classList.remove('open');
 }
@@ -160,6 +164,7 @@ function _pfMemberChanged() {
       const sessionLabel = STATE.currentSession?.label || '';
       const list = _proofRows.filter(p => p.session === sessionLabel && nameMatch(p.name, name));
       box.innerHTML = `<div class="card-title" style="margin-bottom:8px">Existing Proofs (${list.length})</div>${_proofGridHtml(list)}`;
+      _proofListRender = () => _pfMemberChanged(); // so Delete from this grid's lightbox returns here, not out of the whole form
     }
   }
   _pfRenderMonths(name);
@@ -398,6 +403,17 @@ function _openQuickSourcePicker(title) {
   `;
 }
 
+// Rebuilds the exact filtered list a browse-modal context represents, straight
+// from the live _proofRows — used to refresh after a delete (a captured `list`
+// array snapshot would still contain the just-removed item by reference).
+function _proofsMatchingContext(context) {
+  const sessionLabel = STATE.currentSession?.label || '';
+  return _proofRows.filter(p =>
+    p.session === sessionLabel && p.type === context.type && p.name === context.name &&
+    (context.month ? _monthsListOf(p).includes(context.month) : true)
+  );
+}
+
 function _openProofBrowseModal(list, title, context) {
   _proofBrowseCtx = context || null;
   _openProofOverlay();
@@ -413,6 +429,10 @@ function _openProofBrowseModal(list, title, context) {
     </button>` : ''}
     ${_proofGridHtml(list)}
   `;
+  // Delete from this grid's lightbox returns to this same grid (freshly refiltered), not out of the whole overlay
+  _proofListRender = context
+    ? () => _openProofBrowseModal(_proofsMatchingContext(context), title, context)
+    : () => _openProofBrowseModal(list, title, context);
 }
 
 function _qpAddMoreFromBrowse() {
@@ -474,7 +494,13 @@ function _deleteProofPrompt(driveId) {
   if (!p) return;
   showConfirm('Proof Delete Karein?', `<b>${p.name}</b> ka yeh screenshot permanently delete ho jayega.<br><span style="color:var(--red);font-size:12px">Yeh action wapas nahi ho sakta!</span>`, async () => {
     const ok = await _deleteProof(p);
-    if (ok) { showAlert('Proof Delete Ho Gaya', 'Screenshot delete ho gaya. 🗑'); closeProofOverlay(); }
+    if (ok) {
+      showAlert('Proof Delete Ho Gaya', 'Screenshot delete ho gaya. 🗑');
+      // Return to whatever list this photo was opened from (refreshed) instead of
+      // closing the whole overlay — keeps the user browsing where they were.
+      if (typeof _proofListRender === 'function') _proofListRender();
+      else closeProofOverlay();
+    }
     else showAlert('Delete Error', 'Delete nahi ho paya — dobara try karein.');
   });
 }
@@ -645,6 +671,8 @@ function _renderAllProofsBrowse() {
     <div style="font-size:12px;color:var(--muted);margin:4px 0 12px">${list.length} proof${list.length === 1 ? '' : 's'} mile</div>
     ${_apGridHtml(list)}
   `;
+  // Re-filters live from _proofRows each call, so this is always safe to call again after a delete
+  _proofListRender = () => _renderAllProofsBrowse();
 }
 
 function _apSetFilter(key, value) {
