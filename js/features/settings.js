@@ -186,9 +186,11 @@ async function loadTrackHistory() {
   }
   el.innerHTML = `<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">Loading...</div>`;
   try {
-    const rows = (await sheetsGet('TrackHistory!A1:E1000')).filter(r => r.length >= 2);
+    const sessionLabel = STATE.currentSession?.label || '';
+    const rows = (await sheetsGet('TrackHistory!A1:E1000'))
+      .filter(r => r.length >= 2 && r[3] === sessionLabel);
     if (!rows.length) {
-      el.innerHTML = `<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">Koi activity record nahi hai</div>`;
+      el.innerHTML = `<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">Is session mein koi activity record nahi hai</div>`;
       return;
     }
     _historyRows  = [...rows].reverse(); // newest first

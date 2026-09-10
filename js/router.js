@@ -71,18 +71,35 @@ window.addEventListener('popstate', e => {
   // 3. On dashboard — exit app directly (no confirmation)
 });
 
-// Show AI nav only for the active session; redirect to dashboard if on AI screen
+// AI nav stays visible for every session but is dimmed/disabled for non-active
+// ones — tapping it explains why instead of just doing nothing.
 function syncAiNav() {
   const isActive = !!(CONFIG.SESSIONS[STATE.currentSessionIdx]?.active);
   const aiBtn    = document.getElementById('aiNavBtn');
-  if (aiBtn) aiBtn.style.display = isActive ? '' : 'none';
+  if (aiBtn) aiBtn.classList.toggle('nav-disabled', !isActive);
   // If user is currently on AI screen and switches to a non-active session → go to dashboard
   if (!isActive && STATE.currentScreen === 'ai') {
     showScreen('dashboard', document.querySelector('.nav-item'));
   }
 }
 
+// Kept as the nav button's onclick target for backward compatibility — the
+// actual guard now lives inside showScreen() itself so every path into the
+// AI screen (nav click, popstate/back-button restore, any future caller) is
+// covered, not just this one entry point.
+function goToAiTab(el) {
+  showScreen('ai', el);
+}
+
 function showScreen(name, el, _skipHistory) {
+  // AI screen is only ever valid for the active session — block it here so
+  // even a back-button/popstate restore (which bypasses goToAiTab) can't land on it.
+  if (name === 'ai' && !_isActiveSession()) {
+    showAlert('AI Sirf Current Session Ke Liye', _sessionLockedMsg('AI chat use karne'));
+    name = 'dashboard';
+    el = document.querySelector('.nav-item[onclick*="showScreen(\'dashboard\'"]') || el;
+  }
+
   // Push history entry storing the screen we're leaving (so back restores it)
   if (!_skipHistory) _histPush({ screen: STATE.currentScreen });
   // Save scroll position for the screen we're leaving

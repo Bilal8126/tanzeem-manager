@@ -62,7 +62,7 @@ function renderDashboard() {
     </div>` : '';
 
   const isActiveSess = !!(CONFIG.SESSIONS[STATE.currentSessionIdx]?.active);
-  const _qaBlocked   = `showAlert('Edit Nahi Ho Sakta','Purane session mein yeh kaam nahi ho sakta — sirf current active session mein ho sakta hai.')`;
+  const _qaBlocked   = `showAlert('Edit Nahi Ho Sakta', _sessionLockedMsg())`;
   const qaMarkPay    = isActiveSess
     ? `onclick="showQuickMarkPayment()"`
     : `onclick="${_qaBlocked}" style="opacity:.55"`;
@@ -175,7 +175,7 @@ function renderDashboard() {
     </div>`;
 
   setTimeout(() => buildDashChart(months, monthlyTotals), 80);
-  if (isActiveSess) _loadRecentActivity();
+  _loadRecentActivity();
 }
 
 function _goToMembersSession(label) {
@@ -274,7 +274,9 @@ async function _loadRecentActivity() {
   const el = document.getElementById('storiesRow');
   if (!el || !section || !STATE.accessToken) return;
   try {
-    const rows = (await sheetsGet('TrackHistory!A1:E1000')).filter(r => r.length >= 2);
+    const sessionLabel = STATE.currentSession?.label || '';
+    const rows = (await sheetsGet('TrackHistory!A1:E1000'))
+      .filter(r => r.length >= 2 && r[3] === sessionLabel);
     if (STATE.currentScreen !== 'dashboard') return; // user navigated away while fetching
     _recentActivity = rows.slice(-10).reverse(); // newest first, last 10
     if (!_recentActivity.length) { section.style.display = 'none'; el.innerHTML = ''; return; }

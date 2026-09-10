@@ -56,7 +56,8 @@ function _pDisambiguation(d) {
   const names = d.stats.map(s => s.name.replace(/\(.*?\)/g, '').trim()).join(', ');
   return `=== NAME RULE ===
 Members: ${names}
-1 match → answer directly. 2+ matches → ask which one. 0 → say not found.`;
+1 match → answer directly. 2+ matches → ask which one. 0 → say not found.
+Yeh list SAARE members ki hai — chahe unka Join-Session koi bhi ho, chahe woh kisi purane session mein add hue ho. Kisi member ko dhoondhte waqt uske Join-Session ko current/active session se compare karke "not found" mat bolo — naam match hote hi member mil gaya, bas uski payment/subscription details hamesha CURRENT ACTIVE SESSION ke payment data se hi aayengi.`;
 }
 
 function _pSession(d) {
@@ -110,9 +111,34 @@ ${activeRows || 'No data'}
 ${inactiveRows || 'None'}`;
 }
 
-function _pMemberSessions() {
-  const rows = STATE.allMembers.map(m => `  ${m.name}: ${m.session || 'N/A'}`).join('\n') || '  No data';
-  return `=== MEMBER JOIN SESSION (jis session mein member Tanzeem mein add hua) ===\n${rows}`;
+// Personal-record fields (DOJ, address, DOE, join-session) straight from the
+// Members List sheet — separate from the payment-stats rows in _pMembers()
+// so "kab add hua / kaha ka hai / kab Inactive hua" can be answered directly.
+function _pMemberProfiles() {
+  const rows = STATE.allMembers.map(m => {
+    const parts = [
+      `DOJ(add hua) ${m.doj || 'N/A'}`,
+      `Address(kaha ka hai) ${m.address || 'N/A'}`,
+      `Status ${m.status || 'Active'}`,
+      `Type ${m.type || 'Regular'}`,
+      `Join-Session ${m.session || 'N/A'}`,
+    ];
+    if (m.status !== 'Active' && m.doe) parts.push(`DOE(Inactive kab hua) ${m.doe}`);
+    return `  ${m.name}: ${parts.join(' | ')}`;
+  }).join('\n');
+  return `=== MEMBER PROFILES (personal record — kab add hua, kaha ke hain, active/inactive kab/kis session mein hue) ===
+${rows || '  No data'}
+NOTE: "Total members" / "kitne members hain" hamesha SAB members ka count hai (${STATE.allMembers.length}), chahe kisi bhi session mein active ho ya jo bhi session abhi active ho — Join-Session field sirf yeh batati hai ke woh member kis session mein add hua tha, ispar total ko filter mat karo jab tak user khud kisi specific session ke members maange.`;
+}
+
+// Multi-turn conversational rules for "who am I" self-lookup and for names
+// that don't match any real member — relies on _chatHistory (last 8 turns)
+// so a bare name reply is understood as the answer to the AI's own question.
+function _pPersonaFlow() {
+  return `=== SELF-LOOKUP & NEW-VISITOR FLOW ===
+Agar koi pooche "main kaun hoon", "meri details batao", "who am i", ya apna record maange, aur unka naam pata na ho: pehle unka naam poochein. Naam milte hi MEMBER PROFILES se unki puri detail do — DOJ (kab add hue), Address (kaha ke hain), Status (Active/Inactive), aur agar Inactive hain to DOE (kab Inactive hue) aur Join-Session. Uske baad poochein: "Aapko apni payment/subscription ke baare mein jaanna hai kya?" — haan kahein to unki payment status (paid/unpaid months, total) batao.
+
+Yeh "not found" sirf tab bolein jab naam MEMBER PROFILES/disambiguation ki poori list (sab sessions ke members) mein kahin bhi match na ho — kisi member ka Join-Session purana hone se woh "not found" nahi ban jata, woh ab bhi member hai. Agar diya gaya naam kisi bhi member se sach mein match nahi hota: unhe seedha bataye ke woh Tanzeem ke member nahi hain. Fir Tanzeem Abd-e-Mustafa ke baare mein thodi jaankari dete hue (maqsad: gareebo ki madad, masjid/madrasa, langar, deen ki khidmat) unhe member banne ki garmjoshi se dawat dein. Phir poochein: "Kya aap Tanzeem ka member banna chahte hain?" — haan kahein to unhe bataye ke aap unki basic details (naam, mobile number, address) le kar aage guide kar denge, aur wahi maangna shuru kar dein.`;
 }
 
 function _pDonations() {
@@ -289,14 +315,14 @@ function buildDataContext(type = 'full', includeInactiveDetail = false) {
       parts.push(_pSession(d), _pFinancials(d), _pDonations(), _pExpenses());
       break;
     case 'payments':
-      parts.push(_pDisambiguation(d), _pSession(d), _pFinancials(d), _pMonthly(d), _pMembers(d, false), _pMemberSessions());
+      parts.push(_pDisambiguation(d), _pSession(d), _pFinancials(d), _pMonthly(d), _pMembers(d, false), _pMemberProfiles());
       break;
     case 'member':
-      parts.push(_pDisambiguation(d), _pSession(d), _pFinancials(d), _pMonthly(d), _pMembers(d, includeInactiveDetail), _pMemberSessions());
+      parts.push(_pDisambiguation(d), _pSession(d), _pFinancials(d), _pMonthly(d), _pMembers(d, includeInactiveDetail), _pMemberProfiles(), _pPersonaFlow());
       break;
     default: // 'full'
       parts.push(_pAppInfo(d), _pDisambiguation(d), _pSession(d), _pFinancials(d),
-                 _pMonthly(d), _pMembers(d, includeInactiveDetail), _pMemberSessions(), _pDonations(), _pExpenses());
+                 _pMonthly(d), _pMembers(d, includeInactiveDetail), _pMemberProfiles(), _pDonations(), _pExpenses(), _pPersonaFlow());
   }
 
   parts.push('\nJawab Hinglish mein do. Friendly aur concise raho.');

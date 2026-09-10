@@ -192,6 +192,11 @@
       <button id="memberAddBtn" onclick="openAddMember()" title="Add Member" style="flex-shrink:0;background:#1a6b3c;border:none;border-radius:50%;width:36px;height:36px;color:#fff;font-size:22px;font-weight:300;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;box-shadow:0 2px 8px rgba(15,74,41,0.35)">+</button>
     </div>
     <div id="memberSessionFilters" class="month-pills" style="margin-bottom:12px"></div>
+    <div class="month-pills" style="margin-bottom:12px">
+      <button class="month-pill active" id="memberSortDefault" onclick="setMemberSortMode('default')">Default</button>
+      <button class="month-pill" id="memberSortDate" onclick="setMemberSortMode('date')">Date Wise</button>
+      <button class="month-pill" id="memberSortAlpha" onclick="setMemberSortMode('alpha')">A-Z</button>
+    </div>
     <div id="membersList"><div class="loading">Loading...</div></div>
   </div>
 
@@ -310,7 +315,7 @@
       </svg>
       Settings
     </button>
-    <button id="aiNavBtn" class="nav-item" onclick="showScreen('ai',this)">
+    <button id="aiNavBtn" class="nav-item" onclick="goToAiTab(this)">
       <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
         <path d="M12 2a10 10 0 0 1 10 10c0 5.52-4.48 10-10 10a9.96 9.96 0 0 1-5.19-1.45L2 21l1.45-4.81A9.96 9.96 0 0 1 2 12 10 10 0 0 1 12 2z"/>
         <circle cx="8" cy="12" r="1" fill="currentColor" stroke="none"/>

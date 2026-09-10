@@ -36,6 +36,9 @@ function renderMembers() {
     }
   }
 
+  document.querySelectorAll('#screen-members .month-pills button[id^="memberSort"]').forEach(b => b.classList.remove('active'));
+  document.getElementById('memberSort' + STATE.memberSortMode[0].toUpperCase() + STATE.memberSortMode.slice(1))?.classList.add('active');
+
   const q = (document.getElementById('memberSearch')?.value || '').toLowerCase();
   const list = STATE.allMembers.filter(m => {
     const matchQ = !q || m.name.toLowerCase().includes(q) || m.mobile.includes(q);
@@ -47,6 +50,12 @@ function renderMembers() {
     const matchS = STATE.memberSessionFilter === 'all' || m.session === STATE.memberSessionFilter;
     return matchQ && matchF && matchS;
   });
+
+  if (STATE.memberSortMode === 'date') {
+    list.sort((a, b) => (_toISODate(b.doj) || '').localeCompare(_toISODate(a.doj) || '')); // newest join first
+  } else if (STATE.memberSortMode === 'alpha') {
+    list.sort((a, b) => a.name.localeCompare(b.name));
+  } // 'default' → keep sheet row order as-is
 
   const isActive = m => m.status === 'Active';
   const initials = name => name.trim().split(' ').slice(0,2).map(w => w[0]).join('').toUpperCase();
@@ -75,6 +84,12 @@ function renderMembers() {
               ${m.session ? `<span style="display:inline-flex;align-items:center;gap:3px;font-size:10px;padding:2px 7px;border-radius:8px;font-weight:600;background:#ede9fe;color:#6d28d9">
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>${m.session}
               </span>` : ''}
+              ${m.doj ? `<span style="display:inline-flex;align-items:center;gap:3px;font-size:10px;padding:2px 7px;border-radius:8px;font-weight:600;background:#f1f5f9;color:#475569">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>DOJ ${m.doj}
+              </span>` : ''}
+              ${(!isActive(m) && m.doe) ? `<span style="display:inline-flex;align-items:center;gap:3px;font-size:10px;padding:2px 7px;border-radius:8px;font-weight:600;background:#fee2e2;color:#991b1b">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>DOE ${m.doe}
+              </span>` : ''}
             </div>
             <div class="member-sub">${m.mobile || 'No mobile'}</div>
             ${m.address ? `<div class="member-sub">${m.address}</div>` : ''}
@@ -89,6 +104,7 @@ function renderMembers() {
 function goToMembersTab(el) {
   STATE.memberFilter = 'all';
   STATE.memberSessionFilter = 'all';
+  STATE.memberSortMode = 'default';
   const search = document.getElementById('memberSearch');
   if (search) search.value = '';
   document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
@@ -105,6 +121,11 @@ function setMemberFilter(f, el) {
 
 function setMemberSessionFilter(s) {
   STATE.memberSessionFilter = s;
+  renderMembers();
+}
+
+function setMemberSortMode(mode) {
+  STATE.memberSortMode = mode;
   renderMembers();
 }
 
@@ -347,7 +368,7 @@ function shareWhatsAppMember(idx) {
 // ── Toggle payment from member profile ───────────────────
 
 async function togglePaymentFromProfile(payIdx, mo, memberIdx) {
-  if (!_isActiveSession()) { showAlert('Edit Nahi Ho Sakta', 'Purane session mein payment mark/unmark nahi ho sakti — sirf current active session editable hai.'); return; }
+  if (!_isActiveSession()) { showAlert('Edit Nahi Ho Sakta', _sessionLockedMsg()); return; }
   const p = STATE.allPayments[payIdx];
   if (!p) return;
   const memberRec = STATE.allMembers.find(m => nameMatch(m.name, p.name));
@@ -400,7 +421,7 @@ let _editMemberAadhar = null;
 let _editMemberRef    = null;
 
 function openEditMember(idx) {
-  if (!_isActiveSession()) { showAlert('Edit Nahi Ho Sakta', 'Purane session mein member add/edit nahi ho sakta — sirf current active session mein yeh kaam ho sakta hai.'); return; }
+  if (!_isActiveSession()) { showAlert('Edit Nahi Ho Sakta', _sessionLockedMsg()); return; }
   const m = STATE.allMembers[idx];
   if (!m) return;
   _editMemberStatus = m.status;
@@ -571,7 +592,7 @@ async function saveEditMember(idx) {
 }
 
 async function deleteMember(idx) {
-  if (!_isActiveSession()) { showAlert('Edit Nahi Ho Sakta', 'Purane session mein member delete nahi ho sakta — sirf current active session mein yeh kaam ho sakta hai.'); return; }
+  if (!_isActiveSession()) { showAlert('Edit Nahi Ho Sakta', _sessionLockedMsg()); return; }
   const m = STATE.allMembers[idx];
   if (!m) return;
   if (!await _ensureWriteAccess()) return;
@@ -600,7 +621,7 @@ async function deleteMember(idx) {
 // ── Add New Member ────────────────────────────────────────
 
 async function openAddMember() {
-  if (!_isActiveSession()) { showAlert('Edit Nahi Ho Sakta', 'Purane session mein naya member add nahi ho sakta — sirf current active session mein yeh kaam ho sakta hai.'); return; }
+  if (!_isActiveSession()) { showAlert('Edit Nahi Ho Sakta', _sessionLockedMsg()); return; }
   if (!STATE.accessToken) await syncData();
   document.getElementById('memberProfileContent').innerHTML = `
     <div class="modal-header">

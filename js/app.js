@@ -6,6 +6,7 @@ const STATE = {
   currentFinanceTab: 'donations',
   memberFilter:          'all',
   memberSessionFilter:   'all',
+  memberSortMode:        'default', // 'default' | 'date' | 'alpha'
   selectedPaymentMonth:  null,
   dashChart:         null,
   allMembers:        [],
@@ -300,6 +301,16 @@ function closeConfirm() {
 }
 
 // ── Validation alert modal (centered, blurred backdrop) ───
+// Shared message for every "this needs the active session" block — names both
+// the actually-active session and whichever one the user currently has open,
+// so it's obvious what to do (switch to the active one) instead of just "no".
+function _sessionLockedMsg(action) {
+  action = action || 'Edit karne';
+  const activeSession   = CONFIG.SESSIONS.find(s => s.active)?.label || '—';
+  const selectedSession = STATE.currentSession?.label || CONFIG.SESSIONS[STATE.currentSessionIdx]?.label || '—';
+  return `Ye kaam sirf Active session mein ho sakta hai. ${action} ke liye pehle session ko active karein.\n\nActive Session: ${activeSession}\nSelected Session: ${selectedSession}`;
+}
+
 function showAlert(title, message) {
   const titleEl = document.getElementById('alertTitle');
   const msgEl   = document.getElementById('alertMsg');

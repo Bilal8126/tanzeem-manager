@@ -90,7 +90,7 @@ let _ffType = null;
 let _ffIdx  = null;
 
 function openFinanceForm(type, idx) {
-  if (!_isActiveSession()) { showAlert('Edit Nahi Ho Sakta', 'Purane session mein donation/expense add ya edit nahi ho sakta — sirf current active session mein yeh kaam ho sakta hai.'); return; }
+  if (!_isActiveSession()) { showAlert('Edit Nahi Ho Sakta', _sessionLockedMsg()); return; }
   _ffType = type;
   _ffIdx  = (idx === undefined || idx === null) ? null : idx;
   const isEdit     = _ffIdx !== null;
@@ -166,7 +166,7 @@ function closeFinanceForm() {
 
 async function saveFinanceForm() {
   if (!await _ensureWriteAccess()) return;
-  if (STATE.currentSessionIdx !== 0) { showAlert('Edit Nahi Ho Sakta', 'Purane session mein edit nahi ho sakta — sirf current active session editable hai.'); return; }
+  if (STATE.currentSessionIdx !== 0) { showAlert('Edit Nahi Ho Sakta', _sessionLockedMsg()); return; }
 
   const isDonation = _ffType === 'donation';
   const isEdit     = _ffIdx !== null;
@@ -254,7 +254,7 @@ async function saveFinanceForm() {
 
 async function deleteFinanceItem(type, idx) {
   if (!await _ensureWriteAccess()) return;
-  if (STATE.currentSessionIdx !== 0) { showAlert('Edit Nahi Ho Sakta', 'Purane session mein edit nahi ho sakta — sirf current active session editable hai.'); return; }
+  if (STATE.currentSessionIdx !== 0) { showAlert('Edit Nahi Ho Sakta', _sessionLockedMsg()); return; }
   const isDonation = type === 'donation';
   const item    = isDonation ? STATE.allDonations[idx] : STATE.allExpenses[idx];
   if (!item) return;

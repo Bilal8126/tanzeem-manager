@@ -407,6 +407,9 @@ body {
 }
 .nav-item.active svg { transform: scale(1.08); }
 .nav-item.active::before { display: none; }
+.nav-item.nav-disabled { opacity: 0.38; }
+.nav-item.nav-disabled.active { background: none; color: #94a3b8; box-shadow: none; }
+.nav-item.nav-disabled.active svg { transform: none; }
 
 /* ── Raised center nav button (Paytm-style) ──────────── */
 .nav-item.nav-raised {
