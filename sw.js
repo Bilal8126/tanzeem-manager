@@ -1,4 +1,4 @@
-const CACHE = 'tanzeem-v239'; // bump this version on every deploy → triggers auto-reload for all users
+const CACHE = 'tanzeem-v241'; // bump this version on every deploy → triggers auto-reload for all users
 const ASSETS = [
   './',
   './index.html',
@@ -77,9 +77,10 @@ self.addEventListener('push', e => {
   e.waitUntil(
     self.registration.showNotification(title, {
       body,
-      icon:  './icons/icon.svg?v=2',
-      badge: './icons/icon.svg?v=2',
-      tag:   'tanzeem-update'
+      icon:     './icons/icon.svg?v=2',
+      badge:    './icons/icon.svg?v=2',
+      tag:      'tanzeem-update',
+      renotify: true // without this, a new notification with the same tag silently replaces an unread one instead of alerting again
     })
   );
 });

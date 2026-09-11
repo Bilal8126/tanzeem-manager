@@ -1,0 +1,16 @@
+name: Notify Users of App Update
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    name: Push "App Updated" Notification
+    steps:
+      - name: Send update notification
+        run: |
+          curl -sS -X POST "https://tanzeem-manager.erhacker81.workers.dev/api/push/notify" \
+            -H "Content-Type: application/json" \
+            -d '{"title":"App Update Hua! 🚀","body":"Tanzeem Manager mein naye features/fixes aa gaye hain. App khol kar dekhein."}'

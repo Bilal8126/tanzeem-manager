@@ -529,6 +529,7 @@ async function _uploadProofFile(file, { type, name, months }) {
     _proofRows.push(newRow);
     _refreshProofStatusIcons(); // turn the relevant member+month icon green immediately, no resync needed
     _trackHistory('Proof Uploaded', `${name} - ${type}${months ? ' - ' + months : ''}`, false);
+    _pushNotify('Payment Proof Upload Hua! 📸', `${name} — ${type}${months ? ' (' + months + ')' : ''} ka screenshot upload kiya gaya`);
     return { ok: true, row: newRow };
   } catch (e) {
     return { ok: false, error: e.message === 'AUTH_EXPIRED' ? 'Session expired — sync karein.' : 'Upload error: ' + e.message };
