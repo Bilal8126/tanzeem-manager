@@ -276,6 +276,7 @@ async function _doSetActive(idx) {
   try {
     await _persistSessions();
     showAlert('Session Active Ho Gaya', 'Active session ab: ' + CONFIG.SESSIONS[idx].label);
+    _pushNotify('Naya Session Shuru Hua! 🎉', `${CONFIG.SESSIONS[idx].label} ab active session hai — isi ka payment/donation collect hoga.`);
     loadAllData(true);
   } catch(e) { showAlert('Sync Nahi Hua', 'Locally set ho gaya hai, lekin sync nahi ho paya. Baad mein sync karein.'); }
   closeNewSessionModal();
