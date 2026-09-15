@@ -70,10 +70,10 @@ function updateSyncStatus(ts) {
   else                 el.textContent = Math.round(mins / 1440) + 'd ago';
 }
 
-// ── Idle re-sync: app minimized/backgrounded for 30s+, then reopened ──
+// ── Idle re-sync: app minimized/backgrounded for 45s+, then reopened ──
 // (First-ever app open already force-syncs immediately via checkAutoSignIn().)
 let _bgHiddenAt = null;
-const IDLE_SYNC_MS = 30000;
+const IDLE_SYNC_MS = 45000;
 
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'hidden') {

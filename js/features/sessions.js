@@ -457,7 +457,13 @@ async function _doCreateSession() {
     showAlert('Session Pehle Se Hai', 'Session ' + info.label + ' already exists.'); return;
   }
 
-  const bal           = STATE.sessionSummary.balance || 0;
+  // "Last Year Balance" is a LIVE reference to the old session's own Balance cell
+  // (not a frozen snapshot) — old-session member-row count comes from the payment
+  // sheet actually loaded right now (STATE.allPayments), which reflects however many
+  // rows that sheet had when IT was created, not today's active-member count.
+  const oldSession  = STATE.currentSession;
+  const oldBalRow   = oldSession ? 8 + STATE.allPayments.length : 0;
+  const lybFormula  = oldSession ? `='${oldSession.sheet}'!P${oldBalRow}` : (STATE.sessionSummary.balance || 0);
   const activeMembers = STATE.allMembers.filter(m => m.status === 'Active');
   const nM            = activeMembers.length;
   const btn           = document.getElementById('createSessionBtn');
@@ -503,7 +509,7 @@ async function _doCreateSession() {
         return [i + 1, m.name, m.amount || '150', ...e12(), `=COUNTIF(D${rn}:O${rn},"Paid")*C${rn}`];
       }),
       sRow('---', '---'),
-      sRow('Last Year Balance', bal),
+      sRow('Last Year Balance', lybFormula),
       sRow('Current Total',  `=SUMIF(A${R0}:A1000,">0",P${R0}:P1000)`),
       sRow('Total Donation', `=SUM('${info.donations}'!C2:C10000)`),
       sRow('Grand Total',    `=P${ctR}+P${donR}+P${lybR}`),
