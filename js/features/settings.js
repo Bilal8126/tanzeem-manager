@@ -109,40 +109,32 @@ function renderSettings() {
 
     ${renderReportsSection()}
 
-    <!-- Payment Proofs -->
+    <!-- Tools: Proofs / Messages / QR -->
     <div class="card" style="margin-bottom:14px">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--green-dark)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-        <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px">Payment Proofs</div>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--green-dark)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+        <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px">Tanzeem Tools</div>
       </div>
-      <button class="btn btn-secondary" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px" onclick="openAllProofsBrowse()">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-        Show All Uploaded Proof
-      </button>
-    </div>
-
-    <!-- Tanzeem Messages -->
-    <div class="card" style="margin-bottom:14px">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--green-dark)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-        <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px">Tanzeem Messages</div>
+      <div class="tools-grid">
+        <div class="tool-tile" onclick="openAllProofsBrowse()">
+          <div class="tool-icon purple"><svg viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>
+          <div class="tool-title">All Proofs</div>
+          <div class="tool-sub" id="toolProofsSub">&nbsp;</div>
+        </div>
+        <div class="tool-tile" onclick="openMessagesLibrary()">
+          <div class="tool-icon blue"><svg viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+          <div class="tool-title">Messages</div>
+          <div class="tool-sub" id="toolMsgSub">&nbsp;</div>
+        </div>
+        <div class="tool-tile" onclick="openQrLibrary()">
+          <div class="tool-icon green" style="position:relative">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><line x1="14" y1="14" x2="14" y2="21"/><line x1="21" y1="14" x2="21" y2="21"/><line x1="17.5" y1="14" x2="17.5" y2="17.5"/><line x1="14" y1="17.5" x2="21" y2="17.5"/></svg>
+            <img id="toolQrThumb" class="tool-thumb" style="display:none" alt="">
+          </div>
+          <div class="tool-title">QR Code</div>
+          <div class="tool-sub" id="toolQrSub">&nbsp;</div>
+        </div>
       </div>
-      <button class="btn btn-secondary" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px" onclick="openMessagesLibrary()">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-        Dawat / Announcement Messages
-      </button>
-    </div>
-
-    <!-- UPI QR Code -->
-    <div class="card" style="margin-bottom:14px">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--green-dark)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><line x1="14" y1="14" x2="14" y2="21"/><line x1="21" y1="14" x2="21" y2="21"/><line x1="17.5" y1="14" x2="17.5" y2="17.5"/><line x1="14" y1="17.5" x2="21" y2="17.5"/></svg>
-        <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px">UPI QR Code</div>
-      </div>
-      <div id="qrSettingsPreview" style="margin-bottom:12px"><div style="font-size:12px;color:var(--muted)">Loading...</div></div>
-      <button class="btn btn-secondary" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px" onclick="openQrLibrary()">
-        Manage QR Codes
-      </button>
     </div>
 
     <!-- Activity History -->
@@ -192,7 +184,38 @@ function renderSettings() {
     </div>
   `;
   loadTrackHistory();
-  if (typeof _renderQrSettingsPreview === 'function') _renderQrSettingsPreview();
+  _renderToolsSummary();
+}
+
+// ── Tools grid dynamic subtitles (Proofs count / Messages count / Active QR) ──
+async function _renderToolsSummary() {
+  if (!STATE.accessToken) return;
+  await Promise.all([
+    (async () => {
+      if (typeof _loadProofs !== 'function') return;
+      await _loadProofs();
+      const el = document.getElementById('toolProofsSub');
+      if (el) el.textContent = _proofRows.length ? `${_proofRows.length} Photos` : 'Khaali';
+    })(),
+    (async () => {
+      if (typeof _loadMsgTemplates !== 'function') return;
+      await _loadMsgTemplates();
+      const el = document.getElementById('toolMsgSub');
+      if (el) el.textContent = _msgRows.length ? `${_msgRows.length} Saved` : 'Khaali';
+    })(),
+    (async () => {
+      if (typeof _loadQrCodes !== 'function') return;
+      await _loadQrCodes();
+      const active = typeof _qrActiveEntry === 'function' ? _qrActiveEntry() : null;
+      const sub   = document.getElementById('toolQrSub');
+      const thumb = document.getElementById('toolQrThumb');
+      if (sub) sub.textContent = active ? 'Active' : 'Set Karein';
+      if (thumb) {
+        if (active) { thumb.src = _thumbUrlQr(active.driveId, 80); thumb.style.display = 'block'; }
+        else thumb.style.display = 'none';
+      }
+    })(),
+  ]);
 }
 
 // ── Activity History ───────────────────────────────────────────

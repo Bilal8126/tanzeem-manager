@@ -431,21 +431,3 @@ function _sendQrOnly(row) {
   if (!m) return;
   _shareQrImage(m.driveId, '', `${(m.label || 'QR').replace(/[^a-z0-9]+/gi, '-')}.png`);
 }
-
-// ── Settings screen preview (Active QR summary card) ─────────────
-async function _renderQrSettingsPreview() {
-  const el = document.getElementById('qrSettingsPreview');
-  if (!el) return;
-  el.innerHTML = `<div style="font-size:12px;color:var(--muted)">Loading...</div>`;
-  await _loadQrCodes();
-  const active = _qrActiveEntry();
-  el.innerHTML = active
-    ? `<div style="display:flex;align-items:center;gap:12px">
-         <img src="${_thumbUrlQr(active.driveId, 120)}" style="width:52px;height:52px;border-radius:10px;object-fit:cover;border:1px solid var(--border)" alt="">
-         <div style="flex:1;min-width:0">
-           <div style="font-size:14px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${_qrEsc(active.label)}</div>
-           ${active.upi ? `<div style="font-size:12px;color:var(--muted)">${_qrEsc(active.upi)}</div>` : ''}
-         </div>
-       </div>`
-    : `<div style="font-size:13px;color:var(--muted)">Koi Active QR set nahi hai.</div>`;
-}

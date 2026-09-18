@@ -1504,6 +1504,44 @@ input:focus, select:focus, textarea:focus {
 .qa-icon.purple { background: #ede9fe; box-shadow: 0 2px 8px rgba(124,58,237,.15); }
 .qa-label { font-size: 8px; font-weight: 700; color: var(--muted); text-align: center; letter-spacing: 0; line-height: 1.25; }
 
+/* ── Settings "Tools" menu (Proofs / Messages / QR) ─── */
+.tools-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+.tool-tile {
+  background: var(--card);
+  border-radius: 16px;
+  padding: 16px 6px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  text-align: center;
+  box-shadow: 0 2px 10px rgba(15,23,42,.05);
+  transition: transform 0.15s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.15s;
+}
+.tool-tile:active { transform: scale(.94); }
+.tool-icon {
+  width: 46px; height: 46px;
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.tool-icon svg { width: 22px; height: 22px; }
+.tool-icon.purple { background: linear-gradient(145deg,#ede9fe,#ddd6fe); box-shadow: 0 3px 10px rgba(124,58,237,.18); }
+.tool-icon.blue   { background: linear-gradient(145deg,#dbeafe,#bfdbfe); box-shadow: 0 3px 10px rgba(37,99,235,.16); }
+.tool-icon.green  { background: linear-gradient(145deg,#dcfce7,#bbf7d0); box-shadow: 0 3px 10px rgba(5,150,105,.16); }
+.tool-title { font-size: 12px; font-weight: 700; color: var(--text); line-height: 1.2; }
+.tool-sub   { font-size: 10px; color: var(--muted); font-weight: 600; min-height: 12px; }
+.tool-thumb {
+  position: absolute; top: -4px; right: -4px;
+  width: 20px; height: 20px; border-radius: 6px;
+  border: 2px solid var(--card); object-fit: cover;
+}
+
 /* ── Recent Activity "stories" row (Dashboard) ─────── */
 .stories-title {
   font-size: 13px;
