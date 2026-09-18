@@ -91,6 +91,10 @@ function closeProofOverlay() {
     return;
   }
   _proofListRender = null;
+  // Settings' Tools tile only sets its "N Photos" subtitle once when the
+  // screen first renders — refresh it now in case anything changed
+  // (upload/delete) while this overlay was open.
+  if (typeof _renderToolsSummary === 'function') _renderToolsSummary();
   _histBack();
   document.getElementById('proofOverlay')?.classList.remove('open');
 }

@@ -69,6 +69,10 @@ function closeQrOverlay() {
     return;
   }
   _qrListRender = null;
+  // Settings' Tools tile only sets its thumbnail/subtitle once when the
+  // screen first renders — refresh it now in case anything changed
+  // (edit/activate/delete) while this overlay was open.
+  if (typeof _renderToolsSummary === 'function') _renderToolsSummary();
   _histBack();
   document.getElementById('qrOverlay')?.classList.remove('open');
 }

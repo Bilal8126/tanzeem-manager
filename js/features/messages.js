@@ -67,6 +67,10 @@ function closeMessagesOverlay() {
     return;
   }
   _msgListRender = null;
+  // Settings' Tools tile only sets its "N Saved" subtitle once when the
+  // screen first renders — refresh it now in case anything changed
+  // (add/edit/delete) while this overlay was open.
+  if (typeof _renderToolsSummary === 'function') _renderToolsSummary();
   _histBack();
   document.getElementById('messagesOverlay')?.classList.remove('open');
 }
