@@ -7,6 +7,9 @@
 let _proofRows   = [];
 let _proofLoaded = false;
 let _pfAdvance   = false;
+let _pfTab       = 'member'; // 'member' | 'donation' | 'expense' — always resets to 'member' on (re)open
+let _pfPrefillName   = '';
+let _pfRecordIdx     = null; // selected index into STATE.allDonations/STATE.allExpenses for the donation/expense tabs
 let _pfSelectedMonths = new Set();
 let _pfPickedFiles  = []; // files chosen via Gallery/Camera for the main upload form (gallery allows multi-select)
 let _qpContext      = null; // { type, name } — set right before opening the Gallery/Camera picker for quick-upload
@@ -111,17 +114,50 @@ async function openProofUpload(prefillName) {
 }
 
 function _renderProofEntry(prefillName) {
-  const active  = _isActiveSession();
-  const sortedNames = [...STATE.allMembers].map(m => m.name).sort((a, b) => a.localeCompare(b));
-  const memberOptions = sortedNames.map(n =>
-    `<option value="${n.replace(/"/g, '&quot;')}"${n === prefillName ? ' selected' : ''}>${n}</option>`
-  ).join('');
+  _pfTab = 'member'; // always default back to Member every time this screen opens
+  _pfPrefillName = prefillName || '';
+  _pfRecordIdx = null;
+  _qpContext = null; // main-form mode — quick-upload's shared file inputs must route back here, not to a quick target
 
   document.getElementById('proofOverlayContent').innerHTML = `
     <div class="modal-header">
       <div class="modal-title">Payment Proofs — ${STATE.currentSession?.label || ''}</div>
       <button class="close-btn" onclick="closeProofOverlay()">×</button>
     </div>
+    <div class="tabs">
+      <button class="tab active" id="pfTab_member"   onclick="_pfSwitchTab('member')">Member</button>
+      <button class="tab"        id="pfTab_donation" onclick="_pfSwitchTab('donation')">Donation</button>
+      <button class="tab"        id="pfTab_expense"  onclick="_pfSwitchTab('expense')">Expense</button>
+    </div>
+    <div id="pf_body"></div>
+  `;
+  _pfRenderBody();
+}
+
+function _pfSwitchTab(tab) {
+  if (_pfTab === tab) return;
+  _pfTab = tab;
+  _pfRecordIdx = null;
+  _pfPickedFiles = [];
+  ['member', 'donation', 'expense'].forEach(t =>
+    document.getElementById(`pfTab_${t}`)?.classList.toggle('active', t === tab)
+  );
+  _pfRenderBody();
+}
+
+function _pfRenderBody() {
+  if (_pfTab === 'member') _pfRenderMemberBody();
+  else _pfRenderRecordBody(_pfTab === 'donation' ? 'Donation' : 'Expense');
+}
+
+function _pfRenderMemberBody() {
+  const active  = _isActiveSession();
+  const sortedNames = [...STATE.allMembers].map(m => m.name).sort((a, b) => a.localeCompare(b));
+  const memberOptions = sortedNames.map(n =>
+    `<option value="${n.replace(/"/g, '&quot;')}"${n === _pfPrefillName ? ' selected' : ''}>${n}</option>`
+  ).join('');
+
+  document.getElementById('pf_body').innerHTML = `
     <div class="form-group">
       <label><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>Member Ka Naam</label>
       <select id="pf_member" onchange="_pfMemberChanged()">
@@ -147,8 +183,88 @@ function _renderProofEntry(prefillName) {
   _pfAdvance = false;
   _pfSelectedMonths = new Set();
   _pfPickedFiles = [];
-  _qpContext = null; // main-form mode — quick-upload's shared file inputs must route back here, not to a quick target
   _pfMemberChanged(); // populates existing-proofs box + month pills (prefilled member or the "select member" placeholder)
+}
+
+// Donation/Expense tabs: pick an existing record instead of a member — no months
+// involved, the proof just attaches directly to that donation/expense entry.
+function _pfRenderRecordBody(type) {
+  const active  = _isActiveSession();
+  const records = type === 'Donation' ? STATE.allDonations : STATE.allExpenses;
+  const label   = type === 'Donation' ? 'Donation Chunein' : 'Expense Chunein';
+  const placeholder = type === 'Donation' ? '-- Donation chunein --' : '-- Expense chunein --';
+  const recordOptions = records.map((r, i) => {
+    const name = type === 'Donation' ? r.donor : r.desc;
+    const opt  = `${name} — Rs.${r.amount}${r.date ? ' (' + r.date + ')' : ''}`;
+    return `<option value="${i}">${opt.replace(/"/g, '&quot;')}</option>`;
+  }).join('');
+
+  document.getElementById('pf_body').innerHTML = `
+    <div class="form-group">
+      <label>${label}</label>
+      <select id="pf_record" onchange="_pfRecordChanged('${type}')">
+        <option value="">${placeholder}</option>
+        ${recordOptions}
+      </select>
+    </div>
+    ${active ? `
+    <div class="form-group" id="pf_recordUpload" style="display:none">
+      <label><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Screenshot (Gallery se multiple select kar sakte hain)</label>
+      ${_proofSourceButtonsHtml()}
+      <div id="pf_fileName" style="font-size:11px;color:var(--muted);margin-top:6px"></div>
+    </div>
+    <button class="btn btn-primary" style="width:100%;margin-top:6px;display:none" id="pf_recordSubmitBtn" onclick="_submitProofUploadRecord('${type}', this)">Upload Karein</button>
+    ` : `<div style="font-size:12px;color:var(--muted);margin-bottom:10px">Ye purana session hai — sirf existing proofs dekh sakte hain, naya upload nahi ho sakta.</div>`}
+    <div id="pf_existing" style="margin-top:18px"></div>
+  `;
+  _pfPickedFiles = [];
+}
+
+function _pfRecordChanged(type) {
+  const idx = document.getElementById('pf_record')?.value;
+  _pfRecordIdx = idx === '' || idx === undefined ? null : parseInt(idx, 10);
+  const box = document.getElementById('pf_existing');
+  const uploadGroup = document.getElementById('pf_recordUpload');
+  const submitBtn   = document.getElementById('pf_recordSubmitBtn');
+  if (uploadGroup) uploadGroup.style.display = _pfRecordIdx === null ? 'none' : '';
+  if (submitBtn)   submitBtn.style.display   = _pfRecordIdx === null ? 'none' : '';
+  if (!box) return;
+  if (_pfRecordIdx === null) { box.innerHTML = ''; return; }
+  const rec  = (type === 'Donation' ? STATE.allDonations : STATE.allExpenses)[_pfRecordIdx];
+  const name = type === 'Donation' ? rec.donor : rec.desc;
+  const sessionLabel = STATE.currentSession?.label || '';
+  const list = _proofRows.filter(p => p.session === sessionLabel && p.type === type && p.name === name);
+  box.innerHTML = `<div class="card-title" style="margin-bottom:8px">Existing Proofs (${list.length})</div>${_proofGridHtml(list)}`;
+  _proofListRender = () => _pfRecordChanged(type); // so Delete from this grid's lightbox returns here
+}
+
+async function _submitProofUploadRecord(type, btn) {
+  if (_proofBusy) return;
+  if (!_isActiveSession()) { showAlert('Edit Nahi Ho Sakta', _sessionLockedMsg('Proof upload karne')); return; }
+  const records = type === 'Donation' ? STATE.allDonations : STATE.allExpenses;
+  const rec  = _pfRecordIdx !== null ? records[_pfRecordIdx] : null;
+  const files = _pfPickedFiles;
+  if (!rec) { showAlert(type + ' Chunein', `Pehle ek ${type.toLowerCase()} select karein.`); return; }
+  if (!files.length) { showAlert('Screenshot Zaroori Hai', 'Gallery ya Camera se screenshot chunein.'); return; }
+  const name = type === 'Donation' ? rec.donor : rec.desc;
+
+  let uploaded = 0;
+  for (const file of files) {
+    _setProofBusy(true, files.length > 1 ? `Photo ${uploaded + 1}/${files.length} upload ho raha hai...` : 'Screenshot upload ho raha hai...');
+    const result = await _uploadProofFile(file, { type, name, months: '' });
+    if (!result.ok) {
+      _setProofBusy(false);
+      showAlert('Upload Error', uploaded > 0 ? `${uploaded} photo(s) upload ho gaye. Phir error aaya: ${result.error}` : result.error);
+      _pfRenderRecordBody(type);
+      return;
+    }
+    uploaded++;
+  }
+  _setProofBusy(false);
+  showAlert('Proof Upload Ho Gaya', `${name} — ${type} ke ${uploaded > 1 ? uploaded + ' proofs' : 'proof'} upload ho gaye! ✅`);
+  _pfRenderRecordBody(type); // rebuild fresh — new proofs show immediately, no resync needed
+  const sel = document.getElementById('pf_record');
+  if (sel) { sel.value = String(_pfRecordIdx); _pfRecordChanged(type); }
 }
 
 function _pfMemberChanged() {
@@ -570,9 +686,17 @@ async function openAllProofsBrowse() {
   _renderAllProofsBrowse();
 }
 
+// Only Payment/Advance proofs belong to real members — Donation/Expense rows use
+// this same `name` field for the donor/description, so they're excluded here to
+// keep the Member dropdown clean. Those proofs still show up in the grid itself
+// under "All Members" (the Member filter only narrows, it never hides anything).
 function _apMembersFor(sessionLabel) {
   const names = new Set();
-  _proofRows.forEach(p => { if (p.session === sessionLabel) names.add(p.name); });
+  _proofRows.forEach(p => {
+    if (p.session !== sessionLabel) return;
+    if (p.type === 'Donation' || p.type === 'Expense') return;
+    names.add(p.name);
+  });
   return [...names].sort((a, b) => a.localeCompare(b));
 }
 
