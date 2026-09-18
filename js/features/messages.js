@@ -209,7 +209,7 @@ function _confirmSendMsg(row) {
     const withQr = !!active && !!document.getElementById('waWithQr')?.checked;
     const text   = _msgRenderBody(m.body, memberName);
     if (withQr) {
-      await _shareQrImage(active.driveId, text, `${(m.title || 'QR').replace(/[^a-z0-9]+/gi, '-')}.png`);
+      await _shareQrImage(active.driveId, text);
     } else {
       window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
     }

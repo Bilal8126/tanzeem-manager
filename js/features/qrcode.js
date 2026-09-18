@@ -442,22 +442,27 @@ async function _fetchQrBlob(driveId, name) {
   return await res.blob();
 }
 
+// Every QR shared to a member uses this exact file name, regardless of the
+// entry's own Label — keeps what a member sees/saves consistent no matter
+// which saved QR (or which admin) sent it.
+const _QR_SHARE_FILENAME = 'TanzeemAbdEMustafa.png';
+
 // Shares a QR image (optionally with caption text) via the phone's native
 // Share sheet so WhatsApp receives the image+caption TOGETHER — a plain
 // wa.me link can only pre-fill text, never attach an image. Desktop/browsers
 // without file-sharing support fall back to a two-step flow: download the
 // QR, then open WhatsApp Web with the text separately (manual attach).
-async function _shareQrImage(driveId, text, filename) {
+async function _shareQrImage(driveId, text) {
   try {
-    const blob = await _fetchQrBlob(driveId, filename);
-    const file = new File([blob], filename, { type: blob.type || 'image/png' });
+    const blob = await _fetchQrBlob(driveId, _QR_SHARE_FILENAME);
+    const file = new File([blob], _QR_SHARE_FILENAME, { type: blob.type || 'image/png' });
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
       await navigator.share({ files: [file], text: text || undefined, title: 'Tanzeem Abd-e-Mustafa' });
       return;
     }
     const blobUrl = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = blobUrl; a.download = filename;
+    a.href = blobUrl; a.download = _QR_SHARE_FILENAME;
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     setTimeout(() => URL.revokeObjectURL(blobUrl), 8000);
     showToast('QR image download ho gayi — WhatsApp mein manually attach karein');
@@ -471,5 +476,5 @@ async function _shareQrImage(driveId, text, filename) {
 function _sendQrOnly(row) {
   const m = _qrRows.find(x => x.row === row);
   if (!m) return;
-  _shareQrImage(m.driveId, '', `${(m.label || 'QR').replace(/[^a-z0-9]+/gi, '-')}.png`);
+  _shareQrImage(m.driveId, '');
 }
