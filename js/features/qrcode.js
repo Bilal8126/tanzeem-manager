@@ -235,13 +235,20 @@ async function _composeQrCard(qrCanvas, upi) {
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, W, H);
 
-  // Header: Tanzeem name only (the logo already appears center-on-QR below).
+  // Header: Tanzeem name only (the logo already appears center-on-QR below),
+  // filled with the app's own brand gradient (green→blue, same as the
+  // member avatar / login icon) instead of plain black, plus a small
+  // gradient accent bar underneath instead of a flat divider line.
   // Shrink the font a touch if needed so the full name fits in one line.
-  const headerCenterY = headerH / 2 + 4;
+  const headerCenterY = headerH / 2 + 2;
   const headerText = 'Tanzeem Abd-e-Mustafa (Bisauli)';
   const maxTextW = W - PAD * 2;
-  let headerFontSize = 15;
-  ctx.fillStyle = '#0f172a';
+  let headerFontSize = 16;
+  const brandGrad = ctx.createLinearGradient(PAD, 0, W - PAD, 0);
+  brandGrad.addColorStop(0,    '#047857');
+  brandGrad.addColorStop(0.55, '#059669');
+  brandGrad.addColorStop(1,    '#2563eb');
+  ctx.fillStyle = brandGrad;
   ctx.textBaseline = 'middle';
   ctx.textAlign = 'center';
   do {
@@ -249,9 +256,12 @@ async function _composeQrCard(qrCanvas, upi) {
     headerFontSize--;
   } while (ctx.measureText(headerText).width > maxTextW && headerFontSize >= 11);
   ctx.fillText(headerText, W / 2, headerCenterY);
-  ctx.strokeStyle = '#e2e8f0';
-  ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(PAD, headerH); ctx.lineTo(W - PAD, headerH); ctx.stroke();
+
+  const barW = 46, barY = headerH - 12;
+  ctx.strokeStyle = brandGrad;
+  ctx.lineWidth = 2.5;
+  ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(W / 2 - barW / 2, barY); ctx.lineTo(W / 2 + barW / 2, barY); ctx.stroke();
 
   // QR
   const qrX = (W - qrSize) / 2;
@@ -508,7 +518,9 @@ function _openQrViewer(row) {
     </div>
     ${m.active ? `<div style="margin-bottom:12px"><span style="display:inline-flex;align-items:center;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:#dcfce7;color:#15803d">Active</span></div>` : ''}
     <div style="display:flex;justify-content:center;margin-bottom:14px">
-      <img src="${_thumbUrlQr(m.driveId, 500)}" style="max-width:100%;max-height:320px;border-radius:12px;border:3px solid #475569;box-sizing:border-box" alt="">
+      <div style="padding:3px;border-radius:15px;background:linear-gradient(145deg,#064e3b 0%,#047857 55%,#059669 85%,#2563eb 130%);box-shadow:0 4px 14px rgba(5,150,105,.28);max-width:100%">
+        <img src="${_thumbUrlQr(m.driveId, 500)}" style="display:block;max-width:100%;max-height:320px;border-radius:12px;box-sizing:border-box" alt="">
+      </div>
     </div>
     ${m.upi ? `<div style="text-align:center;font-size:13px;color:var(--muted);margin-bottom:10px">UPI ID: <b style="color:var(--text)">${_qrEsc(m.upi)}</b></div>` : ''}
     <div style="text-align:center;font-size:11px;color:var(--muted);margin-bottom:16px">
