@@ -617,6 +617,7 @@ function _askShareFormat(msg, waLink, pdfFn = null) {
     overlay.addEventListener('click', _closeShareFormat);
     document.body.appendChild(overlay);
   }
+  const activeQr = typeof _qrActiveEntry === 'function' ? _qrActiveEntry() : null;
   overlay.innerHTML = `
     <div class="modal" onclick="event.stopPropagation()">
       <div class="modal-handle"></div>
@@ -624,6 +625,11 @@ function _askShareFormat(msg, waLink, pdfFn = null) {
         <div class="modal-title">Please Choose Format</div>
         <button class="close-btn" onclick="_closeShareFormat()">×</button>
       </div>
+      <label style="display:flex;align-items:center;gap:9px;font-size:13px;font-weight:600;color:var(--text);margin-bottom:14px;cursor:${activeQr ? 'pointer' : 'not-allowed'};${activeQr ? '' : 'opacity:.5'}">
+        <input type="checkbox" id="shareWithQr" ${activeQr ? 'checked' : 'disabled'} style="width:18px;height:18px;flex-shrink:0">
+        WhatsApp ke saath QR Code bhi attach karein
+      </label>
+      ${!activeQr ? `<div style="font-size:11px;color:var(--muted);margin:-9px 0 14px">Koi Active QR set nahi hai — Settings mein QR add karein.</div>` : ''}
       <div style="display:flex;flex-direction:column;gap:10px;padding-top:4px">
         <button class="whatsapp-btn" style="margin:0;justify-content:center;gap:10px" onclick="_closeShareFormat();_sendAsText()">
           ${WA_SVG} Text Message (WhatsApp)
@@ -643,8 +649,20 @@ function _closeShareFormat() {
   document.getElementById('shareFormatOverlay')?.classList.remove('open');
 }
 
+// With the QR tick on, goes through the native Share sheet (image+text
+// together — see _shareQrImage in qrcode.js) since a wa.me link can only
+// pre-fill text, never attach an image; that also means it can't target a
+// specific member's chat the way _memberWaLink does, so the user picks the
+// contact themselves from WhatsApp's own picker. Untouched, sends exactly
+// as before (opens the specific member's chat, or the generic composer).
 function _sendAsText() {
-  window.open(_pendingShare.waLink + encodeURIComponent(_pendingShare.msg), '_blank');
+  const activeQr = typeof _qrActiveEntry === 'function' ? _qrActiveEntry() : null;
+  const withQr   = !!activeQr && !!document.getElementById('shareWithQr')?.checked;
+  if (withQr) {
+    _shareQrImage(activeQr.driveId, _pendingShare.msg);
+  } else {
+    window.open(_pendingShare.waLink + encodeURIComponent(_pendingShare.msg), '_blank');
+  }
 }
 
 async function _sendAsPdf() {
