@@ -4,7 +4,13 @@
 // image. Exactly one is "Active" at a time (same idea as Active Session);
 // that's the one attached when a message is sent "with QR". Deletes are
 // SOFT so old QR history stays on record.
-// Sheet "QRCodes" columns: A=SrNo | B=Label | C=UPIID | D=DriveFileId | E=IsActive | F=CreatedDate | G=IsDeleted
+// Sheet "QRCodes" columns: A=SrNo | B=Label | C=UPIID | D=DriveFileId | E=IsActive |
+// F=CreatedDate | G=IsDeleted | H=Source | I=CreatedBy | J=LastUpdatedDate | K=UpdatedBy | L=WhatUpdate
+// Source is "Generate" or "Upload" — set once at creation, tells the Edit
+// button which editor to reopen (regenerate vs re-pick a photo) instead of
+// guessing from whether a UPI ID happens to be filled in.
+// I-L are an audit trail: I/CreatedDate are written once at creation and
+// never touched again; J/K/L are overwritten by every edit/activate/delete.
 // Images live in Drive (worker's /api/qr/upload + /api/qr/download), same
 // mechanics as Payment Proofs — just a different Drive folder.
 
@@ -23,6 +29,10 @@ function _qrEsc(s) {
 
 function _truthyFlag(v) {
   return /^(yes|true|1|y)$/i.test((v || '').toString().trim());
+}
+
+function _qrAdminName() {
+  return localStorage.getItem('tanzeem_user_display') || STATE.loggedInEmail || localStorage.getItem('tanzeem_logged_email') || 'Unknown';
 }
 
 function _thumbUrlQr(id, size = 400) {
@@ -74,12 +84,13 @@ async function _loadQrCodes(force = false) {
   if (_qrLoaded && !force) return;
   if (!STATE.accessToken) { _qrRows = []; _qrRawCount = 0; return; }
   try {
-    const rows = await sheetsGet('QRCodes!A2:G2000');
+    const rows = await sheetsGet('QRCodes!A2:L2000');
     _qrRawCount = rows.length;
     _qrRows = rows
       .map((r, i) => ({
         row: i + 2, sr: r?.[0] || '', label: r?.[1] || '', upi: r?.[2] || '', driveId: r?.[3] || '',
         active: _truthyFlag(r?.[4]), createdDate: r?.[5] || '', deleted: _truthyFlag(r?.[6]),
+        source: r?.[7] || '', createdBy: r?.[8] || '', lastUpdated: r?.[9] || '', updatedBy: r?.[10] || '', whatUpdate: r?.[11] || '',
       }))
       .filter(m => m.label && m.driveId && !m.deleted);
     _qrLoaded = true;
@@ -104,10 +115,10 @@ function _renderQrList() {
     </div>
     <button class="btn btn-primary" style="width:100%;margin-bottom:14px;display:flex;align-items:center;justify-content:center;gap:8px" onclick="_openQrChooser()">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-      Naya QR
+      New QR
     </button>
     ${!rows.length
-      ? `<div style="text-align:center;color:var(--muted);padding:30px 0;font-size:13px">Koi QR save nahi hai. Upar "Naya QR" se shuru karein.</div>`
+      ? `<div style="text-align:center;color:var(--muted);padding:30px 0;font-size:13px">Koi QR save nahi hai. Upar "New QR" se shuru karein.</div>`
       : rows.map((m, i) => `
         <div style="padding:12px 0;${i < rows.length - 1 ? 'border-bottom:1px solid var(--border);' : ''}display:flex;align-items:center;gap:12px;cursor:pointer" onclick="_openQrViewer(${m.row})">
           <img src="${_thumbUrlQr(m.driveId, 120)}" style="width:46px;height:46px;border-radius:10px;object-fit:cover;border:1px solid var(--border);flex-shrink:0" alt="">
@@ -128,7 +139,7 @@ function _openQrChooser() {
   _qrListRender = _renderQrList;
   document.getElementById('qrOverlayContent').innerHTML = `
     <div class="modal-header">
-      <div class="modal-title">Naya QR</div>
+      <div class="modal-title">New QR</div>
       <button class="close-btn" onclick="closeQrOverlay()">×</button>
     </div>
     <div style="display:flex;flex-direction:column;gap:10px">
@@ -193,7 +204,7 @@ async function _saveQrGenerate(row) {
   const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
   if (!blob) { showToast('QR generate nahi ho paya', 'error'); return; }
   const file = new File([blob], 'qr-' + Date.now() + '.png', { type: 'image/png' });
-  await _saveQrCommon(row, label, upi, file);
+  await _saveQrCommon(row, label, upi, file, 'Generate');
 }
 
 // ── Upload editor (existing QR image) ───────────────────────────
@@ -242,15 +253,20 @@ async function _saveQrUpload(row) {
   if (!await _ensureWriteAccess()) return;
   if (_qrPickedFile) {
     const compressed = await _compressImage(_qrPickedFile);
-    await _saveQrCommon(row, label, upi, compressed);
+    await _saveQrCommon(row, label, upi, compressed, 'Upload');
     _qrPickedFile = null;
   } else {
     // Editing an existing entry without changing the image — just update label/UPI text
     _setQrBusy(true, 'Update ho raha hai...');
     try {
-      await sheetsPut(`QRCodes!B${row}:C${row}`, [[label, upi]]);
+      const admin   = _qrAdminName();
+      const dateStr = todayDate();
+      await sheetsBatchPut([
+        { range: `QRCodes!B${row}:C${row}`, values: [[label, upi]] },
+        { range: `QRCodes!J${row}:L${row}`, values: [[dateStr, admin, 'Label/UPI Updated']] },
+      ]);
       const m = _qrRows.find(x => x.row === row);
-      if (m) { m.label = label; m.upi = upi; }
+      if (m) { m.label = label; m.upi = upi; m.lastUpdated = dateStr; m.updatedBy = admin; m.whatUpdate = 'Label/UPI Updated'; }
       _trackHistory('QR Updated', label, false);
       showToast('Update ho gaya!');
       _qrBusy = false;
@@ -265,7 +281,9 @@ async function _saveQrUpload(row) {
 }
 
 // ── Shared save (upload file to Drive, then write the sheet row) ───
-async function _saveQrCommon(row, label, upi, file) {
+// `source` ('Generate' or 'Upload') is only used on a brand-new entry — an
+// edit never changes how the QR was originally created.
+async function _saveQrCommon(row, label, upi, file, source) {
   _setQrBusy(true, row ? 'Update ho raha hai...' : 'Save ho raha hai...');
   try {
     const form = new FormData();
@@ -275,10 +293,15 @@ async function _saveQrCommon(row, label, upi, file) {
     const uploaded = await res.json();
     if (!uploaded.id) throw new Error('Upload response invalid');
 
+    const admin = _qrAdminName();
     if (row) {
-      await sheetsPut(`QRCodes!B${row}:D${row}`, [[label, upi, uploaded.id]]);
+      const dateStr = todayDate();
+      await sheetsBatchPut([
+        { range: `QRCodes!B${row}:D${row}`, values: [[label, upi, uploaded.id]] },
+        { range: `QRCodes!J${row}:L${row}`, values: [[dateStr, admin, 'Label/UPI/QR Image Updated']] },
+      ]);
       const m = _qrRows.find(x => x.row === row);
-      if (m) { m.label = label; m.upi = upi; m.driveId = uploaded.id; }
+      if (m) { m.label = label; m.upi = upi; m.driveId = uploaded.id; m.lastUpdated = dateStr; m.updatedBy = admin; m.whatUpdate = 'Label/UPI/QR Image Updated'; }
       _trackHistory('QR Updated', label, false);
       showToast('QR update ho gaya!');
       _qrBusy = false;
@@ -288,9 +311,9 @@ async function _saveQrCommon(row, label, upi, file) {
       const newRow  = _qrRawCount + 2; // header is row 1, data starts row 2
       const isFirst = _qrRows.length === 0; // first-ever QR becomes Active automatically
       const dateStr = todayDate();
-      await sheetsAppend('QRCodes', [[sr, label, upi, uploaded.id, isFirst ? 'Yes' : '', dateStr, '']]);
+      await sheetsAppend('QRCodes', [[sr, label, upi, uploaded.id, isFirst ? 'Yes' : '', dateStr, '', source, admin, dateStr, admin, 'Created']]);
       _qrRawCount++;
-      _qrRows.push({ row: newRow, sr: String(sr), label, upi, driveId: uploaded.id, active: isFirst, createdDate: dateStr });
+      _qrRows.push({ row: newRow, sr: String(sr), label, upi, driveId: uploaded.id, active: isFirst, createdDate: dateStr, source, createdBy: admin, lastUpdated: dateStr, updatedBy: admin, whatUpdate: 'Created' });
       _trackHistory('QR Added', label, false);
       showToast('QR save ho gaya!' + (isFirst ? ' Active QR set ho gaya.' : ''));
       _qrBusy = false;
@@ -320,7 +343,11 @@ function _openQrViewer(row) {
     <div style="display:flex;justify-content:center;margin-bottom:14px">
       <img src="${_thumbUrlQr(m.driveId, 500)}" style="max-width:100%;max-height:320px;border-radius:12px;border:3px solid #475569;box-sizing:border-box" alt="">
     </div>
-    ${m.upi ? `<div style="text-align:center;font-size:13px;color:var(--muted);margin-bottom:16px">UPI ID: <b style="color:var(--text)">${_qrEsc(m.upi)}</b></div>` : ''}
+    ${m.upi ? `<div style="text-align:center;font-size:13px;color:var(--muted);margin-bottom:10px">UPI ID: <b style="color:var(--text)">${_qrEsc(m.upi)}</b></div>` : ''}
+    <div style="text-align:center;font-size:11px;color:var(--muted);margin-bottom:16px">
+      ${m.createdBy ? `Add kiya: <b>${_qrEsc(m.createdBy)}</b>${m.createdDate ? ' · ' + _qrEsc(m.createdDate) : ''}` : ''}
+      ${m.updatedBy && m.whatUpdate && m.whatUpdate !== 'Created' ? `<br>Last update: <b>${_qrEsc(m.whatUpdate)}</b> by ${_qrEsc(m.updatedBy)}${m.lastUpdated ? ' · ' + _qrEsc(m.lastUpdated) : ''}` : ''}
+    </div>
     ${!m.active ? `<button class="btn btn-primary" style="width:100%;margin-bottom:10px" onclick="_setQrActive(${m.row})">Active Karein</button>` : ''}
     <div style="display:flex;gap:10px;margin-bottom:10px">
       <button class="btn btn-secondary" style="flex:1;display:flex;align-items:center;justify-content:center;gap:7px" onclick="_qrEditRouter(${m.row})">
@@ -338,7 +365,10 @@ function _openQrViewer(row) {
 function _qrEditRouter(row) {
   const m = _qrRows.find(x => x.row === row);
   if (!m) return;
-  if (m.upi) _openQrEditorGenerate(row); else _openQrEditorUpload(row);
+  // Source is set once at creation and never guessed — falls back to the old
+  // "has a UPI ID" heuristic only for rows saved before the Source column existed.
+  const isUpload = m.source ? m.source === 'Upload' : !m.upi;
+  if (isUpload) _openQrEditorUpload(row); else _openQrEditorGenerate(row);
 }
 
 // ── Set Active ───────────────────────────────────────────────────
@@ -349,11 +379,17 @@ async function _setQrActive(row) {
   if (!await _ensureWriteAccess()) return;
   _qrBusy = true;
   try {
+    const admin   = _qrAdminName();
+    const dateStr = todayDate();
     const prevActive = _qrRows.find(x => x.active);
-    const data = [{ range: `QRCodes!E${row}`, values: [['Yes']] }];
+    const data = [
+      { range: `QRCodes!E${row}`, values: [['Yes']] },
+      { range: `QRCodes!J${row}:L${row}`, values: [[dateStr, admin, 'Set as Active QR']] },
+    ];
     if (prevActive) data.push({ range: `QRCodes!E${prevActive.row}`, values: [['']] });
     await sheetsBatchPut(data);
     _qrRows.forEach(x => { x.active = x.row === row; });
+    current.lastUpdated = dateStr; current.updatedBy = admin; current.whatUpdate = 'Set as Active QR';
     _trackHistory('QR Set Active', current.label, false);
     showToast('QR Active ho gaya!');
   } catch (e) {
@@ -370,7 +406,13 @@ async function _deleteQrCode(m) {
   if (!await _ensureWriteAccess()) return false;
   _qrBusy = true;
   try {
-    await sheetsPut(`QRCodes!G${m.row}`, [['Yes']]); // soft delete — row stays in the sheet as a record
+    const admin   = _qrAdminName();
+    const dateStr = todayDate();
+    // Soft delete — row stays in the sheet as a record, only IsDeleted + the audit columns change
+    await sheetsBatchPut([
+      { range: `QRCodes!G${m.row}`, values: [['Yes']] },
+      { range: `QRCodes!J${m.row}:L${m.row}`, values: [[dateStr, admin, 'Deleted']] },
+    ]);
     _qrRows = _qrRows.filter(x => x !== m);
     _trackHistory('QR Deleted', m.label, false);
     return true;

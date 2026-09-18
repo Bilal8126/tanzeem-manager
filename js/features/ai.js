@@ -114,7 +114,7 @@ const AI_TOOLS = [{
 
 // name → { validate, commit, title } — validate/commit live in members.js/payments.js/finance.js
 const _AI_ACTION_HANDLERS = {
-  add_member:    { validate: (a) => _aiValidateAddMember(a),    commit: (a) => _aiCommitAddMember(a),    title: 'Naya Member Add Karein?' },
+  add_member:    { validate: (a) => _aiValidateAddMember(a),    commit: (a) => _aiCommitAddMember(a),    title: 'New Member Add Karein?' },
   edit_member:   { validate: (a) => _aiValidateEditMember(a),   commit: (a) => _aiCommitEditMember(a),   title: 'Member Update Karein?' },
   mark_payment:  { validate: (a) => _aiValidateMarkPayment(a),  commit: (a) => _aiCommitMarkPayment(a),  title: 'Payment Update Karein?' },
   add_donation:  { validate: (a) => _aiValidateAddDonation(a),  commit: (a) => _aiCommitAddDonation(a),  title: 'Donation Add Karein?' },

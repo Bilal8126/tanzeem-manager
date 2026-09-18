@@ -667,7 +667,7 @@ async function openAddMember() {
   if (!STATE.accessToken) await syncData();
   document.getElementById('memberProfileContent').innerHTML = `
     <div class="modal-header">
-      <div class="modal-title">Naya Member Add Karein</div>
+      <div class="modal-title">New Member Add Karein</div>
       <button class="close-btn" onclick="closeMemberProfile()">×</button>
     </div>
     <div class="form-group">

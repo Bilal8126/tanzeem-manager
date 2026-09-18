@@ -250,7 +250,7 @@ function buildDashChart(months, data) {
 
 // ── Recent Activity "stories" row (last 5, current active session only) ──
 const _STORY_META = {
-  'Member Added':     { grad: 'linear-gradient(145deg,#064e3b 0%,#047857 55%,#059669 85%,#2563eb 130%)', label: 'Naya Member',
+  'Member Added':     { grad: 'linear-gradient(145deg,#064e3b 0%,#047857 55%,#059669 85%,#2563eb 130%)', label: 'New Member',
     icon: '<path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/>' },
   'Member Updated':   { grad: 'linear-gradient(145deg,#92400e 0%,#d97706 60%,#f59e0b 120%)', label: 'Member Edit',
     icon: '<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>' },

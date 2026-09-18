@@ -130,10 +130,10 @@ function _renderMsgList() {
     </div>
     <button class="btn btn-primary" style="width:100%;margin-bottom:14px;display:flex;align-items:center;justify-content:center;gap:8px" onclick="_openMsgEditor(null)">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-      Naya Message
+      New Message
     </button>
     ${!rows.length
-      ? `<div style="text-align:center;color:var(--muted);padding:30px 0;font-size:13px">Koi message save nahi hai. Upar "Naya Message" se shuru karein.</div>`
+      ? `<div style="text-align:center;color:var(--muted);padding:30px 0;font-size:13px">Koi message save nahi hai. Upar "New Message" se shuru karein.</div>`
       : rows.map((m, i) => `
         <div style="padding:13px 0;${i < rows.length - 1 ? 'border-bottom:1px solid var(--border);' : ''}display:flex;align-items:center;gap:10px;cursor:pointer" onclick="_openMsgViewer(${m.row})">
           <div style="flex:1;min-width:0">
@@ -223,12 +223,12 @@ function _openMsgEditor(row) {
   _msgListRender = row ? (() => _openMsgViewer(row)) : _renderMsgList;
   document.getElementById('messagesOverlayContent').innerHTML = `
     <div class="modal-header">
-      <div class="modal-title">${m ? 'Message Edit Karein' : 'Naya Message'}</div>
+      <div class="modal-title">${m ? 'Message Edit Karein' : 'New Message'}</div>
       <button class="close-btn" onclick="closeMessagesOverlay()">×</button>
     </div>
     <div class="form-group">
       <label>Title</label>
-      <input type="text" id="msg_title" placeholder="jaise: Naya Member Dawat" value="${_msgEsc(m?.title || '')}">
+      <input type="text" id="msg_title" placeholder="jaise: Dawat Message" value="${_msgEsc(m?.title || '')}">
     </div>
     <div class="form-group">
       <label>Type</label>

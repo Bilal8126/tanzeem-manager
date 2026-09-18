@@ -195,13 +195,13 @@ async function _renderToolsSummary() {
       if (typeof _loadProofs !== 'function') return;
       await _loadProofs();
       const el = document.getElementById('toolProofsSub');
-      if (el) el.textContent = _proofRows.length ? `${_proofRows.length} Photos` : 'Khaali';
+      if (el) el.textContent = _proofRows.length ? `${_proofRows.length} Photos` : 'Empty';
     })(),
     (async () => {
       if (typeof _loadMsgTemplates !== 'function') return;
       await _loadMsgTemplates();
       const el = document.getElementById('toolMsgSub');
-      if (el) el.textContent = _msgRows.length ? `${_msgRows.length} Saved` : 'Khaali';
+      if (el) el.textContent = _msgRows.length ? `${_msgRows.length} Saved` : 'Empty';
     })(),
     (async () => {
       if (typeof _loadQrCodes !== 'function') return;
