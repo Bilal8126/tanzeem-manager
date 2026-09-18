@@ -175,10 +175,11 @@ function _openMsgViewer(row) {
     </button>`;
 }
 
-// Confirm step shown before EVERY message send. For a "Members" type
-// template it also shows a member picker (pre-selected to the first member,
-// so there's always a valid choice) whose name fills {{member}} in the body.
-// It also lets the user tick "attach QR" (defaults to ticked if an Active QR
+// Confirm step shown before EVERY message send. The member picker only shows
+// when the body actually contains the {{member}} tag (not just because the
+// template's Type is "Members") — pre-selected to the first member, so
+// there's always a valid choice, and fills {{member}} in the body. It also
+// lets the user tick "attach QR" (defaults to ticked if an Active QR
 // exists). Text-only goes through the plain wa.me link; text+QR goes through
 // the native Share sheet (see _shareQrImage in qrcode.js) since a wa.me link
 // can't pre-fill an image.
@@ -186,7 +187,7 @@ function _confirmSendMsg(row) {
   const m = _msgRows.find(x => x.row === row);
   if (!m) return;
   const active = typeof _qrActiveEntry === 'function' ? _qrActiveEntry() : null;
-  const needsMember  = m.type === 'Members';
+  const needsMember  = /\{\{\s*member\s*\}\}/i.test(m.body || '');
   const sortedMembers = needsMember ? [...STATE.allMembers].sort((a, b) => a.name.localeCompare(b.name)) : [];
   showConfirm('Message Bhejein?', `
     ${needsMember ? (sortedMembers.length ? `
