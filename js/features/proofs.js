@@ -9,6 +9,7 @@ let _proofLoaded = false;
 let _pfAdvance   = false;
 let _pfTab       = 'member'; // 'member' | 'donation' | 'expense' — always resets to 'member' on (re)open
 let _pfPrefillName   = '';
+let _pfSelectedMemberName = ''; // tracks the live member selection so it survives a lightbox round-trip (that wipes the <select> from the DOM)
 let _pfRecordIdx     = null; // selected index into STATE.allDonations/STATE.allExpenses for the donation/expense tabs
 let _pfSelectedMonths = new Set();
 let _pfPickedFiles  = []; // files chosen via Gallery/Camera for the main upload form (gallery allows multi-select)
@@ -18,6 +19,9 @@ let _proofBusy      = false; // true while an upload/download/delete network op 
 let _proofListRender = null; // re-renders whatever list/grid is currently under the lightbox — set by every
 // grid-producing function right as it renders, so a successful delete can return to that same list
 // (refreshed) instead of always closing the entire overlay back out to whatever screen opened it.
+let _proofInLightbox = false; // true only while the lightbox (photo view) is the current overlay content —
+// lets closeProofOverlay() (the × button, backdrop click, AND Android back) step back to the list
+// instead of exiting the whole overlay, the same way a successful delete already does.
 
 // Blocks the ENTIRE proof overlay (like the app's sync loader) for the
 // duration of an upload/download/delete — swaps the content for a spinner
@@ -78,6 +82,14 @@ function _proofGridHtml(list) {
 
 function closeProofOverlay() {
   if (_proofBusy) return; // upload/download/delete in progress — block header X and backdrop-tap close
+  // Closing FROM the lightbox (× button, backdrop tap, or Android back) steps back
+  // to whatever list opened it instead of exiting the whole overlay — same behavior
+  // a successful delete already has, just triggered by "close" instead of "delete".
+  if (_proofInLightbox && typeof _proofListRender === 'function') {
+    _proofInLightbox = false;
+    _proofListRender();
+    return;
+  }
   _proofListRender = null;
   _histBack();
   document.getElementById('proofOverlay')?.classList.remove('open');
@@ -116,22 +128,42 @@ async function openProofUpload(prefillName) {
 function _renderProofEntry(prefillName) {
   _pfTab = 'member'; // always default back to Member every time this screen opens
   _pfPrefillName = prefillName || '';
+  _pfSelectedMemberName = '';
   _pfRecordIdx = null;
   _qpContext = null; // main-form mode — quick-upload's shared file inputs must route back here, not to a quick target
+  _pfRebuildShell();
+}
 
+// Rebuilds the header + tab bar + #pf_body container, then renders whichever
+// tab is current. The lightbox replaces the overlay's ENTIRE content (tabs
+// included), so returning from it needs this, not just a #pf_body refresh.
+function _pfRebuildShell() {
   document.getElementById('proofOverlayContent').innerHTML = `
     <div class="modal-header">
       <div class="modal-title">Payment Proofs — ${STATE.currentSession?.label || ''}</div>
       <button class="close-btn" onclick="closeProofOverlay()">×</button>
     </div>
     <div class="tabs">
-      <button class="tab active" id="pfTab_member"   onclick="_pfSwitchTab('member')">Member</button>
-      <button class="tab"        id="pfTab_donation" onclick="_pfSwitchTab('donation')">Donation</button>
-      <button class="tab"        id="pfTab_expense"  onclick="_pfSwitchTab('expense')">Expense</button>
+      <button class="tab ${_pfTab === 'member'   ? 'active' : ''}" id="pfTab_member"   onclick="_pfSwitchTab('member')">Member</button>
+      <button class="tab ${_pfTab === 'donation' ? 'active' : ''}" id="pfTab_donation" onclick="_pfSwitchTab('donation')">Donation</button>
+      <button class="tab ${_pfTab === 'expense'  ? 'active' : ''}" id="pfTab_expense"  onclick="_pfSwitchTab('expense')">Expense</button>
     </div>
     <div id="pf_body"></div>
   `;
   _pfRenderBody();
+}
+
+// Used as the lightbox's "go back" target for the Member/Donation/Expense tabs —
+// rebuilds the whole shell (see above) and re-selects whichever member/record
+// was actually chosen before the lightbox opened.
+function _pfRestoreView() {
+  if (_pfTab === 'member') _pfPrefillName = _pfSelectedMemberName || _pfPrefillName;
+  _pfRebuildShell();
+  if (_pfTab !== 'member') {
+    const type = _pfTab === 'donation' ? 'Donation' : 'Expense';
+    const sel  = document.getElementById('pf_record');
+    if (sel && _pfRecordIdx !== null) { sel.value = String(_pfRecordIdx); _pfRecordChanged(type); }
+  }
 }
 
 function _pfSwitchTab(tab) {
@@ -151,6 +183,7 @@ function _pfRenderBody() {
 }
 
 function _pfRenderMemberBody() {
+  _proofInLightbox = false;
   const active  = _isActiveSession();
   const sortedNames = [...STATE.allMembers].map(m => m.name).sort((a, b) => a.localeCompare(b));
   const memberOptions = sortedNames.map(n =>
@@ -189,6 +222,7 @@ function _pfRenderMemberBody() {
 // Donation/Expense tabs: pick an existing record instead of a member — no months
 // involved, the proof just attaches directly to that donation/expense entry.
 function _pfRenderRecordBody(type) {
+  _proofInLightbox = false;
   const active  = _isActiveSession();
   const records = type === 'Donation' ? STATE.allDonations : STATE.allExpenses;
   const label   = type === 'Donation' ? 'Donation Chunein' : 'Expense Chunein';
@@ -235,7 +269,9 @@ function _pfRecordChanged(type) {
   const sessionLabel = STATE.currentSession?.label || '';
   const list = _proofRows.filter(p => p.session === sessionLabel && p.type === type && p.name === name);
   box.innerHTML = `<div class="card-title" style="margin-bottom:8px">Existing Proofs (${list.length})</div>${_proofGridHtml(list)}`;
-  _proofListRender = () => _pfRecordChanged(type); // so Delete from this grid's lightbox returns here
+  // The lightbox wipes the whole shell (tabs included), so returning from it needs
+  // the full _pfRestoreView() rebuild, not just re-calling this function.
+  _proofListRender = () => _pfRestoreView();
 }
 
 async function _submitProofUploadRecord(type, btn) {
@@ -255,20 +291,19 @@ async function _submitProofUploadRecord(type, btn) {
     if (!result.ok) {
       _setProofBusy(false);
       showAlert('Upload Error', uploaded > 0 ? `${uploaded} photo(s) upload ho gaye. Phir error aaya: ${result.error}` : result.error);
-      _pfRenderRecordBody(type);
+      _pfRebuildShell(); // _setProofBusy() replaced the whole overlay content above, so #pf_body no longer exists — needs the full shell rebuild, not a direct body render
       return;
     }
     uploaded++;
   }
   _setProofBusy(false);
   showAlert('Proof Upload Ho Gaya', `${name} — ${type} ke ${uploaded > 1 ? uploaded + ' proofs' : 'proof'} upload ho gaye! ✅`);
-  _pfRenderRecordBody(type); // rebuild fresh — new proofs show immediately, no resync needed
-  const sel = document.getElementById('pf_record');
-  if (sel) { sel.value = String(_pfRecordIdx); _pfRecordChanged(type); }
+  _pfRestoreView(); // rebuild fresh — new proofs show immediately, no resync needed
 }
 
 function _pfMemberChanged() {
   const name = (document.getElementById('pf_member')?.value || '').trim();
+  _pfSelectedMemberName = name;
   const box  = document.getElementById('pf_existing');
   if (box) {
     if (!name) box.innerHTML = '';
@@ -276,7 +311,9 @@ function _pfMemberChanged() {
       const sessionLabel = STATE.currentSession?.label || '';
       const list = _proofRows.filter(p => p.session === sessionLabel && nameMatch(p.name, name));
       box.innerHTML = `<div class="card-title" style="margin-bottom:8px">Existing Proofs (${list.length})</div>${_proofGridHtml(list)}`;
-      _proofListRender = () => _pfMemberChanged(); // so Delete from this grid's lightbox returns here, not out of the whole form
+      // The lightbox wipes the whole shell (tabs included), so returning from it needs
+      // the full _pfRestoreView() rebuild, not just re-calling this function.
+      _proofListRender = () => _pfRestoreView();
     }
   }
   _pfRenderMonths(name);
@@ -505,6 +542,7 @@ async function _proofFileChosen(input) {
 }
 
 function _openQuickSourcePicker(title) {
+  _proofInLightbox = false;
   _openProofOverlay();
   document.getElementById('proofOverlayContent').innerHTML = `
     <div class="modal-header">
@@ -527,6 +565,7 @@ function _proofsMatchingContext(context) {
 }
 
 function _openProofBrowseModal(list, title, context) {
+  _proofInLightbox = false;
   _proofBrowseCtx = context || null;
   _openProofOverlay();
   document.getElementById('proofOverlayContent').innerHTML = `
@@ -559,6 +598,7 @@ function _qpAddMoreFromBrowse() {
 function _openProofLightbox(driveId) {
   const p = _proofRows.find(x => x.driveId === driveId);
   if (!p) return;
+  _proofInLightbox = true;
   document.getElementById('proofOverlayContent').innerHTML = `
     <div class="modal-header">
       <div class="modal-title">${p.name}</div>
@@ -741,6 +781,7 @@ function _apGridHtml(list) {
 }
 
 function _renderAllProofsBrowse() {
+  _proofInLightbox = false;
   const sessionOptions = (CONFIG.SESSIONS || []).map(s =>
     `<option value="${s.label.replace(/"/g, '&quot;')}"${s.label === _apFilters.session ? ' selected' : ''}>${s.label}${s.active ? ' (Active)' : ''}</option>`
   ).join('');

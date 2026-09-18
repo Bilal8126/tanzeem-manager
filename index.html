@@ -16,6 +16,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/app.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 </head>
 <body>
 
@@ -352,6 +353,24 @@
 <input type="file" id="proofGalleryInput" accept="image/*" multiple style="display:none" onchange="_proofFileChosen(this)">
 <input type="file" id="proofCameraInput" accept="image/*" capture="environment" style="display:none" onchange="_proofFileChosen(this)">
 
+<!-- Tanzeem Messages (saved WhatsApp announcement templates — list / viewer / editor swapped by messages.js) -->
+<div id="messagesOverlay" class="modal-overlay" onclick="closeMessagesOverlay()">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div id="messagesOverlayContent"></div>
+  </div>
+</div>
+
+<!-- UPI QR Codes (list / viewer / editor swapped by qrcode.js) -->
+<div id="qrOverlay" class="modal-overlay" onclick="closeQrOverlay()">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div id="qrOverlayContent"></div>
+  </div>
+</div>
+<input type="file" id="qrGalleryInput" accept="image/*" style="display:none" onchange="_qrFileChosen(this)">
+<input type="file" id="qrCameraInput" accept="image/*" capture="environment" style="display:none" onchange="_qrFileChosen(this)">
+
 <!-- Finance FAB -->
 <button id="financeFab" class="fab" onclick="openFinanceForm(STATE.currentFinanceTab==='donations'?'donation':'expense',null)" style="display:none" title="Add">+</button>
 
@@ -503,6 +522,8 @@
 <script src="js/features/finance.js"></script>
 <script src="js/features/gallery.js"></script>
 <script src="js/features/proofs.js"></script>
+<script src="js/features/messages.js"></script>
+<script src="js/features/qrcode.js"></script>
 <script src="js/features/ai.js"></script>
 <script src="js/features/sessions.js"></script>
 <script src="js/features/settings.js"></script>

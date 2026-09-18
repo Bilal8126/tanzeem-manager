@@ -121,6 +121,30 @@ function renderSettings() {
       </button>
     </div>
 
+    <!-- Tanzeem Messages -->
+    <div class="card" style="margin-bottom:14px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--green-dark)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px">Tanzeem Messages</div>
+      </div>
+      <button class="btn btn-secondary" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px" onclick="openMessagesLibrary()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Dawat / Announcement Messages
+      </button>
+    </div>
+
+    <!-- UPI QR Code -->
+    <div class="card" style="margin-bottom:14px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--green-dark)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><line x1="14" y1="14" x2="14" y2="21"/><line x1="21" y1="14" x2="21" y2="21"/><line x1="17.5" y1="14" x2="17.5" y2="17.5"/><line x1="14" y1="17.5" x2="21" y2="17.5"/></svg>
+        <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px">UPI QR Code</div>
+      </div>
+      <div id="qrSettingsPreview" style="margin-bottom:12px"><div style="font-size:12px;color:var(--muted)">Loading...</div></div>
+      <button class="btn btn-secondary" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px" onclick="openQrLibrary()">
+        Manage QR Codes
+      </button>
+    </div>
+
     <!-- Activity History -->
     <div class="card" id="historyCard" style="margin-bottom:14px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
@@ -168,6 +192,7 @@ function renderSettings() {
     </div>
   `;
   loadTrackHistory();
+  if (typeof _renderQrSettingsPreview === 'function') _renderQrSettingsPreview();
 }
 
 // ── Activity History ───────────────────────────────────────────
@@ -186,6 +211,13 @@ const _HISTORY_COLORS = {
   'Expense Deleted':  { bg:'#fce7f3', color:'#9d174d' },
   'Proof Uploaded':   { bg:'#ede9fe', color:'#6d28d9' },
   'Proof Deleted':    { bg:'#fee2e2', color:'#991b1b' },
+  'Message Template Added':   { bg:'#dcfce7', color:'#15803d' },
+  'Message Template Updated': { bg:'#fef9c3', color:'#854d0e' },
+  'Message Template Deleted': { bg:'#fee2e2', color:'#991b1b' },
+  'QR Added':       { bg:'#dcfce7', color:'#15803d' },
+  'QR Updated':     { bg:'#fef9c3', color:'#854d0e' },
+  'QR Set Active':  { bg:'#dbeafe', color:'#1d4ed8' },
+  'QR Deleted':     { bg:'#fee2e2', color:'#991b1b' },
 };
 
 const _PROOF_ICON = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:3px"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>';

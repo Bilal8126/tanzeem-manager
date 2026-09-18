@@ -192,7 +192,8 @@ Agar pooche "kisne banaya" ya "developer kaun" → "Yeh app Bilal Ansari ne bana
 Tanzeem: Abd-e-Mustafa Bisauli | Founded: 2023
 Members: ${STATE.allMembers.length} (Active: ${d.activeMembers.length}, Inactive: ${d.inactiveMembers.length})
 Founding: Mohsin Ansari, Javed Ansari, Moh. Hasnain Ansari, Bilal Ansari, Mubeen Ansari, Tofeeq Ansari, Altaf Ansari, Shahrukh Ansari
-Maqsad: Gareebo ki madad, Masjid/Madrasa, Langar, Jaloos langar, Deen ki khidmat`;
+Maqsad: Julus-e-Mohammadi mein langar/paani, Ahadees-e-Rasool par mabni flex lagana, Ramzan calendar, Masajid roshni/intezaamat, Jalse-deeni programs (12 Rabi-ul-Awwal, Muharram), zarurat-mand/bimar ki madad, Madaris ke liye maali imdad
+Membership fee: Rs.150/maahana per member. Non-members bhi khushi se donation de sakte hain.`;
 }
 
 function _pDisambiguation(d) {
@@ -304,7 +305,7 @@ function _pPersonaFlow() {
   return `=== SELF-LOOKUP & NEW-VISITOR FLOW ===
 Agar koi pooche "main kaun hoon", "meri details batao", "who am i", ya apna record maange, aur unka naam pata na ho: pehle unka naam poochein. Naam milte hi MEMBER PROFILES se unki puri detail do — DOJ (kab add hue), Address (kaha ke hain), Status (Active/Inactive), aur agar Inactive hain to DOE (kab Inactive hue) aur Join-Session. Uske baad poochein: "Aapko apni payment/subscription ke baare mein jaanna hai kya?" — haan kahein to unki payment status (paid/unpaid months, total) batao.
 
-Yeh "not found" sirf tab bolein jab naam MEMBER PROFILES/disambiguation ki poori list (sab sessions ke members) mein kahin bhi match na ho — kisi member ka Join-Session purana hone se woh "not found" nahi ban jata, woh ab bhi member hai. Agar diya gaya naam kisi bhi member se sach mein match nahi hota: unhe seedha bataye ke woh Tanzeem ke member nahi hain. Fir Tanzeem Abd-e-Mustafa ke baare mein thodi jaankari dete hue (maqsad: gareebo ki madad, masjid/madrasa, langar, deen ki khidmat) unhe member banne ki garmjoshi se dawat dein. Phir poochein: "Kya aap Tanzeem ka member banna chahte hain?" — haan kahein to unhe bataye ke aap unki basic details (naam, mobile number, address) le kar aage guide kar denge, aur wahi maangna shuru kar dein.`;
+Yeh "not found" sirf tab bolein jab naam MEMBER PROFILES/disambiguation ki poori list (sab sessions ke members) mein kahin bhi match na ho — kisi member ka Join-Session purana hone se woh "not found" nahi ban jata, woh ab bhi member hai. Agar diya gaya naam kisi bhi member se sach mein match nahi hota: unhe seedha bataye ke woh Tanzeem ke member nahi hain. Fir Tanzeem Abd-e-Mustafa ke baare mein thodi jaankari dete hue (maqsad: Julus-e-Mohammadi mein langar/paani, Ahadees par mabni flex, Ramzan calendar, Masajid intezaamat, Jalse/deeni programs, zarurat-mand/bimar ki madad, Madaris ke liye maali imdad — aur membership fee Rs.150/maahana, jo koi member nahi banna chahta woh khushi se donation bhi de sakta hai) unhe member banne ki garmjoshi se dawat dein. Phir poochein: "Kya aap Tanzeem ka member banna chahte hain?" — haan kahein to unhe bataye ke aap unki basic details (naam, mobile number, address/shehar) le kar aage guide kar denge, aur wahi maangna shuru kar dein.`;
 }
 
 // Tells the model what it's allowed to *do* (as opposed to just answer).
@@ -462,7 +463,7 @@ function _tryLocalAnswer(q) {
   if (/tanzeem kya|tanzeem ke baare|about tanzeem|tanzeem kab|tanzeem kis|tanzeem history|tanzeem maqsad|tanzeem ka kaam/.test(ql)) {
     const active   = STATE.allMembers.filter(m => m.status === 'Active').length;
     const inactive = STATE.allMembers.filter(m => m.status !== 'Active').length;
-    return `**Tanzeem Abd-e-Mustafa — Bisauli** 🕌\n\n- **Shuruwaat:** Year 2023\n- **Total Members:** ${STATE.allMembers.length} (Active: ${active}, Inactive: ${inactive})\n\n**Founding Members:**\n1. Mohsin Ansari\n2. Javed Ansari\n3. Moh. Hasnain Ansari\n4. Bilal Ansari\n5. Mubeen Ansari\n6. Tofeeq Ansari\n7. Altaf Ansari\n8. Shahrukh Ansari\n\n**Maqsad (Kaam):**\n- Gareebo ki madad karna\n- Masjid aur Madrasa ki madad\n- Langar lagana\n- Jaloos mein langar dena\n- Deen ki khidmat karna`;
+    return `**Tanzeem Abd-e-Mustafa — Bisauli, Badaun** 🕌\n\n- **Shuruwaat:** Year 2023\n- **Total Members:** ${STATE.allMembers.length} (Active: ${active}, Inactive: ${inactive})\n\n**Founding Members:**\n1. Mohsin Ansari\n2. Javed Ansari\n3. Moh. Hasnain Ansari\n4. Bilal Ansari\n5. Mubeen Ansari\n6. Tofeeq Ansari\n7. Altaf Ansari\n8. Shahrukh Ansari\n\n**Maqsad (Kaam):**\n- Julus-e-Mohammadi ﷺ mein langar aur paani ka intezaam\n- Ahadees-e-Rasool ﷺ par mabni flex lagana, taaki logon ko ilm mile\n- Mah-e-Ramzan ke liye khaas calendar jaari karna\n- Masajid mein zaroorat ke mutabiq roshni aur digar intezaamat\n- Jalse aur deeni programon ka ehtemaam (jaise 12 Rabi-ul-Awwal aur Muharram)\n- Zarurat-mand aur bimar logon ki madad\n- Madaris aur deeni taleem ke liye maali imdad\n\n**Membership:** Har rukn Rs.150/maahana deta hai, jo poori tarah deeni aur samaji kaamon mein kharch hota hai. Jo log member nahi hain woh bhi apni khushi se Tanzeem ko donation de sakte hain.\n\n**Join karne ke liye** apni Naam, Mobile number, aur Shehar/Pata bhejein — Tanzeem ka hissa banne ke liye khush-aamdeed hai! 🙌`;
   }
 
   if (/kisne banaya|developer kaun|creator kaun|app kisne|app ka developer|app banaya/.test(ql)) {

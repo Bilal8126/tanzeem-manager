@@ -334,6 +334,51 @@ async function handleProofDownload(url, env, origin) {
   });
 }
 
+// ── QR Codes — same Drive mechanics as Gallery/Proofs, separate folder.
+// Metadata (label/UPI ID/active flag) lives in the app's QRCodes sheet, not
+// the Drive file — upload here is just the file, mirroring proofs upload.
+
+// ── Route: POST /api/qr/upload ────────────────────────────────
+async function handleQrUpload(request, env, origin) {
+  const token    = await getAdminToken(env);
+  const folderId = await getGalleryFolder(token, 'Tanzeem QR Codes');
+
+  const form = await request.formData();
+  const file = form.get('file');
+
+  const driveMeta = JSON.stringify({ name: file.name, parents: [folderId] });
+  const driveForm = new FormData();
+  driveForm.append('metadata', new Blob([driveMeta], { type: 'application/json' }));
+  driveForm.append('file', file);
+
+  const res = await fetch(
+    `${DRIVE_UPL}/files?uploadType=multipart&fields=id,name,createdTime`,
+    { method: 'POST', headers: { Authorization: 'Bearer ' + token }, body: driveForm }
+  );
+  const uploaded = await res.json();
+  if (uploaded.id) await makePublic(uploaded.id, token);
+  return json(uploaded, res.status, origin);
+}
+
+// ── Route: GET /api/qr/download?id=X&name=Y ───────────────────
+async function handleQrDownload(url, env, origin) {
+  const fileId = url.searchParams.get('id');
+  const name   = url.searchParams.get('name') || 'qr.png';
+  if (!fileId) return json({ error: 'Missing id' }, 400, origin);
+  const token = await getAdminToken(env);
+  const res = await fetch(`${DRIVE_BASE}/files/${fileId}?alt=media`, {
+    headers: { Authorization: 'Bearer ' + token },
+  });
+  return new Response(res.body, {
+    status: res.status,
+    headers: {
+      ...corsHeaders(origin),
+      'Content-Type':        res.headers.get('Content-Type') || 'image/png',
+      'Content-Disposition': `attachment; filename="${name}"`,
+    },
+  });
+}
+
 // ── Route: POST /api/ai ───────────────────────────────────────
 async function handleAI(request, env, origin) {
   const body = await request.json();
@@ -414,6 +459,12 @@ export default {
       }
       if (url.pathname === '/api/proofs/download' && request.method === 'GET') {
         return await handleProofDownload(url, env, origin);
+      }
+      if (url.pathname === '/api/qr/upload' && request.method === 'POST') {
+        return await handleQrUpload(request, env, origin);
+      }
+      if (url.pathname === '/api/qr/download' && request.method === 'GET') {
+        return await handleQrDownload(url, env, origin);
       }
     } catch (e) {
       return json({ error: e.message }, 500, origin);

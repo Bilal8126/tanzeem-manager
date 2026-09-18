@@ -48,6 +48,8 @@ const _MODALS = [
   { id: 'galleryOccasionOverlay',  fn: () => typeof closeOccasionPicker  !== 'undefined' && closeOccasionPicker() },
   { id: 'financeFormOverlay',      fn: () => typeof closeFinanceForm      !== 'undefined' && closeFinanceForm() },
   { id: 'proofOverlay',            fn: () => typeof closeProofOverlay     !== 'undefined' && closeProofOverlay() },
+  { id: 'messagesOverlay',         fn: () => typeof closeMessagesOverlay  !== 'undefined' && closeMessagesOverlay() },
+  { id: 'qrOverlay',               fn: () => typeof closeQrOverlay        !== 'undefined' && closeQrOverlay() },
   { id: 'memberProfileOverlay',    fn: () => typeof closeMemberProfile    !== 'undefined' && closeMemberProfile() },
   { id: 'newSessionOverlay',       fn: () => typeof closeNewSessionModal  !== 'undefined' && closeNewSessionModal(), useDisplay: true },
   { id: 'profileMenuOverlay',      fn: () => typeof closeProfileMenu      !== 'undefined' && closeProfileMenu(), useDisplay: true },
