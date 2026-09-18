@@ -237,13 +237,22 @@ const _HISTORY_COLORS = {
   'Message Template Added':   { bg:'#dcfce7', color:'#15803d' },
   'Message Template Updated': { bg:'#fef9c3', color:'#854d0e' },
   'Message Template Deleted': { bg:'#fee2e2', color:'#991b1b' },
-  'QR Added':       { bg:'#dcfce7', color:'#15803d' },
-  'QR Updated':     { bg:'#fef9c3', color:'#854d0e' },
-  'QR Set Active':  { bg:'#dbeafe', color:'#1d4ed8' },
-  'QR Deleted':     { bg:'#fee2e2', color:'#991b1b' },
+  'QR Add Hua':      { bg:'#dcfce7', color:'#15803d' },
+  'QR Update Hua':   { bg:'#fef9c3', color:'#854d0e' },
+  'QR Active Hua':   { bg:'#dbeafe', color:'#1d4ed8' },
+  'QR InActive Hua': { bg:'#f1f5f9', color:'#475569' },
+  'QR Delete Hua':   { bg:'#fee2e2', color:'#991b1b' },
 };
 
-const _PROOF_ICON = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:3px"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>';
+const _PROOF_ICON   = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:3px"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>';
+const _MESSAGE_ICON = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:3px"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>';
+const _QR_ICON      = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:3px"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><line x1="14" y1="14" x2="14" y2="21"/><line x1="21" y1="14" x2="21" y2="21"/><line x1="17.5" y1="14" x2="17.5" y2="17.5"/><line x1="14" y1="17.5" x2="21" y2="17.5"/></svg>';
+
+const _HISTORY_ICONS = {
+  'Proof Uploaded': _PROOF_ICON, 'Proof Deleted': _PROOF_ICON,
+  'Message Template Added': _MESSAGE_ICON, 'Message Template Updated': _MESSAGE_ICON, 'Message Template Deleted': _MESSAGE_ICON,
+  'QR Add Hua': _QR_ICON, 'QR Update Hua': _QR_ICON, 'QR Active Hua': _QR_ICON, 'QR InActive Hua': _QR_ICON, 'QR Delete Hua': _QR_ICON,
+};
 
 let _historyRows  = [];
 let _historyShown = 10;
@@ -279,11 +288,11 @@ function _renderHistoryRows() {
   const hasMore  = _historyRows.length > _historyShown;
   const rowsHtml = visible.map(([ts, action, details, session, admin], i) => {
     const ac = _HISTORY_COLORS[action] || { bg:'#f1f5f9', color:'#475569' };
-    const isProof = action === 'Proof Uploaded' || action === 'Proof Deleted';
+    const icon = _HISTORY_ICONS[action] || '';
     return `
       <div style="padding:10px 0;${i < visible.length-1 ? 'border-bottom:1px solid var(--border);' : ''}">
         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px">
-          <span style="display:inline-flex;align-items:center;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;white-space:nowrap;background:${ac.bg};color:${ac.color}">${isProof ? _PROOF_ICON : ''}${action || ''}</span>
+          <span style="display:inline-flex;align-items:center;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;white-space:nowrap;background:${ac.bg};color:${ac.color}">${icon}${action || ''}</span>
           <span style="font-size:13px;font-weight:600;color:var(--text)">${details || ''}</span>
         </div>
         <div style="font-size:11px;color:var(--muted);display:flex;gap:6px;flex-wrap:wrap;align-items:center">

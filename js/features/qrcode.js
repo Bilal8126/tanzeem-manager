@@ -160,10 +160,17 @@ function _qrSourceButtonsHtml() {
 }
 
 // ── Generate editor (UPI ID → live QR preview) ─────────────────
+// Uses the qrcodejs (davidshimjs) library — it renders a <canvas> INSIDE the
+// container element you give it (it doesn't draw onto a canvas you already
+// have), so the preview lives in a wrapper div and _qrGenInstance is reused
+// across keystrokes via .clear()/.makeCode() instead of re-creating it.
+let _qrGenInstance = null;
+
 function _openQrEditorGenerate(row) {
   const m = row ? _qrRows.find(x => x.row === row) : null;
-  _qrInSubview  = true;
-  _qrListRender = row ? (() => _openQrViewer(row)) : _renderQrList;
+  _qrInSubview   = true;
+  _qrListRender  = row ? (() => _openQrViewer(row)) : _renderQrList;
+  _qrGenInstance = null; // fresh preview instance for this editor session
   document.getElementById('qrOverlayContent').innerHTML = `
     <div class="modal-header">
       <div class="modal-title">${m ? 'QR Edit Karein' : 'UPI ID Se QR Banayein'}</div>
@@ -178,28 +185,34 @@ function _openQrEditorGenerate(row) {
       <input type="text" id="qr_upi" placeholder="example@bank" value="${_qrEsc(m?.upi || '')}" oninput="_qrRefreshPreview()">
     </div>
     <div style="display:flex;justify-content:center;margin:16px 0">
-      <canvas id="qr_canvas" width="220" height="220" style="border-radius:12px;border:1px solid var(--border)"></canvas>
+      <div id="qr_canvas_wrap" style="width:220px;height:220px;border-radius:12px;border:1px solid var(--border);overflow:hidden;background:#fff"></div>
     </div>
     <button class="btn btn-primary" style="width:100%" onclick="_saveQrGenerate(${row || 'null'})">Save</button>`;
   _qrRefreshPreview();
 }
 
 function _qrRefreshPreview() {
-  const label  = document.getElementById('qr_label')?.value.trim() || '';
-  const upi    = document.getElementById('qr_upi')?.value.trim()   || '';
-  const canvas = document.getElementById('qr_canvas');
-  if (!canvas) return;
-  canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
-  if (!upi || typeof QRCode === 'undefined') return;
+  const label = document.getElementById('qr_label')?.value.trim() || '';
+  const upi   = document.getElementById('qr_upi')?.value.trim()   || '';
+  const wrap  = document.getElementById('qr_canvas_wrap');
+  if (!wrap) return;
+  if (!upi || typeof QRCode === 'undefined') { wrap.innerHTML = ''; _qrGenInstance = null; return; }
   const uri = `upi://pay?pa=${encodeURIComponent(upi)}&pn=${encodeURIComponent(label || 'Tanzeem Abd-e-Mustafa')}&cu=INR`;
-  QRCode.toCanvas(canvas, uri, { width: 220, margin: 1 }, () => {});
+  if (_qrGenInstance) {
+    _qrGenInstance.clear();
+    _qrGenInstance.makeCode(uri);
+  } else {
+    wrap.innerHTML = '';
+    _qrGenInstance = new QRCode(wrap, { text: uri, width: 220, height: 220, correctLevel: QRCode.CorrectLevel.M });
+  }
 }
 
 async function _saveQrGenerate(row) {
   const label  = document.getElementById('qr_label').value.trim();
   const upi    = document.getElementById('qr_upi').value.trim();
-  const canvas = document.getElementById('qr_canvas');
+  const canvas = document.getElementById('qr_canvas_wrap')?.querySelector('canvas');
   if (!label || !upi) { showToast('Label aur UPI ID dono zaroori hain', 'error'); return; }
+  if (!canvas) { showToast('QR generate nahi ho paya — dobara try karein', 'error'); return; }
   if (!await _ensureWriteAccess()) return;
   const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
   if (!blob) { showToast('QR generate nahi ho paya', 'error'); return; }
@@ -267,7 +280,7 @@ async function _saveQrUpload(row) {
       ]);
       const m = _qrRows.find(x => x.row === row);
       if (m) { m.label = label; m.upi = upi; m.lastUpdated = dateStr; m.updatedBy = admin; m.whatUpdate = 'Label/UPI Updated'; }
-      _trackHistory('QR Updated', label, false);
+      _trackHistory('QR Update Hua', `${label}${upi ? ' - ' + upi : ''} - Label/UPI Updated`, false);
       showToast('Update ho gaya!');
       _qrBusy = false;
       _openQrViewer(row);
@@ -302,7 +315,7 @@ async function _saveQrCommon(row, label, upi, file, source) {
       ]);
       const m = _qrRows.find(x => x.row === row);
       if (m) { m.label = label; m.upi = upi; m.driveId = uploaded.id; m.lastUpdated = dateStr; m.updatedBy = admin; m.whatUpdate = 'Label/UPI/QR Image Updated'; }
-      _trackHistory('QR Updated', label, false);
+      _trackHistory('QR Update Hua', `${label}${upi ? ' - ' + upi : ''} - Label/UPI/QR Image Updated`, false);
       showToast('QR update ho gaya!');
       _qrBusy = false;
       _openQrViewer(row);
@@ -314,7 +327,7 @@ async function _saveQrCommon(row, label, upi, file, source) {
       await sheetsAppend('QRCodes', [[sr, label, upi, uploaded.id, isFirst ? 'Yes' : '', dateStr, '', source, admin, dateStr, admin, 'Created']]);
       _qrRawCount++;
       _qrRows.push({ row: newRow, sr: String(sr), label, upi, driveId: uploaded.id, active: isFirst, createdDate: dateStr, source, createdBy: admin, lastUpdated: dateStr, updatedBy: admin, whatUpdate: 'Created' });
-      _trackHistory('QR Added', label, false);
+      _trackHistory('QR Add Hua', `${label}${upi ? ' - ' + upi : ''} (${source})${isFirst ? ' - Active' : ''}`, false);
       showToast('QR save ho gaya!' + (isFirst ? ' Active QR set ho gaya.' : ''));
       _qrBusy = false;
       _qrInSubview = false;
@@ -384,13 +397,20 @@ async function _setQrActive(row) {
     const prevActive = _qrRows.find(x => x.active);
     const data = [
       { range: `QRCodes!E${row}`, values: [['Yes']] },
-      { range: `QRCodes!J${row}:L${row}`, values: [[dateStr, admin, 'Set as Active QR']] },
+      { range: `QRCodes!J${row}:L${row}`, values: [[dateStr, admin, 'Active Hua']] },
     ];
-    if (prevActive) data.push({ range: `QRCodes!E${prevActive.row}`, values: [['']] });
+    if (prevActive) {
+      data.push({ range: `QRCodes!E${prevActive.row}`, values: [['']] });
+      data.push({ range: `QRCodes!J${prevActive.row}:L${prevActive.row}`, values: [[dateStr, admin, 'InActive Hua']] });
+    }
     await sheetsBatchPut(data);
     _qrRows.forEach(x => { x.active = x.row === row; });
-    current.lastUpdated = dateStr; current.updatedBy = admin; current.whatUpdate = 'Set as Active QR';
-    _trackHistory('QR Set Active', current.label, false);
+    current.lastUpdated = dateStr; current.updatedBy = admin; current.whatUpdate = 'Active Hua';
+    _trackHistory('QR Active Hua', `${current.label}${current.upi ? ' - ' + current.upi : ''}`, false);
+    if (prevActive) {
+      prevActive.lastUpdated = dateStr; prevActive.updatedBy = admin; prevActive.whatUpdate = 'InActive Hua';
+      _trackHistory('QR InActive Hua', `${prevActive.label}${prevActive.upi ? ' - ' + prevActive.upi : ''}`, false);
+    }
     showToast('QR Active ho gaya!');
   } catch (e) {
     showToast('Error: ' + e.message, 'error');
@@ -414,7 +434,7 @@ async function _deleteQrCode(m) {
       { range: `QRCodes!J${m.row}:L${m.row}`, values: [[dateStr, admin, 'Deleted']] },
     ]);
     _qrRows = _qrRows.filter(x => x !== m);
-    _trackHistory('QR Deleted', m.label, false);
+    _trackHistory('QR Delete Hua', `${m.label}${m.upi ? ' - ' + m.upi : ''}`, false);
     return true;
   } catch (e) {
     return false;

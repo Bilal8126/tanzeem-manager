@@ -1,4 +1,4 @@
-const CACHE = 'tanzeem-v258'; // bump this version on every deploy → triggers auto-reload for all users
+const CACHE = 'tanzeem-v259'; // bump this version on every deploy → triggers auto-reload for all users
 const ASSETS = [
   './',
   './index.html',
@@ -48,6 +48,7 @@ const BYPASS = [
   'workers.dev',
   'gsi/client',
   'cdn.jsdelivr.net',
+  'cdnjs.cloudflare.com',
 ];
 
 self.addEventListener('fetch', e => {
