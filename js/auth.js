@@ -86,7 +86,7 @@ function showProfileMenu() {
       <div style="display:flex;flex-direction:column;align-items:center;gap:10px;margin-bottom:20px">
         ${photo
           ? `<img src="${photo}" style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:3px solid #f0fdf4">`
-          : `<div style="width:72px;height:72px;border-radius:50%;background:#0f4a29;color:#fff;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:800">${name.slice(0,2).toUpperCase()}</div>`
+          : `<div style="width:72px;height:72px;border-radius:50%;background:linear-gradient(145deg,#064e3b 0%,#047857 55%,#059669 85%,#2563eb 130%);box-shadow:0 4px 14px rgba(5,150,105,.3);color:#fff;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:800">${name.slice(0,2).toUpperCase()}</div>`
         }
         <div style="text-align:center">
           <div style="font-size:16px;font-weight:800;color:#0f172a">${name}</div>

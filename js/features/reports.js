@@ -80,8 +80,9 @@ function renderReportsSection() {
         <button onclick="openReport('${r.id}')"
           style="background:none;border:none;cursor:pointer;padding:2px;
                  display:flex;flex-direction:column;align-items:center;gap:7px">
-          <div style="width:46px;height:46px;border-radius:50%;background:${r.bg};
+          <div style="width:46px;height:46px;border-radius:14px;background:linear-gradient(145deg,${r.bg} 0%,${r.color}26 100%);
                       display:flex;align-items:center;justify-content:center;
+                      box-shadow:0 3px 9px ${r.color}33;
                       color:${r.color};flex-shrink:0">${_RSVG[r.id]}</div>
           <div style="font-size:9.5px;font-weight:700;color:var(--text-2);text-align:center;line-height:1.25">${r.label}</div>
         </button>`).join('')}
