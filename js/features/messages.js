@@ -170,7 +170,7 @@ function _openMsgViewer(row) {
       </button>
       <button class="btn" style="flex:1;display:flex;align-items:center;justify-content:center;gap:7px;background:#25D366;color:#fff" onclick="_confirmSendMsg(${m.row})">
         ${_msgWaIconSvg()}
-        Bhejein
+        Send
       </button>
     </div>
     <button class="btn btn-danger" style="width:100%;display:flex;align-items:center;justify-content:center;gap:7px" onclick="_deleteMsgTemplatePrompt(${m.row})">
@@ -193,7 +193,7 @@ function _confirmSendMsg(row) {
   const active = typeof _qrActiveEntry === 'function' ? _qrActiveEntry() : null;
   const needsMember  = /\{\{\s*member\s*\}\}/i.test(m.body || '');
   const sortedMembers = needsMember ? [...STATE.allMembers].sort((a, b) => a.name.localeCompare(b.name)) : [];
-  showConfirm('Message Bhejein?', `
+  showConfirm('Send Message?', `
     ${needsMember ? (sortedMembers.length ? `
       <div class="form-group" style="margin-bottom:16px">
         <label>Member Chunein</label>

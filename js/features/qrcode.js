@@ -31,6 +31,15 @@ function _truthyFlag(v) {
   return /^(yes|true|1|y)$/i.test((v || '').toString().trim());
 }
 
+// Format-only check — confirms the string LOOKS like a UPI ID/VPA
+// (name@bankhandle). There's no way to confirm a VPA is actually real/live
+// from a plain web app — that needs an NPCI-certified PSP "verify VPA" API,
+// which requires merchant/PSP registration we don't have; this just catches
+// typos and garbage input before a QR gets generated from it.
+function _isValidUpiId(v) {
+  return /^[a-zA-Z0-9.\-_]{2,256}@[a-zA-Z]{2,64}$/.test((v || '').trim());
+}
+
 function _qrAdminName() {
   return localStorage.getItem('tanzeem_user_display') || STATE.loggedInEmail || localStorage.getItem('tanzeem_logged_email') || 'Unknown';
 }
@@ -178,6 +187,11 @@ let _qrGenRawWrap    = null;
 let _qrPreviewToken  = 0;
 let _qrLogoImgPromise = null;
 
+// The card is drawn at 3x the logical layout size (raw QR generated at 3x
+// too) then scaled back down via CSS — a plain 1x canvas looked blurry once
+// saved/shared and viewed full-size on a phone.
+const _QR_HQ_SCALE = 3;
+
 function _getQrLogoImg() {
   if (!_qrLogoImgPromise) {
     _qrLogoImgPromise = new Promise((resolve, reject) => {
@@ -195,37 +209,62 @@ function _getQrLogoImg() {
 // left off the printed card — it's only for our own list/history, not
 // something a recipient scanning the QR needs to see.
 async function _composeQrCard(qrCanvas, upi) {
-  const W = 300, PAD = 22, qrSize = 220;
+  // All drawing below uses these LOGICAL (1x) units — ctx.scale() maps them
+  // onto a physically higher-resolution backing store for crisp output.
+  // qrGap is the white quiet-zone margin above/below the QR box itself —
+  // real scanners (Paytm's especially) need this blank margin on every
+  // side; the previous layout had the header divider line sitting AT the
+  // QR's exact top edge (zero gap, line touching the first module row),
+  // which is a well-known cause of "invalid QR" on stricter scanners.
+  const W = 300, PAD = 22, qrSize = 220, qrGap = 16;
   const headerH = 54, footerH = 74;
-  const H = headerH + qrSize + footerH;
+  const qrTop = headerH + qrGap;
+  const H = qrTop + qrSize + qrGap + footerH;
   let logo = null;
   try { logo = await _getQrLogoImg(); } catch (e) { /* card still works without the logo */ }
 
   const canvas = document.createElement('canvas');
-  canvas.width = W; canvas.height = H;
+  canvas.width  = W * _QR_HQ_SCALE;
+  canvas.height = H * _QR_HQ_SCALE;
+  canvas.style.width  = W + 'px';
+  canvas.style.height = H + 'px';
   const ctx = canvas.getContext('2d');
+  ctx.scale(_QR_HQ_SCALE, _QR_HQ_SCALE);
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, W, H);
 
-  // Header: Tanzeem name only (the logo already appears center-on-QR below)
+  // Header: Tanzeem name only (the logo already appears center-on-QR below).
+  // Shrink the font a touch if needed so the full name fits in one line.
   const headerCenterY = headerH / 2 + 4;
+  const headerText = 'Tanzeem Abd-e-Mustafa (Bisauli)';
+  const maxTextW = W - PAD * 2;
+  let headerFontSize = 15;
   ctx.fillStyle = '#0f172a';
-  ctx.font = '700 15px Arial, sans-serif';
   ctx.textBaseline = 'middle';
-  ctx.textAlign = 'left';
-  ctx.fillText('Tanzeem Abd-e-Mustafa', PAD, headerCenterY);
+  ctx.textAlign = 'center';
+  do {
+    ctx.font = `700 ${headerFontSize}px Arial, sans-serif`;
+    headerFontSize--;
+  } while (ctx.measureText(headerText).width > maxTextW && headerFontSize >= 11);
+  ctx.fillText(headerText, W / 2, headerCenterY);
   ctx.strokeStyle = '#e2e8f0';
   ctx.lineWidth = 1;
   ctx.beginPath(); ctx.moveTo(PAD, headerH); ctx.lineTo(W - PAD, headerH); ctx.stroke();
 
   // QR
   const qrX = (W - qrSize) / 2;
-  ctx.drawImage(qrCanvas, qrX, headerH, qrSize, qrSize);
+  ctx.drawImage(qrCanvas, qrX, qrTop, qrSize, qrSize);
 
   // Small logo overlaid dead-center on the QR, white-ringed so the modules
-  // around it stay scannable (needs correctLevel H, set below).
+  // around it stay scannable (correctLevel H below gives ~30% recovery
+  // budget; this circle covers well under that). Kept modest on purpose —
+  // going bigger risks the QR's own center alignment marker on larger
+  // (longer-URI) codes, which some scanners rely on geometrically and
+  // won't recover via error-correction alone.
   if (logo) {
-    const cx = W / 2, cy = headerH + qrSize / 2, r = 26;
+    const cx = W / 2, cy = qrTop + qrSize / 2, r = 22;
     ctx.save();
     ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2);
     ctx.fillStyle = '#fff'; ctx.fill();
@@ -237,7 +276,7 @@ async function _composeQrCard(qrCanvas, upi) {
 
   // Footer: UPI ID only — Label is for our own list/history, not meant to
   // print on the QR image itself.
-  let fy = headerH + qrSize + 30;
+  let fy = qrTop + qrSize + qrGap + 14;
   ctx.textAlign = 'center';
   ctx.fillStyle = '#0f172a';
   ctx.font = '700 14px Arial, sans-serif';
@@ -267,20 +306,26 @@ function _openQrEditorGenerate(row) {
     <div class="form-group">
       <label>UPI ID (VPA)</label>
       <input type="text" id="qr_upi" placeholder="example@bank" value="${_qrEsc(m?.upi || '')}" oninput="_qrRefreshPreview()">
+      <div id="qr_upi_err" style="display:none;font-size:11.5px;color:var(--red);margin-top:5px">Sahi UPI ID daalein — jaise <b>name@bank</b> (e.g. 9876543210@okaxis)</div>
     </div>
     <div style="display:flex;justify-content:center;margin:16px 0">
       <div id="qr_canvas_wrap" style="border-radius:14px;overflow:hidden;border:1px solid var(--border);box-shadow:0 2px 10px rgba(0,0,0,.08);background:#fff;max-width:100%"></div>
     </div>
-    <button class="btn btn-primary" style="width:100%" onclick="_saveQrGenerate(${row || 'null'})">Save</button>`;
+    <button class="btn btn-primary" id="qr_gen_save_btn" style="width:100%" onclick="_saveQrGenerate(${row || 'null'})" disabled>Save</button>`;
   _qrRefreshPreview();
 }
 
 async function _qrRefreshPreview() {
-  const label = document.getElementById('qr_label')?.value.trim() || '';
-  const upi   = document.getElementById('qr_upi')?.value.trim()   || '';
-  const wrap  = document.getElementById('qr_canvas_wrap');
+  const label   = document.getElementById('qr_label')?.value.trim() || '';
+  const upi     = document.getElementById('qr_upi')?.value.trim()   || '';
+  const wrap    = document.getElementById('qr_canvas_wrap');
+  const errEl   = document.getElementById('qr_upi_err');
+  const saveBtn = document.getElementById('qr_gen_save_btn');
   if (!wrap) return;
-  if (!upi || typeof QRCode === 'undefined') { wrap.innerHTML = ''; _qrGenInstance = null; return; }
+  const valid = _isValidUpiId(upi);
+  if (errEl)   errEl.style.display = (upi && !valid) ? 'block' : 'none';
+  if (saveBtn) saveBtn.disabled = !valid;
+  if (!valid || typeof QRCode === 'undefined') { wrap.innerHTML = ''; _qrGenInstance = null; return; }
   const uri = `upi://pay?pa=${encodeURIComponent(upi)}&pn=${encodeURIComponent(label || 'Tanzeem Abd-e-Mustafa')}&cu=INR`;
   if (!_qrGenRawWrap) _qrGenRawWrap = document.createElement('div');
   if (_qrGenInstance) {
@@ -288,7 +333,9 @@ async function _qrRefreshPreview() {
     _qrGenInstance.makeCode(uri);
   } else {
     _qrGenRawWrap.innerHTML = '';
-    _qrGenInstance = new QRCode(_qrGenRawWrap, { text: uri, width: 220, height: 220, correctLevel: QRCode.CorrectLevel.H });
+    // Rendered at _QR_HQ_SCALE resolution up front — drawing this straight
+    // onto the (also scaled) card canvas is then 1:1, not an upscale.
+    _qrGenInstance = new QRCode(_qrGenRawWrap, { text: uri, width: 220 * _QR_HQ_SCALE, height: 220 * _QR_HQ_SCALE, correctLevel: QRCode.CorrectLevel.H });
   }
   const raw = _qrGenRawWrap.querySelector('canvas');
   if (!raw) return;
@@ -304,6 +351,7 @@ async function _saveQrGenerate(row) {
   const upi    = document.getElementById('qr_upi').value.trim();
   const canvas = document.getElementById('qr_canvas_wrap')?.querySelector('canvas');
   if (!label || !upi) { showToast('Label aur UPI ID dono zaroori hain', 'error'); return; }
+  if (!_isValidUpiId(upi)) { showToast('UPI ID sahi format mein nahi hai (jaise name@bank)', 'error'); return; }
   if (!canvas) { showToast('QR generate nahi ho paya — dobara try karein', 'error'); return; }
   if (!await _ensureWriteAccess()) return;
   const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
@@ -324,7 +372,11 @@ function _openQrEditorUpload(row) {
       <button class="close-btn" onclick="closeQrOverlay()">×</button>
     </div>
     <div class="form-group"><label>Label</label><input type="text" id="qr_label" placeholder="jaise: Hasnain Bhai - Federal Bank" value="${_qrEsc(m?.label || '')}"></div>
-    <div class="form-group"><label>UPI ID (Optional, reference ke liye)</label><input type="text" id="qr_upi" placeholder="example@bank" value="${_qrEsc(m?.upi || '')}"></div>
+    <div class="form-group">
+      <label>UPI ID (Optional, reference ke liye)</label>
+      <input type="text" id="qr_upi" placeholder="example@bank" value="${_qrEsc(m?.upi || '')}" oninput="_qrCheckUploadUpi()">
+      <div id="qr_upi_err" style="display:none;font-size:11.5px;color:var(--red);margin-top:5px">Sahi UPI ID daalein — jaise <b>name@bank</b> (e.g. 9876543210@okaxis)</div>
+    </div>
     <div class="form-group">
       <label>QR Image ${m ? '(badalne ke liye naya chunein, warna purani rahegi)' : ''}</label>
       ${_qrSourceButtonsHtml()}
@@ -350,10 +402,20 @@ function _qrFileChosen(input) {
   reader.readAsDataURL(file);
 }
 
+// UPI ID is optional here (a purely-uploaded QR photo doesn't need one),
+// but if something's typed it must look like a real VPA — errors on blur/
+// input rather than blocking Save outright since the field is optional.
+function _qrCheckUploadUpi() {
+  const upi   = document.getElementById('qr_upi')?.value.trim() || '';
+  const errEl = document.getElementById('qr_upi_err');
+  if (errEl) errEl.style.display = (upi && !_isValidUpiId(upi)) ? 'block' : 'none';
+}
+
 async function _saveQrUpload(row) {
   const label = document.getElementById('qr_label').value.trim();
   const upi   = document.getElementById('qr_upi').value.trim();
   if (!label) { showToast('Label zaroori hai', 'error'); return; }
+  if (upi && !_isValidUpiId(upi)) { showToast('UPI ID sahi format mein nahi hai (jaise name@bank)', 'error'); return; }
   if (!row && !_qrPickedFile) { showToast('Pehle QR image chunein', 'error'); return; }
   if (!await _ensureWriteAccess()) return;
   if (_qrPickedFile) {
@@ -459,12 +521,36 @@ function _openQrViewer(row) {
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
         Edit
       </button>
+      <button class="btn btn-secondary" style="flex:1;display:flex;align-items:center;justify-content:center;gap:7px" onclick="_downloadQr(${m.row})">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download
+      </button>
       <button class="btn" style="flex:1;display:flex;align-items:center;justify-content:center;gap:7px;background:#25D366;color:#fff" onclick="_sendQrOnly(${m.row})">
         ${_msgWaIconSvg()}
-        Bhejein
+        Send
       </button>
     </div>
     <button class="btn btn-danger" style="width:100%" onclick="_deleteQrPrompt(${m.row})">Delete</button>`;
+}
+
+async function _downloadQr(row) {
+  if (_qrBusy) return; // guard against double-tap firing two downloads
+  const m = _qrRows.find(x => x.row === row);
+  if (!m) return;
+  _qrBusy = true;
+  try {
+    const blob = await _fetchQrBlob(m.driveId, _QR_SHARE_FILENAME);
+    const blobUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = blobUrl; a.download = _QR_SHARE_FILENAME;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 8000);
+    showToast('Download ho gaya! ✅');
+  } catch (e) {
+    showToast('Download error: ' + e.message, 'error');
+  } finally {
+    _qrBusy = false;
+  }
 }
 
 function _qrEditRouter(row) {
