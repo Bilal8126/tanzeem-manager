@@ -190,9 +190,11 @@ function _getQrLogoImg() {
   return _qrLogoImgPromise;
 }
 
-// Draws the branded card (white bg, header logo+name, QR with center logo,
-// footer label+UPI) onto a fresh canvas and returns it.
-async function _composeQrCard(qrCanvas, label, upi) {
+// Draws the branded card (white bg, header name, QR with center logo,
+// footer UPI ID) onto a fresh canvas and returns it. Label is deliberately
+// left off the printed card — it's only for our own list/history, not
+// something a recipient scanning the QR needs to see.
+async function _composeQrCard(qrCanvas, upi) {
   const W = 300, PAD = 22, qrSize = 220;
   const headerH = 54, footerH = 74;
   const H = headerH + qrSize + footerH;
@@ -205,19 +207,13 @@ async function _composeQrCard(qrCanvas, label, upi) {
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, W, H);
 
-  // Header: logo + Tanzeem name
-  let hx = PAD;
-  const logoSize = 30;
+  // Header: Tanzeem name only (the logo already appears center-on-QR below)
   const headerCenterY = headerH / 2 + 4;
-  if (logo) {
-    ctx.drawImage(logo, hx, headerCenterY - logoSize / 2, logoSize, logoSize);
-    hx += logoSize + 8;
-  }
   ctx.fillStyle = '#0f172a';
   ctx.font = '700 15px Arial, sans-serif';
   ctx.textBaseline = 'middle';
   ctx.textAlign = 'left';
-  ctx.fillText('Tanzeem Abd-e-Mustafa', hx, headerCenterY);
+  ctx.fillText('Tanzeem Abd-e-Mustafa', PAD, headerCenterY);
   ctx.strokeStyle = '#e2e8f0';
   ctx.lineWidth = 1;
   ctx.beginPath(); ctx.moveTo(PAD, headerH); ctx.lineTo(W - PAD, headerH); ctx.stroke();
@@ -239,19 +235,16 @@ async function _composeQrCard(qrCanvas, label, upi) {
     ctx.restore();
   }
 
-  // Footer: label + UPI ID
-  let fy = headerH + qrSize + 26;
+  // Footer: UPI ID only — Label is for our own list/history, not meant to
+  // print on the QR image itself.
+  let fy = headerH + qrSize + 30;
   ctx.textAlign = 'center';
   ctx.fillStyle = '#0f172a';
   ctx.font = '700 14px Arial, sans-serif';
-  ctx.fillText(label || 'Tanzeem Abd-e-Mustafa', W / 2, fy);
-  fy += 22;
-  ctx.fillStyle = '#64748b';
-  ctx.font = '400 12.5px Arial, sans-serif';
   ctx.fillText(upi, W / 2, fy);
-  fy += 20;
+  fy += 22;
   ctx.fillStyle = '#94a3b8';
-  ctx.font = '400 10.5px Arial, sans-serif';
+  ctx.font = '400 11px Arial, sans-serif';
   ctx.fillText('Scan & Pay using any UPI App', W / 2, fy);
 
   return canvas;
@@ -300,7 +293,7 @@ async function _qrRefreshPreview() {
   const raw = _qrGenRawWrap.querySelector('canvas');
   if (!raw) return;
   const token = ++_qrPreviewToken; // guard against out-of-order async renders while typing fast
-  const card = await _composeQrCard(raw, label, upi);
+  const card = await _composeQrCard(raw, upi);
   if (token !== _qrPreviewToken) return; // a newer refresh already started — drop this stale one
   wrap.innerHTML = '';
   wrap.appendChild(card);
