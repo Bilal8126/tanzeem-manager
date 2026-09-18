@@ -232,23 +232,23 @@ async function _composeQrCard(qrCanvas, upi) {
   ctx.scale(_QR_HQ_SCALE, _QR_HQ_SCALE);
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = 'high';
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0, 0, W, H);
 
-  // Header: Tanzeem name only (the logo already appears center-on-QR below),
-  // filled with the app's own brand gradient (green→blue, same as the
-  // member avatar / login icon) instead of plain black, plus a small
-  // gradient accent bar underneath instead of a flat divider line.
+  // Rounded-corner white card — clipped fill instead of a plain fillRect so
+  // the corners OUTSIDE the rounded shape stay transparent (matches the
+  // rounded gradient border frame drawn at the very end).
+  const cardR = 16;
+  _qrRoundRectPath(ctx, 0, 0, W, H, cardR);
+  ctx.fillStyle = '#ffffff';
+  ctx.fill();
+
+  // Header: Tanzeem name only (the logo already appears center-on-QR
+  // below), solid brand green instead of plain black.
   // Shrink the font a touch if needed so the full name fits in one line.
   const headerCenterY = headerH / 2 + 2;
   const headerText = 'Tanzeem Abd-e-Mustafa (Bisauli)';
   const maxTextW = W - PAD * 2;
   let headerFontSize = 16;
-  const brandGrad = ctx.createLinearGradient(PAD, 0, W - PAD, 0);
-  brandGrad.addColorStop(0,    '#047857');
-  brandGrad.addColorStop(0.55, '#059669');
-  brandGrad.addColorStop(1,    '#2563eb');
-  ctx.fillStyle = brandGrad;
+  ctx.fillStyle = '#047857';
   ctx.textBaseline = 'middle';
   ctx.textAlign = 'center';
   do {
@@ -256,12 +256,6 @@ async function _composeQrCard(qrCanvas, upi) {
     headerFontSize--;
   } while (ctx.measureText(headerText).width > maxTextW && headerFontSize >= 11);
   ctx.fillText(headerText, W / 2, headerCenterY);
-
-  const barW = 46, barY = headerH - 12;
-  ctx.strokeStyle = brandGrad;
-  ctx.lineWidth = 2.5;
-  ctx.lineCap = 'round';
-  ctx.beginPath(); ctx.moveTo(W / 2 - barW / 2, barY); ctx.lineTo(W / 2 + barW / 2, barY); ctx.stroke();
 
   // QR
   const qrX = (W - qrSize) / 2;
@@ -296,7 +290,35 @@ async function _composeQrCard(qrCanvas, upi) {
   ctx.font = '400 11px Arial, sans-serif';
   ctx.fillText('Scan & Pay using any UPI App', W / 2, fy);
 
+  // Outer border frame, baked into the image itself (not just a CSS wrapper
+  // around the <img> in the viewer) so it's actually present when the QR
+  // gets downloaded or shared, not only when viewed inside the app.
+  const borderW = 6;
+  const frameGrad = ctx.createLinearGradient(0, 0, W, H);
+  frameGrad.addColorStop(0,    '#064e3b');
+  frameGrad.addColorStop(0.42, '#047857');
+  frameGrad.addColorStop(0.65, '#059669');
+  frameGrad.addColorStop(1,    '#2563eb');
+  ctx.strokeStyle = frameGrad;
+  ctx.lineWidth = borderW;
+  _qrRoundRectPath(ctx, borderW / 2, borderW / 2, W - borderW, H - borderW, cardR);
+  ctx.stroke();
+
   return canvas;
+}
+
+function _qrRoundRectPath(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.arcTo(x + w, y, x + w, y + r, r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
+  ctx.lineTo(x + r, y + h);
+  ctx.arcTo(x, y + h, x, y + h - r, r);
+  ctx.lineTo(x, y + r);
+  ctx.arcTo(x, y, x + r, y, r);
+  ctx.closePath();
 }
 
 function _openQrEditorGenerate(row) {
@@ -319,7 +341,7 @@ function _openQrEditorGenerate(row) {
       <div id="qr_upi_err" style="display:none;font-size:11.5px;color:var(--red);margin-top:5px">Sahi UPI ID daalein — jaise <b>name@bank</b> (e.g. 9876543210@okaxis)</div>
     </div>
     <div style="display:flex;justify-content:center;margin:16px 0">
-      <div id="qr_canvas_wrap" style="border-radius:14px;overflow:hidden;border:1px solid var(--border);box-shadow:0 2px 10px rgba(0,0,0,.08);background:#fff;max-width:100%"></div>
+      <div id="qr_canvas_wrap" style="max-width:100%"></div>
     </div>
     <button class="btn btn-primary" id="qr_gen_save_btn" style="width:100%" onclick="_saveQrGenerate(${row || 'null'})" disabled>Save</button>`;
   _qrRefreshPreview();
@@ -518,9 +540,7 @@ function _openQrViewer(row) {
     </div>
     ${m.active ? `<div style="margin-bottom:12px"><span style="display:inline-flex;align-items:center;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:#dcfce7;color:#15803d">Active</span></div>` : ''}
     <div style="display:flex;justify-content:center;margin-bottom:14px">
-      <div style="padding:3px;border-radius:15px;background:linear-gradient(145deg,#064e3b 0%,#047857 55%,#059669 85%,#2563eb 130%);box-shadow:0 4px 14px rgba(5,150,105,.28);max-width:100%">
-        <img src="${_thumbUrlQr(m.driveId, 500)}" style="display:block;max-width:100%;max-height:320px;border-radius:12px;box-sizing:border-box" alt="">
-      </div>
+      <img src="${_thumbUrlQr(m.driveId, 500)}" style="display:block;max-width:100%;max-height:320px;border-radius:15px;box-shadow:0 4px 14px rgba(5,150,105,.22);box-sizing:border-box" alt="">
     </div>
     ${m.upi ? `<div style="text-align:center;font-size:13px;color:var(--muted);margin-bottom:10px">UPI ID: <b style="color:var(--text)">${_qrEsc(m.upi)}</b></div>` : ''}
     <div style="text-align:center;font-size:11px;color:var(--muted);margin-bottom:16px">
