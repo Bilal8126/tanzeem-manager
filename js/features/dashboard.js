@@ -276,6 +276,22 @@ const _STORY_META = {
     icon: '<path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>' },
   'Proof Deleted':    { grad: 'linear-gradient(145deg,#7f1d1d 0%,#b91c1c 55%,#ef4444 120%)', label: 'Proof Del',
     icon: '<path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/><line x1="4" y1="4" x2="20" y2="20"/>' },
+  'Message Template Added':   { grad: 'linear-gradient(145deg,#164e63 0%,#0891b2 55%,#22d3ee 120%)', label: 'Message',
+    icon: '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>' },
+  'Message Template Updated': { grad: 'linear-gradient(145deg,#92400e 0%,#d97706 60%,#f59e0b 120%)', label: 'Message Edit',
+    icon: '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>' },
+  'Message Template Deleted': { grad: 'linear-gradient(145deg,#7f1d1d 0%,#b91c1c 55%,#ef4444 120%)', label: 'Message Del',
+    icon: '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>' },
+  'QR Add Hua':      { grad: 'linear-gradient(145deg,#312e81 0%,#4f46e5 55%,#818cf8 120%)', label: 'QR Add',
+    icon: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><line x1="14" y1="14" x2="14" y2="21"/><line x1="21" y1="14" x2="21" y2="21"/><line x1="17.5" y1="14" x2="17.5" y2="17.5"/><line x1="14" y1="17.5" x2="21" y2="17.5"/>' },
+  'QR Update Hua':   { grad: 'linear-gradient(145deg,#92400e 0%,#d97706 60%,#f59e0b 120%)', label: 'QR Edit',
+    icon: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><line x1="14" y1="14" x2="14" y2="21"/><line x1="21" y1="14" x2="21" y2="21"/><line x1="17.5" y1="14" x2="17.5" y2="17.5"/><line x1="14" y1="17.5" x2="21" y2="17.5"/>' },
+  'QR Active Hua':   { grad: 'linear-gradient(145deg,#0c4a6e 0%,#0284c7 55%,#38bdf8 120%)', label: 'QR Active',
+    icon: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><line x1="14" y1="14" x2="14" y2="21"/><line x1="21" y1="14" x2="21" y2="21"/><line x1="17.5" y1="14" x2="17.5" y2="17.5"/><line x1="14" y1="17.5" x2="21" y2="17.5"/>' },
+  'QR InActive Hua': { grad: 'linear-gradient(145deg,#334155 0%,#64748b 60%,#94a3b8 120%)', label: 'QR InActive',
+    icon: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><line x1="14" y1="14" x2="14" y2="21"/><line x1="21" y1="14" x2="21" y2="21"/><line x1="17.5" y1="14" x2="17.5" y2="17.5"/><line x1="14" y1="17.5" x2="21" y2="17.5"/>' },
+  'QR Delete Hua':   { grad: 'linear-gradient(145deg,#7f1d1d 0%,#b91c1c 55%,#ef4444 120%)', label: 'QR Delete',
+    icon: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><line x1="14" y1="14" x2="14" y2="21"/><line x1="21" y1="14" x2="21" y2="21"/><line x1="17.5" y1="14" x2="17.5" y2="17.5"/><line x1="14" y1="17.5" x2="21" y2="17.5"/>' },
   _default: { grad: 'linear-gradient(145deg,#334155 0%,#475569 60%,#64748b 120%)', label: 'Activity',
     icon: '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>' },
 };
@@ -349,6 +365,32 @@ function _activitySentence(action, details) {
     case 'Proof Deleted': {
       const [name, type] = splitDash(d);
       return `${name || d} ka ${type || ''} proof — screenshot/image delete kiya`;
+    }
+    case 'Message Template Added':
+      return `"${d}" naam ka naya message template save kiya`;
+    case 'Message Template Updated':
+      return `"${d}" message template update kiya`;
+    case 'Message Template Deleted':
+      return `"${d}" message template delete kiya`;
+    case 'QR Add Hua': {
+      const [label] = splitDash(d);
+      return `${label || d} QR add kiya`;
+    }
+    case 'QR Update Hua': {
+      const [label] = splitDash(d);
+      return `${label || d} QR update kiya`;
+    }
+    case 'QR Active Hua': {
+      const [label] = splitDash(d);
+      return `${label || d} ko Active QR banaya`;
+    }
+    case 'QR InActive Hua': {
+      const [label] = splitDash(d);
+      return `${label || d} InActive ho gaya (koi aur QR Active hua)`;
+    }
+    case 'QR Delete Hua': {
+      const [label] = splitDash(d);
+      return `${label || d} QR delete kiya`;
     }
     default:
       return d;
