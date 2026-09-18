@@ -569,7 +569,7 @@ function _openProofLightbox(driveId) {
         <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="animation:spin .8s linear infinite"><path d="M21 12a9 9 0 1 1-9-9"/></svg>
         <div style="font-size:12px;color:var(--muted)">Image load ho raha hai...</div>
       </div>
-      <img src="${_thumbUrlProof(p.driveId, 1200)}" style="max-width:100%;border-radius:12px;border:1.5px solid #94a3b8;box-sizing:border-box;display:none" alt=""
+      <img src="${_thumbUrlProof(p.driveId, 1200)}" style="max-width:100%;border-radius:12px;border:3px solid #475569;box-sizing:border-box;display:none" alt=""
            onload="this.style.display='block';var l=document.getElementById('proofLightboxLoader');if(l)l.style.display='none';"
            onerror="var l=document.getElementById('proofLightboxLoader');if(l)l.innerHTML='<div style=color:var(--red);font-size:12px>Image load nahi ho payi.</div>';">
     </div>
