@@ -1493,15 +1493,15 @@ input:focus, select:focus, textarea:focus {
 .qa-btn:active { transform: scale(.91); box-shadow: var(--shadow-md); }
 .qa-icon {
   width: 32px; height: 32px;
-  border-radius: 10px;
+  border-radius: 11px;
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
 }
 .qa-icon svg { width: 17px; height: 17px; }
-.qa-icon.green  { background: #ecfdf5; box-shadow: 0 2px 8px rgba(5,150,105,.15); }
-.qa-icon.blue   { background: #eff6ff; box-shadow: 0 2px 8px rgba(37,99,235,.12); }
-.qa-icon.orange { background: #fef3c7; box-shadow: 0 2px 8px rgba(245,158,11,.15); }
-.qa-icon.purple { background: #ede9fe; box-shadow: 0 2px 8px rgba(124,58,237,.15); }
+.qa-icon.green  { background: linear-gradient(145deg,#ecfdf5,#bbf7d0); box-shadow: 0 3px 9px rgba(5,150,105,.22); }
+.qa-icon.blue   { background: linear-gradient(145deg,#eff6ff,#bfdbfe); box-shadow: 0 3px 9px rgba(37,99,235,.2); }
+.qa-icon.orange { background: linear-gradient(145deg,#fef3c7,#fde68a); box-shadow: 0 3px 9px rgba(217,119,6,.22); }
+.qa-icon.purple { background: linear-gradient(145deg,#ede9fe,#ddd6fe); box-shadow: 0 3px 9px rgba(124,58,237,.22); }
 .qa-label { font-size: 8px; font-weight: 700; color: var(--muted); text-align: center; letter-spacing: 0; line-height: 1.25; }
 
 /* ── Settings "Tools" menu (Proofs / Messages / QR) ─── */
