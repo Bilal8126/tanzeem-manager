@@ -166,9 +166,96 @@ function _qrSourceButtonsHtml() {
 // ── Generate editor (UPI ID → live QR preview) ─────────────────
 // Uses the qrcodejs (davidshimjs) library — it renders a <canvas> INSIDE the
 // container element you give it (it doesn't draw onto a canvas you already
-// have), so the preview lives in a wrapper div and _qrGenInstance is reused
-// across keystrokes via .clear()/.makeCode() instead of re-creating it.
-let _qrGenInstance = null;
+// have). That raw QR is generated off-screen into _qrGenRawWrap (a detached
+// div, reused across keystrokes via .clear()/.makeCode()), then composed
+// onto a branded card — Tanzeem logo + name header, QR with a small logo
+// overlaid center (correctLevel H gives enough error-correction budget for
+// that), and the Label/UPI ID printed below — matching a real bank UPI QR
+// layout (e.g. Federal Bank's), and THAT composed card is what gets saved
+// and shared, not the bare QR.
+let _qrGenInstance   = null;
+let _qrGenRawWrap    = null;
+let _qrPreviewToken  = 0;
+let _qrLogoImgPromise = null;
+
+function _getQrLogoImg() {
+  if (!_qrLogoImgPromise) {
+    _qrLogoImgPromise = new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload  = () => resolve(img);
+      img.onerror = () => reject(new Error('logo load failed'));
+      img.src = new URL('icons/icon.svg?v=2', location.href).href;
+    });
+  }
+  return _qrLogoImgPromise;
+}
+
+// Draws the branded card (white bg, header logo+name, QR with center logo,
+// footer label+UPI) onto a fresh canvas and returns it.
+async function _composeQrCard(qrCanvas, label, upi) {
+  const W = 300, PAD = 22, qrSize = 220;
+  const headerH = 54, footerH = 74;
+  const H = headerH + qrSize + footerH;
+  let logo = null;
+  try { logo = await _getQrLogoImg(); } catch (e) { /* card still works without the logo */ }
+
+  const canvas = document.createElement('canvas');
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, W, H);
+
+  // Header: logo + Tanzeem name
+  let hx = PAD;
+  const logoSize = 30;
+  const headerCenterY = headerH / 2 + 4;
+  if (logo) {
+    ctx.drawImage(logo, hx, headerCenterY - logoSize / 2, logoSize, logoSize);
+    hx += logoSize + 8;
+  }
+  ctx.fillStyle = '#0f172a';
+  ctx.font = '700 15px Arial, sans-serif';
+  ctx.textBaseline = 'middle';
+  ctx.textAlign = 'left';
+  ctx.fillText('Tanzeem Abd-e-Mustafa', hx, headerCenterY);
+  ctx.strokeStyle = '#e2e8f0';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(PAD, headerH); ctx.lineTo(W - PAD, headerH); ctx.stroke();
+
+  // QR
+  const qrX = (W - qrSize) / 2;
+  ctx.drawImage(qrCanvas, qrX, headerH, qrSize, qrSize);
+
+  // Small logo overlaid dead-center on the QR, white-ringed so the modules
+  // around it stay scannable (needs correctLevel H, set below).
+  if (logo) {
+    const cx = W / 2, cy = headerH + qrSize / 2, r = 26;
+    ctx.save();
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.fillStyle = '#fff'; ctx.fill();
+    ctx.strokeStyle = '#e2e8f0'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.beginPath(); ctx.arc(cx, cy, r - 4, 0, Math.PI * 2); ctx.clip();
+    ctx.drawImage(logo, cx - (r - 4), cy - (r - 4), (r - 4) * 2, (r - 4) * 2);
+    ctx.restore();
+  }
+
+  // Footer: label + UPI ID
+  let fy = headerH + qrSize + 26;
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#0f172a';
+  ctx.font = '700 14px Arial, sans-serif';
+  ctx.fillText(label || 'Tanzeem Abd-e-Mustafa', W / 2, fy);
+  fy += 22;
+  ctx.fillStyle = '#64748b';
+  ctx.font = '400 12.5px Arial, sans-serif';
+  ctx.fillText(upi, W / 2, fy);
+  fy += 20;
+  ctx.fillStyle = '#94a3b8';
+  ctx.font = '400 10.5px Arial, sans-serif';
+  ctx.fillText('Scan & Pay using any UPI App', W / 2, fy);
+
+  return canvas;
+}
 
 function _openQrEditorGenerate(row) {
   const m = row ? _qrRows.find(x => x.row === row) : null;
@@ -189,26 +276,34 @@ function _openQrEditorGenerate(row) {
       <input type="text" id="qr_upi" placeholder="example@bank" value="${_qrEsc(m?.upi || '')}" oninput="_qrRefreshPreview()">
     </div>
     <div style="display:flex;justify-content:center;margin:16px 0">
-      <div id="qr_canvas_wrap" style="width:220px;height:220px;border-radius:12px;border:1px solid var(--border);overflow:hidden;background:#fff"></div>
+      <div id="qr_canvas_wrap" style="border-radius:14px;overflow:hidden;border:1px solid var(--border);box-shadow:0 2px 10px rgba(0,0,0,.08);background:#fff;max-width:100%"></div>
     </div>
     <button class="btn btn-primary" style="width:100%" onclick="_saveQrGenerate(${row || 'null'})">Save</button>`;
   _qrRefreshPreview();
 }
 
-function _qrRefreshPreview() {
+async function _qrRefreshPreview() {
   const label = document.getElementById('qr_label')?.value.trim() || '';
   const upi   = document.getElementById('qr_upi')?.value.trim()   || '';
   const wrap  = document.getElementById('qr_canvas_wrap');
   if (!wrap) return;
   if (!upi || typeof QRCode === 'undefined') { wrap.innerHTML = ''; _qrGenInstance = null; return; }
   const uri = `upi://pay?pa=${encodeURIComponent(upi)}&pn=${encodeURIComponent(label || 'Tanzeem Abd-e-Mustafa')}&cu=INR`;
+  if (!_qrGenRawWrap) _qrGenRawWrap = document.createElement('div');
   if (_qrGenInstance) {
     _qrGenInstance.clear();
     _qrGenInstance.makeCode(uri);
   } else {
-    wrap.innerHTML = '';
-    _qrGenInstance = new QRCode(wrap, { text: uri, width: 220, height: 220, correctLevel: QRCode.CorrectLevel.M });
+    _qrGenRawWrap.innerHTML = '';
+    _qrGenInstance = new QRCode(_qrGenRawWrap, { text: uri, width: 220, height: 220, correctLevel: QRCode.CorrectLevel.H });
   }
+  const raw = _qrGenRawWrap.querySelector('canvas');
+  if (!raw) return;
+  const token = ++_qrPreviewToken; // guard against out-of-order async renders while typing fast
+  const card = await _composeQrCard(raw, label, upi);
+  if (token !== _qrPreviewToken) return; // a newer refresh already started — drop this stale one
+  wrap.innerHTML = '';
+  wrap.appendChild(card);
 }
 
 async function _saveQrGenerate(row) {
@@ -476,12 +571,19 @@ const _QR_SHARE_FILENAME = 'TanzeemAbdEMustafa.png';
 // wa.me link can only pre-fill text, never attach an image. Desktop/browsers
 // without file-sharing support fall back to a two-step flow: download the
 // QR, then open WhatsApp Web with the text separately (manual attach).
+// Every message sent WITH the QR attached gets this line tacked on at the
+// end, so the recipient knows what the image is for — added once here
+// rather than in each caller since every "send with QR" flow goes through
+// this one function.
+const _QR_PAYMENT_LINE = 'Diye gaye QR par payment kar sakte hain.';
+
 async function _shareQrImage(driveId, text) {
   try {
+    const caption = text ? `${text}\n\n${_QR_PAYMENT_LINE}` : _QR_PAYMENT_LINE;
     const blob = await _fetchQrBlob(driveId, _QR_SHARE_FILENAME);
     const file = new File([blob], _QR_SHARE_FILENAME, { type: blob.type || 'image/png' });
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      await navigator.share({ files: [file], text: text || undefined, title: 'Tanzeem Abd-e-Mustafa' });
+      await navigator.share({ files: [file], text: caption, title: 'Tanzeem Abd-e-Mustafa' });
       return;
     }
     const blobUrl = URL.createObjectURL(blob);
@@ -490,7 +592,7 @@ async function _shareQrImage(driveId, text) {
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     setTimeout(() => URL.revokeObjectURL(blobUrl), 8000);
     showToast('QR image download ho gayi — WhatsApp mein manually attach karein');
-    if (text) setTimeout(() => window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank'), 500);
+    setTimeout(() => window.open('https://wa.me/?text=' + encodeURIComponent(caption), '_blank'), 500);
   } catch (e) {
     if (e.name === 'AbortError') return; // user cancelled the native share sheet
     showToast('QR bhejne mein error: ' + e.message, 'error');
