@@ -233,13 +233,13 @@ async function _composeQrCard(qrCanvas, upi) {
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = 'high';
 
-  // Plain opaque white background — a rounded-clip fill here left the four
-  // corners genuinely transparent in the saved PNG, which different viewers
-  // (WhatsApp, Drive's thumbnail service, etc.) flatten inconsistently,
-  // showing up as mismatched/incomplete-looking corners. A solid square
-  // fill avoids any transparency at all; the rounded border drawn at the
-  // end just sits on top of it.
-  const cardR = 16;
+  // Plain opaque white background with a SQUARE (unrounded) border below —
+  // a raster image's actual boundary is always a rectangle, so a rounded
+  // border drawn inset from that boundary always leaves the image's true
+  // square corners visible poking out past the rounded arc, no matter how
+  // the background is filled. Square corners on both make the border sit
+  // flush with the image's real edge everywhere, corners included.
+  const cardR = 0;
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, W, H);
 
@@ -545,7 +545,7 @@ function _openQrViewer(row) {
     </div>
     ${m.active ? `<div style="margin-bottom:12px"><span style="display:inline-flex;align-items:center;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:#dcfce7;color:#15803d">Active</span></div>` : ''}
     <div style="display:flex;justify-content:center;margin-bottom:14px">
-      <img src="${_thumbUrlQr(m.driveId, 500)}" style="display:block;max-width:100%;max-height:320px;border-radius:15px;box-shadow:0 4px 14px rgba(5,150,105,.22);box-sizing:border-box" alt="">
+      <img src="${_thumbUrlQr(m.driveId, 500)}" style="display:block;max-width:100%;max-height:320px;box-shadow:0 4px 14px rgba(5,150,105,.22);box-sizing:border-box" alt="">
     </div>
     ${m.upi ? `<div style="text-align:center;font-size:13px;color:var(--muted);margin-bottom:10px">UPI ID: <b style="color:var(--text)">${_qrEsc(m.upi)}</b></div>` : ''}
     <div style="text-align:center;font-size:11px;color:var(--muted);margin-bottom:16px">
