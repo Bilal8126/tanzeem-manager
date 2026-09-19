@@ -606,7 +606,9 @@ function _genFileName(label) {
 
 let _pendingShare = { msg: '', waLink: '', pdfFn: null };
 
-function _askShareFormat(msg, waLink, pdfFn = null) {
+// showQr: false for messages where attaching a payment QR makes no sense —
+// e.g. a "payment confirmed/received" message to someone who already paid.
+function _askShareFormat(msg, waLink, pdfFn = null, showQr = true) {
   _pendingShare = { msg, waLink, pdfFn };
   let overlay = document.getElementById('shareFormatOverlay');
   if (!overlay) {
@@ -617,7 +619,7 @@ function _askShareFormat(msg, waLink, pdfFn = null) {
     overlay.addEventListener('click', _closeShareFormat);
     document.body.appendChild(overlay);
   }
-  const activeQr = typeof _qrActiveEntry === 'function' ? _qrActiveEntry() : null;
+  const activeQr = showQr && typeof _qrActiveEntry === 'function' ? _qrActiveEntry() : null;
   overlay.innerHTML = `
     <div class="modal" onclick="event.stopPropagation()">
       <div class="modal-handle"></div>
@@ -625,11 +627,12 @@ function _askShareFormat(msg, waLink, pdfFn = null) {
         <div class="modal-title">Please Choose Format</div>
         <button class="close-btn" onclick="_closeShareFormat()">×</button>
       </div>
+      ${showQr ? `
       <label style="display:flex;align-items:center;gap:9px;font-size:13px;font-weight:600;color:var(--text);margin-bottom:14px;cursor:${activeQr ? 'pointer' : 'not-allowed'};${activeQr ? '' : 'opacity:.5'}">
         <input type="checkbox" id="shareWithQr" ${activeQr ? 'checked' : 'disabled'} style="width:18px;height:18px;flex-shrink:0">
         WhatsApp ke saath QR Code bhi attach karein
       </label>
-      ${!activeQr ? `<div style="font-size:11px;color:var(--muted);margin:-9px 0 14px">Koi Active QR set nahi hai — Settings mein QR add karein.</div>` : ''}
+      ${!activeQr ? `<div style="font-size:11px;color:var(--muted);margin:-9px 0 14px">Koi Active QR set nahi hai — Settings mein QR add karein.</div>` : ''}` : ''}
       <div style="display:flex;flex-direction:column;gap:10px;padding-top:4px">
         <button class="whatsapp-btn" style="margin:0;justify-content:center;gap:10px" onclick="_closeShareFormat();_sendAsText()">
           ${WA_SVG} Text Message (WhatsApp)
@@ -1201,7 +1204,7 @@ function sendWaMemberPaid() {
   msg += `Allah aapki kamai mein barkat farmaaye. 🤲\n`;
   msg += `━━━━━━━━━━━━━━━━━━━\n`;
   msg += `Jazakallah Khair 🤲`;
-  _askShareFormat(msg, _memberWaLink(capturedName), () => openPaymentReceiptFromPopup('share'));
+  _askShareFormat(msg, _memberWaLink(capturedName), () => openPaymentReceiptFromPopup('share'), false);
 }
 
 // ── Transaction Receipt from WA paid popup ────────────────────

@@ -292,15 +292,18 @@ async function _composeQrCard(qrCanvas, upi) {
 
   // Outer border frame, baked into the image itself (not just a CSS wrapper
   // around the <img> in the viewer) so it's actually present when the QR
-  // gets downloaded or shared, not only when viewed inside the app.
-  const borderW = 6;
+  // gets downloaded or shared, not only when viewed inside the app. Made
+  // thicker with fewer/more saturated gradient stops — a thin border with a
+  // pale mid-tone stop read as "missing" in spots once WhatsApp recompresses
+  // the image, so this keeps it visibly solid all the way around.
+  const borderW = 11;
   const frameGrad = ctx.createLinearGradient(0, 0, W, H);
-  frameGrad.addColorStop(0,    '#064e3b');
-  frameGrad.addColorStop(0.42, '#047857');
-  frameGrad.addColorStop(0.65, '#059669');
-  frameGrad.addColorStop(1,    '#2563eb');
+  frameGrad.addColorStop(0,   '#065f46');
+  frameGrad.addColorStop(0.5, '#059669');
+  frameGrad.addColorStop(1,   '#1d4ed8');
   ctx.strokeStyle = frameGrad;
   ctx.lineWidth = borderW;
+  ctx.lineJoin = 'round';
   _qrRoundRectPath(ctx, borderW / 2, borderW / 2, W - borderW, H - borderW, cardR);
   ctx.stroke();
 
@@ -675,7 +678,7 @@ async function _fetchQrBlob(driveId, name) {
 // Every QR shared to a member uses this exact file name, regardless of the
 // entry's own Label — keeps what a member sees/saves consistent no matter
 // which saved QR (or which admin) sent it.
-const _QR_SHARE_FILENAME = 'TanzeemAbdEMustafa.png';
+const _QR_SHARE_FILENAME = 'TanzeemAbdEMustafaQR.png';
 
 // Shares a QR image (optionally with caption text) via the phone's native
 // Share sheet so WhatsApp receives the image+caption TOGETHER — a plain
