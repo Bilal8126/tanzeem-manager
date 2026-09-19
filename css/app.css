@@ -1532,7 +1532,8 @@ input:focus, select:focus, textarea:focus {
 .tool-thumb {
   position: absolute; top: -4px; right: -4px;
   width: 20px; height: 20px; border-radius: 6px;
-  border: 2px solid var(--card); object-fit: cover;
+  border: 2px solid var(--card); object-fit: contain;
+  background: #fff;
 }
 
 /* ── Recent Activity "stories" row (Dashboard) ─────── */

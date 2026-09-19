@@ -134,7 +134,7 @@ function _renderQrList() {
       ? `<div style="text-align:center;color:var(--muted);padding:30px 0;font-size:13px">Koi QR save nahi hai. Upar "New QR" se shuru karein.</div>`
       : rows.map((m, i) => `
         <div style="padding:12px 0;${i < rows.length - 1 ? 'border-bottom:1px solid var(--border);' : ''}display:flex;align-items:center;gap:12px;cursor:pointer" onclick="_openQrViewer(${m.row})">
-          <img src="${_thumbUrlQr(m.driveId, 120)}" style="width:46px;height:46px;border-radius:10px;object-fit:cover;border:1px solid var(--border);flex-shrink:0" alt="">
+          <img src="${_thumbUrlQr(m.driveId, 120)}" style="width:46px;height:46px;border-radius:10px;object-fit:contain;background:#fff;border:1px solid var(--border);flex-shrink:0" alt="">
           <div style="flex:1;min-width:0">
             <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${_qrEsc(m.label)}</div>
             ${m.active
