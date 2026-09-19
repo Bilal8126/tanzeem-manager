@@ -305,7 +305,9 @@ async function _composeQrCard(qrCanvas, upi) {
   frameGrad.addColorStop(1,   '#1d4ed8');
   ctx.strokeStyle = frameGrad;
   ctx.lineWidth = borderW;
-  ctx.lineJoin = 'round';
+  ctx.lineJoin = 'miter'; // 'round' rounds the STROKE's own corners even on
+                          // a sharp-cornered path — left a tiny rounded
+                          // notch at each corner even with cardR at 0
   _qrRoundRectPath(ctx, borderW / 2, borderW / 2, W - borderW, H - borderW, cardR);
   ctx.stroke();
 
