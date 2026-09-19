@@ -233,13 +233,15 @@ async function _composeQrCard(qrCanvas, upi) {
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = 'high';
 
-  // Rounded-corner white card — clipped fill instead of a plain fillRect so
-  // the corners OUTSIDE the rounded shape stay transparent (matches the
-  // rounded gradient border frame drawn at the very end).
+  // Plain opaque white background — a rounded-clip fill here left the four
+  // corners genuinely transparent in the saved PNG, which different viewers
+  // (WhatsApp, Drive's thumbnail service, etc.) flatten inconsistently,
+  // showing up as mismatched/incomplete-looking corners. A solid square
+  // fill avoids any transparency at all; the rounded border drawn at the
+  // end just sits on top of it.
   const cardR = 16;
-  _qrRoundRectPath(ctx, 0, 0, W, H, cardR);
   ctx.fillStyle = '#ffffff';
-  ctx.fill();
+  ctx.fillRect(0, 0, W, H);
 
   // Header: Tanzeem name only (the logo already appears center-on-QR
   // below), solid brand green instead of plain black.
